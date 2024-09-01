@@ -147,4 +147,4 @@ impl<const N: usize> Valid<Array<u32, N>> {
 It takes an `Valid<Array<u32, N>>` and returns `Valid<u32>`. It transforms the ingress payload to sum of them.
 In the application-specific logic in `map` interface combinator, we use `fold_assoc` method which aggregates the data within array of signal.
 
-You can find the implementation in [fir_filter.rs](TODO).
+You can find the implementation in [fir_filter.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/fir_filter.rs).

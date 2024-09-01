@@ -43,8 +43,7 @@
 #![register_tool(hazardflow)]
 
 pub mod cpu;
-pub mod fir_filter;
+pub mod examples;
 pub mod gemmini;
-pub mod masked_merge;
 pub mod prelude;
 pub mod std;

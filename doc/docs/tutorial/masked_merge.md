@@ -1,7 +1,5 @@
 # Masked Merge
 
-In this tutorial, `masked_merge` combinator를 이용해서 resolver 개념을 modular design에 어떻게 활용할 수 있는지 알아볼 것이다.
-
 ## Specification
 
 <p align="center">
@@ -96,5 +94,7 @@ pub fn m(ingress: [Vr<u32>; 5]) -> Vr<u32> {
         .map(|(ip, _idx)| ip)
 }
 ```
+
+You can find the implementation in [masked_merge.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/masked_merge.rs).
 
 Congratulations! You finished the tutorial!
