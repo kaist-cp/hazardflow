@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "hazardflow",
+  "hazardflow-rustc",
+  "hazardflow-macro",
+  "hazardflow-designs",
+]
+resolver = "2"

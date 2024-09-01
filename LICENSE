@@ -1,0 +1,44 @@
+All files in this distribution are part of HazardFlow.
+
+HazardFlow is distributed under the terms of the Apache License 2.0.
+A copy of the Apache License 2.0 is included in /LICENSE-APACHE2.
+
+----------------------------------------------------------------------
+
+The following files in this distribution are taken from the Corundum
+project, https://github.com/corundum/corundum:
+
+  all files in the /scripts/common/ directory
+  all files in the /scripts/fpga/ directory
+  all files in the /scripts/rtl/ directory
+  all files in the /scripts/tb/ directory
+  all files in the /scripts/wrappers/ directory
+
+The files from the Corundum project are Copyright 2019-2023 The Regents of
+the University of California and distributed under the terms of the BSD
+ License. A copy of the BSD License is included in /LICENSE-BSD.
+
+----------------------------------------------------------------------
+
+The following files in this distribution are taken from the RISC-V Sodor
+project, https://github.com/ucb-bar/riscv-sodor:
+
+  all files in the /scripts/cpu/sodor_files/ directory
+  all files in the /scripts/cpu/wrappers/ directory
+
+The files from the RISC-V Sodor project are Copyright 2011-2013 The Regents
+of the University of California and distributed under the terms of the
+BSD License. A copy of the BSD License is included in /LICENSE-BSD.
+
+----------------------------------------------------------------------
+
+The following files in this distribution are taken from the Gemmini
+project, https://github.com/ucb-bar/gemmini:
+
+  all files in the /scripts/gemmini/chisel_wrappers/ directory
+  all files in the /scripts/gemmini/verilator_build_files/ directory
+  all files in the /scripts/gemmini/verilog_wrappers/ directory
+
+The files from the Corundum project are Copyright 2018-2019 The Regents of
+the University of California and distributed under the terms of the BSD
+ License. A copy of the BSD License is included in /LICENSE-BSD.

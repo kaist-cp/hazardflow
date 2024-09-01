@@ -1,0 +1,10 @@
+[package]
+name = "hazardflow-designs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hazardflow-macro = { path = "../hazardflow-macro/" }
+static_assertions = "1.1.0"

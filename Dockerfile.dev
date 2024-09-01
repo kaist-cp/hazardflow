@@ -1,0 +1,133 @@
+## BUILDER
+FROM ubuntu:20.04 as builder
+
+### Install Miniforge conda
+ARG MINIFORGE_NAME=Miniforge3
+ARG MINIFORGE_VERSION=24.3.0-0
+ARG TARGETPLATFORM
+
+ENV CONDA_DIR=/opt/conda
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH=${CONDA_DIR}/bin:${PATH}
+
+## Miniforge3 conda installation
+## <https://github.com/conda-forge/miniforge-images/blob/master/ubuntu/Dockerfile>
+# 1. Install just enough for conda to work
+# 2. Keep $HOME clean (no .wget-hsts file), since HSTS isn't useful in this context
+# 3. Install miniforge from GitHub releases
+# 4. Apply some cleanup tips from https://jcrist.github.io/conda-docker-tips.html
+#    Particularly, we remove pyc and a files. The default install has no js, we can skip that
+# 5. Activate base by default when running as any *non-root* user as well
+#    Good security practice requires running most workloads as non-root
+#    This makes sure any non-root users created also have base activated
+#    for their interactive shells.
+# 6. Activate base by default when running as root as well
+#    The root user is already created, so won't pick up changes to /etc/skel
+RUN apt-get update > /dev/null && \
+    apt-get install --no-install-recommends --yes \
+    wget bzip2 ca-certificates \
+    git \
+    tini \
+    > /dev/null && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    wget --no-hsts --quiet https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/${MINIFORGE_NAME}-${MINIFORGE_VERSION}-Linux-$(uname -m).sh -O /tmp/miniforge.sh && \
+    /bin/bash /tmp/miniforge.sh -b -p ${CONDA_DIR} && \
+    rm /tmp/miniforge.sh && \
+    conda clean --tarballs --index-cache --packages --yes && \
+    find ${CONDA_DIR} -follow -type f -name '*.a' -delete && \
+    find ${CONDA_DIR} -follow -type f -name '*.pyc' -delete && \
+    conda clean --force-pkgs-dirs --all --yes  && \
+    echo ". ${CONDA_DIR}/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc && \
+    echo ". ${CONDA_DIR}/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc && \
+    conda install -n base conda-libmamba-solver && \
+    conda config --set solver libmamba
+### Miniforge conda installation done
+
+### Add user
+ARG USER=cs492
+RUN apt-get update && apt-get install -y sudo
+RUN adduser --disabled-password --gecos '' ${USER}
+
+#  Add new user ${USER} to sudo group
+RUN adduser ${USER} sudo
+RUN chmod -R 777 ${CONDA_DIR}
+
+# Ensure sudo group users are not 
+# asked for a password when using 
+# sudo command by ammending sudoers file
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# now we can set USER to the user we just created
+USER ${USER}
+
+WORKDIR /home/${USER}
+
+###########################################################################################
+FROM builder as builder-with-conda
+# Language
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+# Install dependent packages
+RUN \
+    sudo apt-get update && \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    autoconf bison build-essential ccache flex help2man libfl2 libfl-dev libgoogle-perftools-dev \
+    numactl perl perl-doc curl wget git sudo ca-certificates keyboard-configuration console-setup \
+    libreadline-dev gawk tcl-dev libffi-dev graphviz xdot libboost-system-dev python3-pip \
+    libboost-python-dev libboost-filesystem-dev zlib1g-dev time device-tree-compiler libelf-dev \
+    bc unzip zlib1g zlib1g-dev libtcl8.6 iverilog pkg-config clang verilator vim ripgrep cmake openjdk-8-jre && \
+    sudo apt-get clean
+
+# Install rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH "/home/${USER}/.cargo/bin:${PATH}"
+
+RUN sudo ln -s /usr/bin/python3 /usr/bin/python
+
+# hdl-tools (to reduce the size of vcd file)
+RUN mkdir -p tools &&\
+    cd tools && \
+    git clone https://github.com/IBM/hdl-tools.git
+ENV PATH "/home/${USER}/tools/hdl-tools/scripts:${PATH}"
+
+
+# Install chipyard
+RUN \
+    git clone https://github.com/ucb-bar/chipyard.git && \
+    cd chipyard && \
+    git checkout 1.9.1
+
+SHELL ["/bin/bash", "-cl"]
+
+RUN conda install -n base conda-libmamba-solver conda-lock==1.4.0 && \
+    conda config --set solver libmamba && \
+    cd chipyard && \
+    git checkout 1.9.1 && \
+    ./build-setup.sh riscv-tools -s 6 -s 7 -s 8 -s 9
+
+###########################################################################################
+FROM builder-with-conda as builder-with-chipyard
+
+ENV RISCV "/home/${USER}/chipyard/.conda-env/riscv-tools"
+
+RUN cd chipyard && \
+    source env.sh && \
+    cd generators/gemmini && \
+    git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*" && \
+    git fetch && git checkout v0.7.1 && \
+    git submodule update --init --recursive && \
+    make -C software/libgemmini install
+
+RUN source chipyard/env.sh && \
+    cd chipyard/generators/gemmini && \
+    ./scripts/setup-paths.sh
+
+###########################################################################################
+FROM builder-with-chipyard as builder-with-gemmini
+
+RUN conda install -y rich parse
+RUN pip3 install cocotb
+
+CMD ["/bin/bash", "-l"]
