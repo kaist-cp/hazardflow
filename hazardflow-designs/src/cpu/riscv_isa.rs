@@ -162,7 +162,6 @@ impl From<u32> for Instruction {
 
         /* RV Priviledged Set */
         let is_mret = value == 0x30200073;
-        let is_dret = value == 0x7b200073;
         let is_wfi = value == 0x10500073;
 
         let l1 = is_lw || is_lb || is_lbu || is_lh || is_lhu || is_sw || is_sb || is_sh;
@@ -171,7 +170,7 @@ impl From<u32> for Instruction {
         let l4 = is_sll || is_add || is_sub || is_slt || is_sltu || is_and || is_or || is_xor || is_sra || is_srl;
         let l5 = is_jal || is_jalr || is_beq || is_bne || is_bge || is_bgeu || is_blt || is_bltu;
         let l6 = is_csrrwi || is_csrrsi || is_csrrw || is_csrrs || is_csrrc || is_csrrci;
-        let l7 = is_ecall || is_mret || is_dret || is_ebreak || is_wfi;
+        let l7 = is_ecall || is_mret || is_ebreak || is_wfi;
         let l8 = is_fencei || is_fence;
 
         let is_illegal = !(l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8);
@@ -334,8 +333,6 @@ impl From<u32> for Instruction {
             })
         } else if is_ecall || is_ebreak || is_mret {
             Some(CsrInfo { addr: csr_addr, cmd: CsrCommand::I })
-        } else if is_dret {
-            Some(CsrInfo { addr: U::from(0b000100000010), cmd: CsrCommand::I })
         } else {
             None
         };
@@ -364,8 +361,7 @@ impl From<u32> for Instruction {
             Some(Op1Sel::Pc)
         } else if is_csri {
             Some(Op1Sel::Imm)
-        } else if is_lui || is_ecall || is_ebreak || is_fencei || is_fence || is_mret || is_dret || is_wfi || is_illegal
-        {
+        } else if is_lui || is_ecall || is_ebreak || is_fencei || is_fence || is_mret || is_wfi || is_illegal {
             None
         } else {
             Some(Op1Sel::Rs1)
