@@ -41,12 +41,10 @@ def check_verilator_version():
         if result.returncode == 0:
             # Extract the version number from the output
             version_output = result.stdout.splitlines()[0]  # Extracting the first line
-            version_string = version_output.split()[
-                -1
-            ]  # Assuming version number is the last item
+            version_string = version_output.split()[1]  # Assuming version number is the second item
 
             # Extracting major version number
-            major_version = int(version_string.split(".")[0][1])
+            major_version = int(version_string.split(".")[0])
             minor_version = int(version_string.split(".")[1][:3])
 
             return major_version + (minor_version / 1000)
