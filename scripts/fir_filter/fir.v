@@ -11,9 +11,4 @@ module fir (
 
 // TODO: Implement this module.
 
-initial begin
-    $dumpfile("fir.vcd");
-    $dumpvars(0, fir);
-end
-
 endmodule

@@ -1,10 +1,12 @@
 # Makefile
 
-# defaults
-SIM ?= icarus
-TOPLEVEL_LANG ?= verilog
+TOPLEVEL_LANG = verilog
+SIM = icarus
 
 VERILOG_SOURCES += $(PWD)/fir.v
+VERILOG_SOURCES += $(PWD)/dump.v
+
+COMPILE_ARGS += -s dump
 
 # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
 TOPLEVEL = fir
@@ -16,5 +18,5 @@ MODULE = test_fir
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 clean::
-	@rm -rf iverilog_dump.v
+	@rm -rf results.xml
 	@rm -rf $(TOPLEVEL).vcd
