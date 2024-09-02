@@ -121,7 +121,7 @@ VERILATOR_OPT_FLAGS ?= \
 	-O3 \
 	--x-assign fast \
 	--x-initial fast \
-	-I/$(HOME)/chipyard/generators/gemmini/src/main/resources/vsrc \
+	-I/$(CHIPYARD)/generators/gemmini/src/main/resources/vsrc \
 	--output-split 10000 \
 	--output-split-cfuncs 100
 
