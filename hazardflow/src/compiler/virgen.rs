@@ -499,8 +499,6 @@ impl<'tcx> Virgen<'tcx> {
 
         let always_comb = vir::ModuleItem::AlwaysConstruct("always @*".to_string(), blocking_stmts.clone());
 
-        let initial_comb = vir::ModuleItem::AlwaysConstruct("initial".to_string(), blocking_stmts);
-
         // 3. generate the state update logic
         // always @(posedge clk) begin
         //     ... // (4) state update logic
@@ -577,7 +575,6 @@ impl<'tcx> Virgen<'tcx> {
                 vir::ModuleItem::Declarations(init_decls),
                 vir::ModuleItem::ContinuousAssigns(ingress_conts),
                 always_comb,
-                initial_comb,
                 vir::ModuleItem::ContinuousAssigns(fsm_result_conts),
                 always_posedge,
             ],
