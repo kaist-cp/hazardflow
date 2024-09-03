@@ -1,5 +1,6 @@
 //! Branch history table.
 
+use super::*;
 use crate::std::*;
 
 /// 2-bit saturation counter.
@@ -51,23 +52,24 @@ impl SatCounter {
 
 /// BHT.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct Bht<const N: usize>
-where [(); clog2(N)]:
-{
-    /// Entries.
-    pub entries: Array<SatCounter, N>,
+pub struct Bht {
+    /// BHT entries.
+    #[allow(unused)]
+    entries: Array<SatCounter, BHT_ENTRIES>,
 }
 
-impl<const N: usize> Bht<N>
-where [(); clog2(N)]:
-{
-    /// Predicts the branch is taken or not based on the given PC.
-    pub fn predict(self, _pc: U<32>) -> bool {
-        todo!("Assignment 2")
+impl Bht {
+    /// Predicts the direction of a branch instruction with the given PC.
+    ///
+    /// Returns `true` if the branch is prediction as taken; otherwise, returns `false`.
+    pub fn predict(self, _pc: u32) -> bool {
+        todo!("assignment 2")
     }
 
-    /// Updates as the branch was mispredicted.
-    pub fn update(self, _pc: U<32>) -> Self {
-        todo!("Assignment 2")
+    /// Returns the updated BHT when a branch misprediction occurs at the given PC.
+    ///
+    /// It updates the entry corresponding to the given PC.
+    pub fn update(self, _pc: u32) -> Self {
+        todo!("assignment 2")
     }
 }

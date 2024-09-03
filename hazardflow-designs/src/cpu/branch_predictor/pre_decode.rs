@@ -11,6 +11,9 @@ pub struct PreDecodeResp {
     /// Is JALR instruction?
     pub is_jalr: bool,
 
+    /// Is JAL instruction?
+    pub is_jal: bool,
+
     /// Immediate.
     pub imm: U<32>,
 }
@@ -19,6 +22,7 @@ pub struct PreDecodeResp {
 ///
 /// It is used in the fetch stage to extract minimum required information for branch prediction.
 pub fn pre_decode(i: U<32>) -> PreDecodeResp {
+    let funct3 = i.clip_const::<3>(12);
     let opcode = i.clip_const::<7>(0);
 
     let uj_imm = |i: U<32>| {
@@ -40,18 +44,10 @@ pub fn pre_decode(i: U<32>) -> PreDecodeResp {
             .append(i[31].repeat::<19>())
     };
 
-    let is_xret =
-        i.clip_const::<2>(30) == 0.into_u() && i.clip_const::<29>(0) == 0b10000001000000000000001110011.into_u();
-
     let is_branch = opcode == 0b1100011.into_u();
-    let is_jalr = opcode == 0b1100111.into_u();
-    let imm = if is_xret {
-        0.into_u()
-    } else if i[3] {
-        uj_imm(i)
-    } else {
-        sb_imm(i)
-    };
+    let is_jalr = funct3 == 0b000.into_u() && opcode == 0b1100111.into_u();
+    let is_jal = opcode == 0b1101111.into_u();
+    let imm = if i[3] { uj_imm(i) } else { sb_imm(i) };
 
-    PreDecodeResp { is_branch, is_jalr, imm }
+    PreDecodeResp { is_branch, is_jalr, is_jal, imm }
 }

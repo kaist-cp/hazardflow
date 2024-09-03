@@ -1,26 +1,26 @@
 //! Branch target buffer.
 
+use super::*;
 use crate::std::*;
 
 /// BTB.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct Btb<const N: usize>
-where [(); clog2(N)]:
-{
-    /// Entries.
-    pub entries: Array<HOption<u32>, N>,
+pub struct Btb {
+    /// BTB entries.
+    #[allow(unused)]
+    entries: Array<HOption<u32>, BTB_ENTRIES>,
 }
 
-impl<const N: usize> Btb<N>
-where [(); clog2(N)]:
-{
-    /// Predicts the target address based on the given PC.
-    pub fn predict(self, _pc: U<32>) -> HOption<u32> {
-        todo!("Assignment 2")
+impl Btb {
+    /// Returns the predicted target address of a JALR instruction with the given PC.
+    pub fn predict(self, _pc: u32) -> HOption<u32> {
+        todo!("assignment 2")
     }
 
-    /// Updates as the target address was mispredicted.
-    pub fn update(self, _pc: U<32>, _target: u32) -> Self {
-        todo!("Assignment 2")
+    /// Returns the updated BTB when a target address misprediction occurs.
+    ///
+    /// It updates the entry corresponding to the given PC with the given correct target address.
+    pub fn update(self, _pc: u32, _target: u32) -> Self {
+        todo!("assignment 2")
     }
 }

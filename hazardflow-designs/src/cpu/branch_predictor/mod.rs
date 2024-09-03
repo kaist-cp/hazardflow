@@ -8,6 +8,11 @@ pub use bht::*;
 pub use btb::*;
 pub use pre_decode::*;
 
+/// Number of BHT entries.
+pub const BHT_ENTRIES: usize = 128;
+/// Number of BTB entries.
+pub const BTB_ENTRIES: usize = 32;
+
 /// Branch prediction info.
 #[derive(Debug, Clone, Copy)]
 pub struct BpInfo {
