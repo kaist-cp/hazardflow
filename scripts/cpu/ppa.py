@@ -8,6 +8,29 @@ from constants import *
 from utils import *
 
 
+def setup_openroad():
+    # Generate verilog code.
+    subprocess.run(
+        [
+            "cargo",
+            "run",
+            "--release",
+            "--",
+            "--target",
+            "core",
+            "--wire-cache",
+            "--deadcode",
+            "--merge",
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        cwd=hazardflow_dir,
+    )
+    logger.info(f"[HAZARDFLOW] Verilog code compiled at {hazardflow_dir}/build/core")
+
+    subprocess.run(f"cp {hazardflow_dir}/build/core/core_top.v {cpu_script_dir}/openroad/vsrc", shell=True)
+
+
 def run_openroad():
     if not os.path.exists(openroad_flow):
         print(f"ERROR: `OPENROAD_FLOW` environment variable is not a path.")
@@ -47,5 +70,6 @@ def report():
 
 
 if __name__ == "__main__":
+    setup_openroad()
     run_openroad()
     report()

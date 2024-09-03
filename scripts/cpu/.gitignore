@@ -1,5 +1,11 @@
 __pycache__
-openroad/*
-!openroad/nangate45
+openroad/logs
+openroad/objects
+openroad/reports
+openroad/results
+openroad/vsrc/*
+!openroad/vsrc/Core.v
+!openroad/vsrc/CoreWrapper.v
+!openroad/vsrc/CSRFileWrapper.v
 output
 emulator-debug

@@ -52,7 +52,7 @@ logger = logging.getLogger("rich")
 hazardflow_dir = hazardflow_dir = pathlib.Path(__file__).absolute().parent.parent.parent
 cpu_script_dir = hazardflow_dir / "scripts" / "cpu"
 
-openroad_flow = os.environ['OPENROAD_FLOW']
+openroad_flow = os.environ.get("OPENROAD_FLOW")
 
 sodor_dir = hazardflow_dir / "riscv-sodor"
 

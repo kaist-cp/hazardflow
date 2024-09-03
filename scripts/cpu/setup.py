@@ -77,11 +77,6 @@ def setup():
 
     # Copy sodor files to rv32_5stage
     subprocess.run(
-        f"cp chisel_top.scala {chisel_core_src_dir}/top.scala",
-        shell=True,
-        cwd=cpu_script_dir / "sodor_files",
-    )
-    subprocess.run(
         f"cp regfile.scala {chisel_core_src_dir}/regfile.scala",
         shell=True,
         cwd=cpu_script_dir / "sodor_files",

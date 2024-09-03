@@ -23,6 +23,7 @@ def build_core():
             "--wire-cache",
             "--deadcode",
             "--merge",
+            "--system-task",
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
