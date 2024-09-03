@@ -50,10 +50,10 @@ pub struct DecEP {
 pub struct DecH;
 
 impl Hazard for DecH {
-    type P = (MemRespWithAddr, Instruction);
+    type P = (FetEP, Instruction);
     type R = (ExeR, MemR, WbR);
 
-    fn ready((_, inst): (MemRespWithAddr, Instruction), (exer, memr, _): (ExeR, MemR, WbR)) -> bool {
+    fn ready((_, inst): (FetEP, Instruction), (exer, memr, _): (ExeR, MemR, WbR)) -> bool {
         let rs1_addr = inst.rs1_addr;
         let rs2_addr = inst.rs2_addr;
 
@@ -69,7 +69,7 @@ impl Hazard for DecH {
 }
 
 /// Generates resolver from decode stage to fetch stage.
-fn gen_resolver(er: (HOption<(MemRespWithAddr, Instruction)>, ExeR, MemR, WbR)) -> (bool, PcSel) {
+fn gen_resolver(er: (HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)) -> (bool, PcSel) {
     let (p, exer, memr, _) = er;
 
     let inst = p.map(|(_, inst)| inst);
@@ -88,7 +88,7 @@ fn gen_resolver(er: (HOption<(MemRespWithAddr, Instruction)>, ExeR, MemR, WbR)) 
 }
 
 /// Generates payload from decode stage to execute stage.
-fn gen_payload(ip: MemRespWithAddr, inst: Instruction, er: (ExeR, MemR, WbR)) -> HOption<DecEP> {
+fn gen_payload(ip: FetEP, inst: Instruction, er: (ExeR, MemR, WbR)) -> HOption<DecEP> {
     let (exer, memr, wbr) = er;
 
     if exer.dec_kill || memr.pipeline_kill {
@@ -118,7 +118,7 @@ fn gen_payload(ip: MemRespWithAddr, inst: Instruction, er: (ExeR, MemR, WbR)) ->
         // op1 will be pc value, and op2 will be 4.
 
         // First operand of ALU.
-        let op1_data = inst.op1_data(rs1, ip.addr);
+        let op1_data = inst.op1_data(rs1, ip.imem_resp.addr);
 
         // Second operand of ALU.
         let op2_data = inst.op2_data(rs2);
@@ -126,7 +126,7 @@ fn gen_payload(ip: MemRespWithAddr, inst: Instruction, er: (ExeR, MemR, WbR)) ->
         AluInput { op: inst.alu_op, op1_data, op2_data }
     };
 
-    let jmp_target = inst.jmp_target(rs1, ip.addr);
+    let jmp_target = inst.jmp_target(rs1, ip.imem_resp.addr);
 
     Some(DecEP {
         wb: inst.rd_addr.zip(inst.wb_sel),
@@ -145,18 +145,18 @@ fn gen_payload(ip: MemRespWithAddr, inst: Instruction, er: (ExeR, MemR, WbR)) ->
         is_fencei: inst.is_fencei,
         // If it is returning from trap (`csr_eret`), clear instruction exception.
         is_illegal: inst.is_illegal,
-        pc: ip.addr,
-        debug_inst: ip.data,
+        pc: ip.imem_resp.addr,
+        debug_inst: ip.imem_resp.data,
     })
 }
 
 /// Decode stage.
 pub fn decode(
-    i: I<VrH<MemRespWithAddr, (bool, PcSel)>, { Dep::Demanding }>,
+    i: I<VrH<FetEP, (bool, PcSel)>, { Dep::Demanding }>,
 ) -> I<VrH<DecEP, (ExeR, MemR, WbR)>, { Dep::Demanding }> {
-    i.map_resolver_inner::<(HOption<(MemRespWithAddr, Instruction)>, ExeR, MemR, WbR)>(gen_resolver)
+    i.map_resolver_inner::<(HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)>(gen_resolver)
         .reg_fwd(true)
-        .map(|p| (p, Instruction::from(p.data)))
+        .map(|p| (p, Instruction::from(p.imem_resp.data)))
         .map_resolver_block_with_p::<AndH<DecH>>(|ip, er| {
             let (exer, memr, wbr) = er.inner;
             (ip, exer, memr, wbr)

@@ -29,22 +29,30 @@ pub enum PcSel {
     Exception(u32),
 }
 
+/// Payload from fetch stage to decode stage.
+#[derive(Debug, Clone, Copy)]
+pub struct FetEP {
+    /// IMEM response.
+    pub imem_resp: MemRespWithAddr,
+}
+
 /// Fetch stage.
 pub fn fetch<const START_ADDR: u32>(
     imem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
-) -> I<VrH<MemRespWithAddr, (bool, PcSel)>, { Dep::Demanding }> {
-    let next_pc = <I<VrH<(HOption<MemRespWithAddr>, PcSel), _>, { Dep::Demanding }>>::source_drop()
+) -> I<VrH<FetEP, (bool, PcSel)>, { Dep::Demanding }> {
+    let next_pc = <I<VrH<(HOption<FetEP>, PcSel), _>, { Dep::Demanding }>>::source_drop()
         .filter_map(|(p, pc_sel)| match pc_sel {
             PcSel::Jmp(target) | PcSel::Exception(target) => Some(target),
-            PcSel::Curr => p.map(|p| p.addr),
-            PcSel::Plus4 => p.map(|p| p.addr + 4),
+            PcSel::Curr => p.map(|p| p.imem_resp.addr),
+            PcSel::Plus4 => p.map(|p| p.imem_resp.addr + 4),
         })
         .reg_fwd_with_init(true, START_ADDR);
 
     next_pc
         .map(|pc| MemReq::load(pc, MemOpTyp::WU))
         .comb::<I<VrH<MemRespWithAddr, _>, { Dep::Helpful }>>(attach_resolver(imem))
-        .map_resolver_drop_with_p::<VrH<MemRespWithAddr, (bool, PcSel)>>(|ip, er| {
+        .map(|imem_resp| FetEP { imem_resp })
+        .map_resolver_drop_with_p::<VrH<FetEP, (bool, PcSel)>>(|ip, er| {
             let (kill, pc_sel) = er.inner;
             Ready::new(er.ready || kill, (ip, pc_sel)) // We need `kill` here to extract the mispredicted PC from register, and then filter out them.
         })
