@@ -13,25 +13,34 @@ pub const BHT_ENTRIES: usize = 128;
 /// Number of BTB entries.
 pub const BTB_ENTRIES: usize = 32;
 
-/// Branch prediction info.
+/// Branch prediction results.
 #[derive(Debug, Clone, Copy)]
-pub struct BpInfo {
+pub struct BpResult {
     /// Pre-decode result.
-    pub pre_decoded: PreDecodeResp,
+    pub pre_decode: PreDecodeResp,
 
-    /// Branch was taken or not?
-    pub is_taken: bool,
+    /// Predicted branch direction (used for branch instructions).
+    pub bht: bool,
 
-    /// Target address.
-    pub target: u32,
+    /// Predicted target address (used for JALR instruction).
+    pub btb: u32,
 }
 
 /// Branch prediction update.
 #[derive(Debug, Clone, Copy)]
 pub enum BpUpdate {
-    /// Updates BHT. Contains PC.
+    /// Updates BHT.
+    ///
+    /// It contains the mispredicted PC.
     Bht(u32),
 
-    /// Updates BTB. Contains (PC, target).
-    Btb(u32, u32),
+    /// Updates BTB.
+    ///
+    /// It contains the mispredicted PC and the correct target address.
+    Btb {
+        /// Mispredicted PC.
+        pc: u32,
+        /// Correct target address.
+        target: u32,
+    },
 }
