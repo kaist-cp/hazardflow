@@ -1,0 +1,5 @@
+__pycache__
+openroad/*
+!openroad/nangate45
+output
+emulator-debug

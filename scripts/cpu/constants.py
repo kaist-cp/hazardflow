@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import os
+from os.path import dirname, join
 import pathlib
 from enum import Enum
-from os.path import dirname, join
 import logging
 from rich.logging import RichHandler
 
@@ -50,6 +51,8 @@ logger = logging.getLogger("rich")
 
 hazardflow_dir = hazardflow_dir = pathlib.Path(__file__).absolute().parent.parent.parent
 cpu_script_dir = hazardflow_dir / "scripts" / "cpu"
+
+openroad_flow = os.environ['OPENROAD_FLOW']
 
 sodor_dir = hazardflow_dir / "riscv-sodor"
 

@@ -4,8 +4,6 @@ tmp
 build/
 /riscv-sodor/
 
-emulator-debug
-
 .pytest_cache
 /scripts/cpu/output
 __pycache__/
