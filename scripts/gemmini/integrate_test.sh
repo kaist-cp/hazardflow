@@ -6,7 +6,7 @@ set -e
 # Silently run the command to check if the conda env is base
 if [[ $CONDA_DEFAULT_ENV == "base" ]]; then
     echo "Please activate a conda environment before running this script."
-    echo "Run \`source ~/chipyard/env.sh\` to activate the chipyard conda environment."
+    echo "Run \`source ${CHIPYARD}/env.sh\` to activate the chipyard conda environment."
     exit 1
 fi
 
@@ -22,5 +22,5 @@ python3 $CURR_DIR/main.py --debug build -c $1
 # 3. Run the gemmini verilator binary
 python3 $CURR_DIR/main.py --debug run -b matmul
 
-echo "For waveform, go to the directory: ~/chipyard/generators/gemmini/waveforms and check \`waveform_pruned.vcd\` file with gtkwave."
+echo "For waveform, go to the directory: ${CHIPYARD}/generators/gemmini/waveforms and check \`waveform_pruned.vcd\` file with gtkwave."
 echo "To see the waveform, run \`gtkwave waveform_pruned.vcd\`"
