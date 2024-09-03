@@ -52,6 +52,7 @@ if __name__ ==  "__main__":
     # Flags
     trace_flag = False
     cpi_flag = False
+    cpi_arg = ""
     waves_flag = False
 
     # Parse arguments
@@ -60,6 +61,8 @@ if __name__ ==  "__main__":
             trace_flag = True
         elif arg == "cpi":
             cpi_flag = True
+        elif arg == "--bp":
+            cpi_arg = "bp"
         elif arg == "--waves":
             waves_flag = True
 
@@ -74,4 +77,4 @@ if __name__ ==  "__main__":
     elif cpi_flag:
         logger.info("Running benchmark cpi tests")
         run_tests(9)
-        calculate_cpi_hf("branch_prediction")
+        calculate_cpi(cpi_arg)

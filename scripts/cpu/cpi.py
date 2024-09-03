@@ -33,7 +33,12 @@ class SodorCpiCalculator:
         return float(self.cycles) / self.inst_count
 
 
-def calculate_cpi_hf(arg):
+def calculate_cpi(arg):
+    if arg == "bp":
+        logger.info("Comparing CPI with branch prediction")
+    else:
+        logger.info("Comparing CPI with baseline")
+
     tracer = SodorCpiCalculator()
     hf_retire_template = compile("[{}] retire: [{}], pc: [{}]")
 
@@ -63,10 +68,10 @@ def calculate_cpi_hf(arg):
         ratio = cpi / BASELINE_CPI[bench]
         logger.info(f"CPI result of benchmark {bench}: {cpi} ({ratio:.2f} times of baseline CPI {BASELINE_CPI[bench]})")
 
-        if arg == "branch_prediction":
+        if arg == "bp":
             if not math.isclose(cpi, BRANCH_PREDICTION_CPI[bench], abs_tol=0.01):
                 logger.error(f"CPI result is not expected (expected: {BRANCH_PREDICTION_CPI[bench]})")
-        elif arg == "baseline":
+        else:
             if not math.isclose(cpi, BASELINE_CPI[bench], abs_tol=0.01):
                 logger.error(f"CPI result is not expected (expected: {BASELINE_CPI[bench]})")
 
@@ -75,4 +80,4 @@ def calculate_cpi_hf(arg):
 
 
 if __name__ == "__main__":
-    calculate_cpi_hf(sys.argv[1])
+    calculate_cpi(sys.argv[1])
