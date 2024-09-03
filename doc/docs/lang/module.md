@@ -1,36 +1,44 @@
 # Modules
 
-Modules are used to structure the design of complex hardware systems, such as processors, by breaking them down into smaller, manageable, and reusable components.
-In HazardFlow HDL, we define a module as a function takes the ingress interface as the input and returns the egress interface.
+<!-- Modules help structure the design of complex hardware systems, like processors, by breaking them into smaller, manageable, and reusable components. -->
+
+We consider a module as a function takes the ingress interface and returns the egress interface.
 
 ```rust,noplayground
 m: impl FnOnce(I) -> E
 ```
-In HazardFlow HDL, we can construct a module as a class of interface combinators. Please refer to the [Interface Combinators](./combinator.md) for more information.
+
+We can construct a module as a class of interface combinators. Please refer to the [Interface Combinators](./combinator.md) for more information.
 
 ## Combine Black Box Module to Interface
 
-The `comb` function within the interface trait is used to combine the black box module to the given interface and return the egress interface.
+The `comb` method within the interface trait is used to combine the black box module to the given interface and return the egress interface.
 ```rust,noplayground
 fn comb<E: Interface>(self, m: impl FnOnce(Self) -> E) -> E {
   m(self)
 }
 ```
-* Applying the given interface to the module is essentially applying the module function `m` to the ingress interface.
-* It is useful when we want to combine multiple modules together.
+
+- Applying the given interface to the module is essentially applying the module function `m` to the ingress interface.
+- It is useful when we want to combine multiple modules together.
 
 In the CPU core, we can combine the multiple stage modules by using `comb`.
+
 ```rust,noplayground
 pub fn core(
-    imem: impl FnOnce(Vr<MemReq, { Dep::Demanding }>) -> Vr<MemRespWithAddr, { Dep::Demanding }>,
+    imem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
     dmem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
 ) {
-    fetch::<START_ADDR>(imem).comb(decode).comb(exe).comb(move |ingress| mem(ingress, dmem)).comb(wb)
+    fetch::<START_ADDR>(imem)
+        .comb(decode)
+        .comb(exe)
+        .comb(move |ingress| mem(ingress, dmem))
+        .comb(wb)
 }
 ```
 
-* `imem` is the instruction memory module and `dmem` is the data memory module.
-* We chain the 5 sub-modules `fetch`, `decode`, `exe`, `mem`, and `wb` modules by using the `comb` function.
+- `imem` and `dmem` are modules for instruction memory and data memory, respectively.
+- We chain the 5 sub-modules `fetch`, `decode`, `exe`, `mem`, and `wb` by using the `comb` method.
 
 TODO: more module combinators @minseong
 

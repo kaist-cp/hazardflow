@@ -9,39 +9,51 @@ We define a `struct` implementing the `Interface` trait and containing the `Haza
 
 ## Hazard
 
-### Handshake
+### Motivation: Handshake
 
 In hardware semantics, a communication protocol is described as a handshake mechanism.
 
 As an example, the most commonly used valid-ready protocol is described as below:
 
 <p align="center">
-  <img src="../figure/handshake.drawio.svg" />
+  <img src="../figure/handshake.svg" width=60% />
 </p>
 
-* The sender computes `Valid` signal and `Payload` signal each clock cycle.
-* The receiver computes `Ready` signal each clock cycle.
-* The `Valid` and `Ready` signals are shared between the sender and the receiver.
-* When both `Valid` and `Ready` signals are `true`, we define it as **Transfer happens**.
-* Note that the `Payload` is always flowing through the wires.
+- The sender generates a 1-bit valid signal and a payload signal every clock cycle.
+- The receiver generates a 1-bit ready signal each clock cycle.
+- A **transfer** occurs when both the valid and ready signals are asserted (i.e., both are true).
+- It's important to note that the payload is continuously present on the wire, regardless of the valid or ready signals.
 
-Wave form diagram:
+Example waveform:
 
 <p align="center">
-  <img src="../figure/wave_form.drawio.svg" />
+  <img src="../figure/handshake-waveform.svg" width=40% />
 </p>
 
-* At cycle 2, the sender turns on the valid bit until cycle 4.
-* The receiver turns on the ready bit at cycle 3 until cycle 4.
-* The transfer happens at cycle 3 since only when both the valid bit and the ready bit are turned on.
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p...'},
+    {name: 'valid', wave: '01.0'},
+    {name: 'payload', wave: 'x3.x', data: ['0x42']},
+    {name: 'ready', wave: '0.10'}
+  ],
+  head: {
+    tock:0,
+    every:1
+  }
+}
+-->
+
+- At cycle 1, the sender turns on the valid bit with payload `0x42`.
+  - Transfer does not happen because the receiver is not ready.
+- At cycle 2, the receiver turns on the ready bit.
+  - Transfer happens because both the valid and ready signals are true.
 
 ### Specification
 
 In HazardFlow HDL, we abstracted any arbitraty communication protocol into `Hazard` trait.
 It describes the necessary information for communication: payload, resolver, and ready function.
-
-<!-- We define hazard as a protocol with given payload, resolver, and ready function.
-This protocol describes the necessary information between sender and receiver and their transfer condition. -->
 
 ```rust,noplayground
 pub trait Hazard {
@@ -54,21 +66,28 @@ pub trait Hazard {
 
 For any hazard type `H`, its member type and functions has the following meaning:
 
-* `H::P`: Payload signal type.
-* `H::R`: Resolver signal type.
-* `H::ready`: Indicates the receiver is ready to receive with current pair of payload and resolver.
+- `H::P`: Payload signal type.
+- `H::R`: Resolver signal type.
+- `H::ready`: Indicates whether the receiver is ready to receive with current pair of payload and resolver.
+
+<!-- 너는 더 많은 종류의 custom hazard를 CPU case study에서 확인할 수 있다. -->
 
 ### Examples
 
 We provide a few handy primitive hazard interfaces for developers.
 
-#### Valid
+#### `ValidH`
 
-Valid hazard represents a communication without backpressure, its ready function always returns `true`.
-Its specification is as follows:
+<p align="center">
+  <img src="../figure/hazard-valid.svg" width=60% />
+</p>
+
+`ValidH` represents a communication without backpressure.
+
+It always ready to receive the payload, it has the following specification:
 
 ```rust,noplayground
-pub struct ValidH<P: Copy, R: Copy>;
+struct ValidH<P: Copy, R: Copy>;
 
 impl<P: Copy, R: Copy> Hazard for ValidH<P, R> {
     type P = P;
@@ -80,26 +99,28 @@ impl<P: Copy, R: Copy> Hazard for ValidH<P, R> {
 }
 ```
 
-* The payload type of the Valid Hazard Interface is `HOption<P>`.
-* The resolver type of the Valid Hazard Interface is `R`.
-* When the payload is valid, which means it is `Some(P)`, transfer happens since the `ready` function always returns `true`.
-* Specially, when the resolver is `()` and the payload signal does not depend on the resolver signal, we define the Valid Hazard Interface as
-  ```rust,noplayground
-  pub type Valid<P> = I<ValidH<P, ()>, { Dep::Helpful }>;
-  ```
+For reusability, we allow `ValidH` to have resolver signals that simply flow from the receiver to the sender.
 
 <!-- For more information about dependency, please refer to the [dependency section](../advanced/dependency.md). -->
 
-#### And
+#### `AndH`
 
-We define an **And** hazard `AndH<H: Hazard>`, whose resolver type is `Ready<H::R>`. `Ready<R>` is a `struct` containing both a resolver and a ready signal in HazardFlow HDL. The interface containing the And Hazard is an And Hazard Interface.
+<p align="center">
+  <img src="../figure/hazard-and.svg" width=60% />
+</p>
+
+For a given hazard specification `H`, the conjunctive `AndH<H>` specification adds to `H`'s resolver signal an availability bit flag.
+Then the receiver is ready if it is available and ready according to the internal specification `H` at the same time.
+
+<!-- We define an **And** hazard `AndH<H: Hazard>`, whose resolver type is `Ready<H::R>`.
+`Ready<R>` is a `struct` containing both a resolver and a ready signal in HazardFlow HDL. -->
 
 ```rust,noplayground
-pub struct AndH<H: Hazard>;
+struct AndH<H: Hazard>;
 
-pub struct Ready<R: Copy> {
-    pub ready: bool,
-    pub inner: R,
+struct Ready<R: Copy> {
+    ready: bool,
+    inner: R,
 }
 
 impl<H: Hazard> Hazard for AndH<H> {
@@ -112,30 +133,36 @@ impl<H: Hazard> Hazard for AndH<H> {
 }
 ```
 
-* The payload type of the And Hazard Interface is `HOption<P>`.
-* The resolver type of the And Hazard Interface is `Ready<R>`.
-* When the payload is valid, which means the payload is `Some(P)`, the ready signal in the resolver is `true`, and the `ready` function returns `true`, then transfer happens.
+The `ready` field of the `Ready` struct represents the availability of the receiver.
 
-#### Valid-Ready
+#### `VrH`
 
-When the resolver is `()`, we combine the Valid Hazard and And Hazard and form the **Valid-Ready** hazard `VrH<P, R = ()>`. We define the Valid-Ready Hazard as `pub type VrH<P, R = ()> = AndH<ValidH<P, R>>`. The interface containing the Valid Ready Hazard is a Valid-Ready Interface.
+<p align="center">
+  <img src="../figure/hazard-vr.svg" width=60% />
+</p>
 
-We can represent the Valid-Ready protocol with using And and Valid protocol as follows:
+We define the valid-ready `VrH` specification as `AndH<ValidH<P, R>>`.
+
+For reusability, we allow `VrH` to have resolver signals that simply flow from the receiver to the sender.
 
 ```rust,noplayground
-pub struct VrH<P: Copy> = AndH<ValidH<P, ()>>;
+type VrH<P: Copy, R: Copy> = AndH<ValidH<P, R>>;
 ```
 
-* The payload type of the Valid-Ready Interface is `HOption<P>`.
+<!-- * The payload type of the Valid-Ready Interface is `HOption<P>`.
 * The resolver type of the Valid-Ready Interface is `Ready<()>`.
 * When the payload is valid, which means the payload is `Some(P)`, and the ready signal in the resolver is `true`, then transfer happens.
-* Specially, we define the Valid-Ready Interface as `pub type Vr<P, const D: Dep = { Dep::Helpful }> = I<VrH<P>, D>`
+* Specially, we define the Valid-Ready Interface as `pub type Vr<P, const D: Dep = { Dep::Helpful }> = I<VrH<P>, D>` -->
 
 ## Interface
 
-We define the interface as a protocol with forward signal, backward signal, and some other methods.
-The other methods are related to the [combinator](./combinator.md) and [module](./module.md), please refer to the corresponding section.
-Any `struct` implements the interface protocol we can consider it as an interface.
+An interface is an abstraction that represents the IO of a hardware module.
+Typically, a single interface is composed of zero, one, or multiple hazard interfaces.
+
+<!-- We define the interface as a protocol with forward signal, backward signal, and some other methods.
+The other methods are related to the [combinator](./combinator.md) and [module](./module.md), please refer to the corresponding section. -->
+
+### Specification
 
 ```rust,noplayground
 pub trait Interface {
@@ -146,12 +173,12 @@ pub trait Interface {
 }
 ```
 
-* Forward signal
-  * This specifies the forward signal type.
-* Backward signal
-  * This specifies the backward signal type.
-* Other functions
-  * These functions are related to the [combinator](./combinator.md) and [module](./module.md), please refer to these sections for further reading.
+For any interface type `I`, its member type has the following meaning:
+
+- `I::Fwd`: Forward signal type.
+- `I::Bwd`: Backward signal type.
+
+It contains the other functions related to the [combinator](./combinator.md) and [module](./module.md), please refer to these sections for further reading.
 
 ### Hazard Interface
 
@@ -159,7 +186,9 @@ pub trait Interface {
   <img src="../figure/interface.drawio.svg" />
 </p>
 
-If a `struct` implements the interface trait and also contains a hazard, we consider it as a **hazard interface**. In the HazardFlow HDL, we define it as `I<H, D>`, where `H` is the hazard, and `D` is the dependency type of hazard protocol. For more information of the dependency, please refer to the [dependency section](../advanced/dependency.md).
+For an arbitraty hazard specification `H`, we define the hazard interface `I<H, D>`, where `D` is the dependency type. (For more information of the dependency, please refer to the [dependency section](../advanced/dependency.md))
+
+<!-- If a `struct` implements the interface trait and also contains a hazard, we consider it as a **hazard interface**. In the HazardFlow HDL, we define it as `I<H, D>`, where `H` is the hazard, and `D` is the dependency type of hazard protocol. For more information of the dependency, please refer to the [dependency section](../advanced/dependency.md). -->
 
 ```rust,noplayground
 pub struct I<H: Hazard, D: Dep>;
@@ -170,17 +199,54 @@ impl<H: Hazard, const D: Dep> Interface for I<H, D> {
 }
 ```
 
-* The interface's forward signal is an `HOption` type of hazard payload. 
-* The backward signal is the hazard's resolver.
-* When the forward signal is `Some(p)` means the sender is sending a valid payload, else it is sending an invalid payload signal. 
-* When we have `payload.is_some_and(|p| H::ready(p, r))`, the transfer happens.
+- The interface's forward signal is an `HOption` type of hazard payload. 
+- The backward signal is the hazard's resolver.
+- When the forward signal is `Some(p)` means the sender is sending a valid payload, else it is sending an invalid payload signal. 
+- When we have `payload.is_some_and(|p| H::ready(p, r))`, the transfer happens.
+
+We define `Valid` and `Vr` as the hazard interface types for `ValidH` and `VrH`, respectively.
+
+```rust,noplayground
+type Valid<P> = I<ValidH<P, ()>, { Dep::Helpful }>;
+type Vr<P> = I<VrH<P, ()>, { Dep::Helpful }>;
+```
 
 ### Compound Interface
 
 Compound types such as tuple, struct, and array also implement the `Interface` trait.
-These types are useful when we use "1-to-N" or "N-to-1" combinators.
 
-For example, array of interfaces also implements `Interface` trait as follows:
+These interfaces are commonly used for IO of "1-to-N" or "N-to-1" modules.
+
+#### Tuple
+
+Tuple of interfaces `(If1, If2)` implements `Interface` trait as follows:
+
+```rust,noplayground
+// In practice, it is implemented as a macro.
+impl<If1: Interface, If2: Interface> Interface for (If1, If2) {
+    type Fwd = (If1::Fwd, If2::Fwd);
+    type Bwd = (If1::Bwd, If2::Bwd);
+}
+```
+
+- The forward signal of the array interface is the tuple of the interface's forward signal.
+- The backward signal of the array interface is the tuple of the interface's backward signal.
+
+#### Struct
+
+```rust,noplayground
+#[derive(Debug, Interface)]
+struct<If1: Interface, If2: Interface> StructIf<If1, If2> {
+    i1: If1,
+    i2: If2,
+}
+```
+
+By applying the `Interface` derive macro to a struct in which all fields are of interface type, the struct itself can also become an interface type.
+
+#### Array
+
+Array of interfaces `[If; N]` also implements `Interface` trait as follows:
 
 ```rust,noplayground
 impl<If: Interface, const N: usize> Interface for [If; N] {
@@ -189,17 +255,5 @@ impl<If: Interface, const N: usize> Interface for [If; N] {
 }
 ```
 
-* The forward signal of the array interface is the array of the interface's forward signal.
-* The backward signal of the array interface is the array of the interface's backward signal.
-
-As another example, tuple of interfaces also implements `Interface` trait as follows (in actual implementation, it is implemented as a macro):
-
-```rust,noplayground
-impl<If1: Interface, If2: Interface> Interface for (If1, If2) {
-    type Fwd = (If1::Fwd, If2::Fwd);
-    type Bwd = (If1::Bwd, If2::Bwd);
-}
-```
-
-* The forward signal of the array interface is the tuple of the interface's forward signal.
-* The backward signal of the array interface is the tuple of the interface's backward signal.
+- The forward signal of the array interface is the array of the interface's forward signal.
+- The backward signal of the array interface is the array of the interface's backward signal.
