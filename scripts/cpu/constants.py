@@ -18,17 +18,6 @@ BENCHES = [
     "queue",
     "radix",
 ]
-BRANCH_PREDICTION_CPI = {
-    "aes": 1.095809690091663,
-    "coremark": 1.245546845940845,
-    "ellpack": 1.0886911087495572,
-    "gemm-block": 1.2075294999063495,
-    "gemm": 1.2047191927428396,
-    "kmp": 1.0173730064026072,
-    "nw": 1.1543892223325705,
-    "queue": 1.1313768065186431,
-    "radix": 1.1181474937676985,
-}
 # Cached CPI values for baseline
 BASELINE_CPI = {
     "aes": 1.2000873267110577,
@@ -40,6 +29,18 @@ BASELINE_CPI = {
     "nw": 1.3411507976321861,
     "queue": 1.3322280857423061,
     "radix": 1.2879425703930862,
+}
+# Cached CPI values for branch prediction
+BRANCH_PREDICTION_CPI = {
+    "aes": 1.0886296740433883,
+    "coremark": 1.2187339929366727,
+    "ellpack": 1.0596931299025947,
+    "gemm-block": 1.1967700018563208,
+    "gemm": 1.1938486919632336,
+    "kmp": 1.0171380924892566,
+    "nw": 1.0771787743261212,
+    "queue": 1.1282135101688187,
+    "radix": 1.1176876179416462,
 }
 
 FORMAT = "%(message)s"  # Logger format
