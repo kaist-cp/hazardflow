@@ -123,12 +123,12 @@ def setup():
     if verilator_version >= 5:
         # TODO: Is this really a good approach?
         subprocess.run(
-            f"sed -i 's/VERILATOR := verilator --cc --exe /VERILATOR := verilator -Wno-UNOPTFLAT -Wno-STMTDLY -Wno-TIMESCALEMOD --no-timing --cc --exe/' {emulator_common_makefile}",
+            f"sed -i 's/VERILATOR := verilator --cc --exe /VERILATOR := verilator -Wno-UNOPTFLAT -Wno-STMTDLY -Wno-TIMESCALEMOD --timescale-override 1ps\/1ps --no-timing --cc --exe/' {emulator_common_makefile}",
             shell=True,
         )
     elif verilator_version >= 4.03:
         subprocess.run(
-            f"sed -i 's/VERILATOR := verilator --cc --exe /VERILATOR := verilator -Wno-UNOPTFLAT -Wno-STMTDLY -Wno-TIMESCALEMOD --cc --exe/' {emulator_common_makefile}",
+            f"sed -i 's/VERILATOR := verilator --cc --exe /VERILATOR := verilator -Wno-UNOPTFLAT -Wno-STMTDLY -Wno-TIMESCALEMOD --timescale-override 1ps\/1ps --cc --exe/' {emulator_common_makefile}",
             shell=True,
         )
     else:
