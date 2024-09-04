@@ -6,16 +6,16 @@ from parse import compile
 
 def check_trace():
     """
-    Check the trace
-    Compare data in register file every cycle.
+    Check the register file update trace.
+    It does not check in cycle-accurate.
     """
     logger.info("Trace check start")
 
-    orig_trace_dir = f"{cpu_script_dir}/program/bench"
+    orig_trace_dir = f"{cpu_script_dir}/logs/trace"
     hf_trace_dir = f"{cpu_script_dir}/output"
 
     log_template = compile("Reg[{}]: [{}] -> [{}]\n")
-    hf_reg_template = compile("[{}] rf[{}]: {}\n")
+    hf_reg_template = compile("[{}] retire=[1] pc=[{}] write=[r{}={}]\n")
 
     failed = False
     for bench in BENCHES:
@@ -28,27 +28,29 @@ def check_trace():
 
         # Initialize register file
         hf_rf = {}
-        [hf_rf.setdefault(str(i), "00000000") for i in range(32)]
+        [hf_rf.setdefault(i, "00000000") for i in range(32)]
 
         with open(hf_raw_log, "r") as hf, open(hf_trace_log, "w") as hf_parsed:
+            lines = 0
+
             for line in hf:
-                if "rf" in line:
+                if lines >= 10000:
+                    break
+
+                if "write" in line:
                     parsed = hf_reg_template.parse(line)
                     _tick = parsed[0]
-                    addr = parsed[1]
-                    data = parsed[2]
+                    _pc = parsed[1]
+                    addr = int(parsed[2])
+                    data = parsed[3]
 
                     if hf_rf[addr] != data:
                         hf_parsed.write(f"Reg[{addr}]: [{hf_rf[addr]}] -> [{data}]\n")
                         hf_rf[addr] = data
+                        lines += 1
 
         with open(orig_trace_log, "r") as orig, open(hf_trace_log, "r") as hf:
-            lines = 0
-
             while True:
-                if lines > 10000:
-                    break
-
                 orig_line = orig.readline()
                 hf_line = hf.readline()
 
@@ -76,8 +78,6 @@ def check_trace():
                     )
                     failed = True
                     break
-
-                lines += 1
             logger.info(f"[Check RF Trace] {bench} END")
 
     if failed:

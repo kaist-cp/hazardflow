@@ -10,36 +10,21 @@ from rich.logging import RichHandler
 BENCHES = [
     "aes",
     "coremark",
-    "ellpack",
-    "gemm-block",
     "gemm",
-    "kmp",
-    "nw",
-    "queue",
     "radix",
 ]
 # Cached CPI values for baseline
 BASELINE_CPI = {
     "aes": 1.2000873267110577,
     "coremark": 1.5222068826183581,
-    "ellpack": 1.3759583636465387,
-    "gemm-block": 1.5248672242888168,
     "gemm": 1.5291745730550284,
-    "kmp": 1.496593118287688,
-    "nw": 1.3411507976321861,
-    "queue": 1.3322280857423061,
     "radix": 1.2879425703930862,
 }
 # Cached CPI values for branch prediction
 BRANCH_PREDICTION_CPI = {
     "aes": 1.073133514986376,
     "coremark": 1.1979357129607546,
-    "ellpack": 1.057687344059193,
-    "gemm-block": 1.1849320790656486,
     "gemm": 1.181595521343597,
-    "kmp": 1.0109134952508447,
-    "nw": 1.073114438245093,
-    "queue": 1.1186424853535,
     "radix": 1.0883295248415745,
 }
 

@@ -27,7 +27,7 @@ def run_tests(test_dir, total_tests):
 
             console.print(f"Test ({count}/{total_tests}): {tb_filename} .. ", end="")
             result = subprocess.run(
-                f"{emulator} {vcd_option} +max-cycles=100000 {tb}",
+                f"{emulator} {vcd_option} +max-cycles=10000 {tb}",
                 stdout=open(txt_file, "w"),
                 stderr=subprocess.STDOUT,
                 shell=True,

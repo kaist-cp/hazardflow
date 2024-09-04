@@ -40,7 +40,7 @@ def calculate_cpi(arg):
         logger.info("Comparing CPI with baseline")
 
     tracer = SodorCpiCalculator()
-    hf_retire_template = compile("[{}] retire: [{}], pc: [{}]")
+    hf_retire_template = compile("[{}] retire=[{}] pc=[{}]{}")
 
     failed = False
     for bench in BENCHES:
@@ -50,7 +50,6 @@ def calculate_cpi(arg):
         file = f"{cpu_script_dir}/output/{bench}.txt"
         with open(file, "r") as f:
             for line in f:
-                line = line.strip()
                 if "retire" in line:
                     parsed = hf_retire_template.parse(line)
                     pc = parsed[2]

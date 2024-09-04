@@ -5,7 +5,6 @@ build/
 /riscv-sodor/
 
 .pytest_cache
-/scripts/cpu/output
 __pycache__/
 
 *.fst

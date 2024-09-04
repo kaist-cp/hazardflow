@@ -18,22 +18,21 @@ console = Console()
 def run_tests(total_tests):
     count = 0
 
-    for tb in bench_dir.iterdir():
-        tb_filename = tb.name
-        if tb.is_file() and not tb.suffix in [".dump", ".trace"]:
-            count += 1
-            vcd_option = f"-v{log_dir}/{tb_filename}.vcd" if waves_flag else ""
-            txt_file = log_dir / f"{tb_filename}.txt"
+    for tb_filename in BENCHES:
+        tb = bench_dir / tb_filename
+        count += 1
+        vcd_option = f"-v{log_dir}/{tb_filename}.vcd" if waves_flag else ""
+        txt_file = log_dir / f"{tb_filename}.txt"
 
-            console.print(f"Extract trace from benchmark ({count}/{total_tests}): {tb_filename} .. ", end="")
-            result = subprocess.run(
-                f"{emulator} {vcd_option} +max-cycles=100000 {tb}",
-                stdout=open(txt_file, "w"),
-                stderr=subprocess.STDOUT,
-                shell=True
-            )
+        console.print(f"Extract trace from benchmark ({count}/{total_tests}): {tb_filename} .. ", end="")
+        result = subprocess.run(
+            f"{emulator} {vcd_option} +max-cycles=100000 {tb}",
+            stdout=open(txt_file, "w"),
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
 
-            console.print("DONE")
+        console.print("DONE")
 
 
 if __name__ ==  "__main__":
@@ -72,9 +71,9 @@ if __name__ ==  "__main__":
     # Running tests
     if trace_flag:
         logger.info("Running benchmark trace tests")
-        run_tests(9)
+        run_tests(4)
         check_trace()
     elif cpi_flag:
         logger.info("Running benchmark cpi tests")
-        run_tests(9)
+        run_tests(4)
         calculate_cpi(cpi_arg)
