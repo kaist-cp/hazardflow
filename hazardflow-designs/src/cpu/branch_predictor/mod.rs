@@ -8,10 +8,42 @@ pub use bht::*;
 pub use btb::*;
 pub use pre_decode::*;
 
+use super::MemRespWithAddr;
+use crate::std::*;
+
 /// Number of BHT entries.
 pub const BHT_ENTRIES: usize = 128;
 /// Number of BTB entries.
 pub const BTB_ENTRIES: usize = 32;
+
+/// Branch predictor with BHT and BTB.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Bp {
+    /// BHT.
+    pub bht: Bht,
+
+    /// BTB.
+    pub btb: Btb,
+}
+
+impl Bp {
+    /// Returns the branch prediction result.
+    pub fn predict(self, imem_resp: MemRespWithAddr) -> BpResult {
+        BpResult {
+            pre_decode: pre_decode(imem_resp.data.into_u()),
+            bht: self.bht.predict(imem_resp.addr),
+            btb: self.btb.predict(imem_resp.addr).unwrap_or(imem_resp.addr + 4),
+        }
+    }
+
+    /// Updates the branch predictor.
+    pub fn update(self, bp_update: BpUpdate) -> Self {
+        match bp_update {
+            BpUpdate::Bht { pc, taken } => Self { bht: self.bht.update(pc, taken), btb: self.btb },
+            BpUpdate::Btb { pc, target } => Self { bht: self.bht, btb: self.btb.update(pc, target) },
+        }
+    }
+}
 
 /// Branch prediction results.
 #[derive(Debug, Clone, Copy)]
