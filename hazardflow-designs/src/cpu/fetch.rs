@@ -39,7 +39,7 @@ pub struct FetEP {
 /// Fetch stage.
 pub fn fetch<const START_ADDR: u32>(
     imem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
-) -> I<VrH<FetEP, (bool, PcSel)>, { Dep::Demanding }> {
+) -> I<VrH<FetEP, DecR>, { Dep::Demanding }> {
     let next_pc = <I<VrH<(HOption<FetEP>, PcSel), _>, { Dep::Demanding }>>::source_drop()
         .filter_map(|(p, pc_sel)| match pc_sel {
             PcSel::Jmp(target) | PcSel::Exception(target) => Some(target),
@@ -52,9 +52,9 @@ pub fn fetch<const START_ADDR: u32>(
         .map(|pc| MemReq::load(pc, MemOpTyp::WU))
         .comb::<I<VrH<MemRespWithAddr, _>, { Dep::Helpful }>>(attach_resolver(imem))
         .map(|imem_resp| FetEP { imem_resp })
-        .map_resolver_drop_with_p::<VrH<FetEP, (bool, PcSel)>>(|ip, er| {
-            let (kill, pc_sel) = er.inner;
+        .map_resolver_drop_with_p::<VrH<FetEP, DecR>>(|ip, er| {
+            let DecR { kill, pc_sel } = er.inner;
             Ready::new(er.ready || kill, (ip, pc_sel)) // We need `kill` here to extract the mispredicted PC from register, and then filter out them.
         })
-        .filter_map_drop_with_r_inner(|resp, (killed, _)| if !killed { Some(resp) } else { None })
+        .filter_map_drop_with_r_inner(|resp, er| if !er.kill { Some(resp) } else { None })
 }

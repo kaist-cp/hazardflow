@@ -66,10 +66,10 @@ impl Bht {
         todo!("assignment 2")
     }
 
-    /// Returns the updated BHT when a branch misprediction occurs at the given PC.
+    /// Returns the updated BHT when a branch instruction resolves at the execute stage with the given PC.
     ///
     /// It updates the entry corresponding to the given PC.
-    pub fn update(self, _pc: u32) -> Self {
+    pub fn update(self, _pc: u32, _taken: bool) -> Self {
         todo!("assignment 2")
     }
 }

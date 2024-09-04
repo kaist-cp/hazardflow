@@ -45,6 +45,16 @@ pub struct DecEP {
     pub debug_inst: u32,
 }
 
+/// Hazard from decode stage to fetch stage.
+#[derive(Debug, Clone, Copy)]
+pub struct DecR {
+    /// Indicates that the fetch stage is killed or not.
+    pub kill: bool,
+
+    /// Next PC selector.
+    pub pc_sel: PcSel,
+}
+
 /// Decode stage ingress interface hazard.
 #[derive(Debug, Clone, Copy)]
 pub struct DecH;
@@ -69,12 +79,12 @@ impl Hazard for DecH {
 }
 
 /// Generates resolver from decode stage to fetch stage.
-fn gen_resolver(er: (HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)) -> (bool, PcSel) {
+fn gen_resolver(er: (HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)) -> DecR {
     let (p, exer, memr, _) = er;
 
     let inst = p.map(|(_, inst)| inst);
     let is_fencei = inst.is_some_and(|inst| inst.is_fencei);
-    let if_kill = exer.if_kill || is_fencei || memr.pipeline_kill;
+    let kill = exer.if_kill || is_fencei || memr.pipeline_kill;
 
     let pc_sel = if matches!(exer.pc_sel, PcSel::Jmp { .. } | PcSel::Exception(_)) {
         exer.pc_sel
@@ -84,7 +94,7 @@ fn gen_resolver(er: (HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)) -> (bool, 
         exer.pc_sel
     };
 
-    (if_kill, pc_sel)
+    DecR { kill, pc_sel }
 }
 
 /// Generates payload from decode stage to execute stage.
@@ -151,9 +161,7 @@ fn gen_payload(ip: FetEP, inst: Instruction, er: (ExeR, MemR, WbR)) -> HOption<D
 }
 
 /// Decode stage.
-pub fn decode(
-    i: I<VrH<FetEP, (bool, PcSel)>, { Dep::Demanding }>,
-) -> I<VrH<DecEP, (ExeR, MemR, WbR)>, { Dep::Demanding }> {
+pub fn decode(i: I<VrH<FetEP, DecR>, { Dep::Demanding }>) -> I<VrH<DecEP, (ExeR, MemR, WbR)>, { Dep::Demanding }> {
     i.map_resolver_inner::<(HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)>(gen_resolver)
         .reg_fwd(true)
         .map(|p| (p, Instruction::from(p.imem_resp.data)))

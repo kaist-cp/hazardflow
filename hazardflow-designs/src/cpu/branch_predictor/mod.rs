@@ -31,8 +31,13 @@ pub struct BpResult {
 pub enum BpUpdate {
     /// Updates BHT.
     ///
-    /// It contains the mispredicted PC.
-    Bht(u32),
+    /// It contains the branch instruction PC and the direction.
+    Bht {
+        /// Branch instruction PC.
+        pc: u32,
+        /// Taken or not taken.
+        taken: bool,
+    },
 
     /// Updates BTB.
     ///
