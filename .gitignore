@@ -19,4 +19,4 @@ tmp*
 .bsp/
 .scala-build/
 
-hw2.zip
+hw*.zip
