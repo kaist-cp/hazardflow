@@ -7,9 +7,6 @@ import math
 
 from constants import *
 
-# Match on committed instructions
-CHISEL_INST_RE = re.compile(r"[^\[]*\[1\].*DASM\(([0-9A-Fa-f]+)\)")
-
 
 class SodorCpiCalculator:
     # Initialize your new counters to 0 here
@@ -40,7 +37,8 @@ def calculate_cpi(arg):
         logger.info("Comparing CPI with baseline")
 
     tracer = SodorCpiCalculator()
-    hf_retire_template = compile("[{}] retire=[{}] pc=[{}]{}")
+
+    hf_retire_template = compile("[{}] retire=[1] pc=[{}]{}\n")
 
     failed = False
     for bench in BENCHES:
@@ -50,18 +48,20 @@ def calculate_cpi(arg):
         file = f"{cpu_script_dir}/output/{bench}.txt"
         with open(file, "r") as f:
             for line in f:
-                if "retire" in line:
+                if "retire=[1]" in line:
                     parsed = hf_retire_template.parse(line)
-                    pc = parsed[2]
+                    pc = parsed[1]
                     if pc == "80000000":
                         start_benchmark = True
                     if not start_benchmark:
                         continue
-                    retired = int(parsed[1])
-                    if retired:
-                        tracer.retire()
-                    else:
-                        tracer.bubble()
+                    tracer.retire()
+                elif "retire=[0]" in line:
+                    if not start_benchmark:
+                        continue
+                    tracer.bubble()
+                else:
+                    pass
         cpi = tracer.cpi()
 
         ratio = cpi / BASELINE_CPI[bench]

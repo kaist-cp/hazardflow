@@ -15,7 +15,7 @@ def check_trace():
     hf_trace_dir = f"{cpu_script_dir}/output"
 
     log_template = compile("Reg[{}]: [{}] -> [{}]\n")
-    hf_reg_template = compile("[{}] retire=[1] pc=[{}] write=[r{}={}]\n")
+    hf_reg_write_template = compile("[{}] retire=[1] pc=[{}] inst=[{}] write=[r{}={}]\n")
 
     failed = False
     for bench in BENCHES:
@@ -38,11 +38,12 @@ def check_trace():
                     break
 
                 if "write" in line:
-                    parsed = hf_reg_template.parse(line)
+                    parsed = hf_reg_write_template.parse(line)
                     _tick = parsed[0]
                     _pc = parsed[1]
-                    addr = int(parsed[2])
-                    data = parsed[3]
+                    _inst = parsed[2]
+                    addr = int(parsed[3])
+                    data = parsed[4]
 
                     if hf_rf[addr] != data:
                         hf_parsed.write(f"Reg[{addr}]: [{hf_rf[addr]}] -> [{data}]\n")

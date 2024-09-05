@@ -61,12 +61,24 @@ pub fn wb(i: I<VrH<MemEP, WbR>, { Dep::Demanding }>) {
         if let Some(p) = ip {
             match p.wb {
                 Some(r) => {
-                    display!("retire=[1] pc=[%x] write=[r%d=%x]", ip.map(|x| x.debug_pc).unwrap_or(0), r.addr, r.data)
+                    display!(
+                        "retire=[1] pc=[%x] inst=[%x] write=[r%d=%x]",
+                        ip.map(|x| x.debug_pc).unwrap_or(0),
+                        ip.map(|x| x.debug_inst).unwrap_or(0),
+                        r.addr,
+                        r.data
+                    );
                 }
-                None => display!("retire=[1] pc=[%x]", ip.map(|x| x.debug_pc).unwrap_or(0)),
+                None => {
+                    display!(
+                        "retire=[1] pc=[%x] inst=[%x]",
+                        ip.map(|x| x.debug_pc).unwrap_or(0),
+                        ip.map(|x| x.debug_inst).unwrap_or(0)
+                    );
+                }
             }
         } else {
-            display!("retire=[0] pc=[%x]", ip.map(|x| x.debug_pc).unwrap_or(0))
+            display!("retire=[0]");
         }
 
         (ir, rf_next)
