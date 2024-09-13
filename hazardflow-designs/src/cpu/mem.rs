@@ -66,9 +66,6 @@ pub struct MemR {
     /// CSR eret.
     pub csr_eret: bool,
 
-    /// Indicates that the D$ miss happened or not.
-    pub dcache_miss: bool,
-
     /// Writeback.
     ///
     /// It contains the writeback address and data.
@@ -92,10 +89,10 @@ fn get_wb(p: ExeEP, dmem_resp: HOption<MemRespWithAddr>, csr_resp: HOption<CsrRe
 }
 
 fn gen_resolver(
-    er: Ready<(HOption<(MemRespWithAddr, ExeEP)>, (HOption<(CsrResp, ExeEP)>, WbR), HOption<ExeEP>)>,
+    er: (HOption<(MemRespWithAddr, ExeEP)>, (HOption<(CsrResp, ExeEP)>, WbR), HOption<ExeEP>),
 ) -> (MemR, WbR) {
     // Extracts resolver from each branch.
-    let (er_dmem, er_csr, er_none) = er.inner;
+    let (er_dmem, er_csr, er_none) = er;
 
     let dmem_resp = er_dmem.map(|(r, _)| r);
     let csr_resp = er_csr.0.map(|(r, _)| r);
@@ -108,7 +105,6 @@ fn gen_resolver(
     let memr = MemR {
         csr_evec: csr_resp.map(|r| r.evec).unwrap_or(0),
         csr_eret: csr_resp.is_some_and(|r| r.eret),
-        dcache_miss: exep.is_some_and(|p| matches!(p.mem_op, MemOp::Dmem { .. }) && !er.ready),
         wb: exep.and_then(|p| get_wb(p, dmem_resp, csr_resp)),
         pipeline_kill,
     };
@@ -123,7 +119,7 @@ pub fn mem(
 ) -> I<VrH<MemEP, WbR>, { Dep::Demanding }> {
     let exep = i
         .reg_fwd(true)
-        .map_resolver::<(HOption<(MemRespWithAddr, ExeEP)>, (HOption<(CsrResp, ExeEP)>, WbR), HOption<ExeEP>)>(
+        .map_resolver_inner::<(HOption<(MemRespWithAddr, ExeEP)>, (HOption<(CsrResp, ExeEP)>, WbR), HOption<ExeEP>)>(
             gen_resolver,
         );
 

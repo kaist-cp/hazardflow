@@ -71,10 +71,7 @@ impl Hazard for DecH {
         let load_use_stall =
             exer.is_load && exer.wb.is_some_and(|wb| rs1_addr == Some(wb.addr) || rs2_addr == Some(wb.addr));
 
-        // D$ miss stall.
-        let dcache_stall = memr.dcache_miss;
-
-        memr.pipeline_kill || (!load_use_stall && !exer.is_csr && !dcache_stall)
+        memr.pipeline_kill || (!load_use_stall && !exer.is_csr)
     }
 }
 

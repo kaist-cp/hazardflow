@@ -60,19 +60,6 @@ pub struct ExeR {
     pub is_fencei: bool,
 }
 
-/// Execute stage ingress interface hazard.
-#[derive(Debug, Clone, Copy)]
-pub struct ExeH;
-
-impl Hazard for ExeH {
-    type P = (DecEP, u32);
-    type R = (MemR, WbR);
-
-    fn ready(_: (DecEP, u32), (memr, _): (MemR, WbR)) -> bool {
-        memr.pipeline_kill || !memr.dcache_miss
-    }
-}
-
 /// Returns PC selector based on the given payload.
 fn get_pc_sel(p: DecEP, alu_out: u32) -> PcSel {
     let target = p.jmp_target.0 + p.jmp_target.1;
@@ -146,8 +133,7 @@ fn gen_resolver(er: (HOption<(DecEP, u32)>, MemR, WbR)) -> (ExeR, MemR, WbR) {
 
     let pc_sel = get_pc_sel(p, alu_out);
 
-    let stalled = memr.dcache_miss;
-    let exer_wb = if stalled { None } else { p.wb.map(|(addr, _)| Register::new(addr, alu_out)) };
+    let exer_wb = p.wb.map(|(addr, _)| Register::new(addr, alu_out));
 
     let exer = ExeR {
         if_kill: !matches!(pc_sel, PcSel::Plus4) || p.is_fencei,
@@ -184,7 +170,7 @@ pub fn exe(i: I<VrH<DecEP, (ExeR, MemR, WbR)>, { Dep::Demanding }>) -> I<VrH<Exe
     i.map_resolver_inner::<(HOption<(DecEP, u32)>, MemR, WbR)>(gen_resolver)
         .reg_fwd(true)
         .map(|p| (p, exe_alu(p.alu_input.op1_data, p.alu_input.op2_data, p.alu_input.op)))
-        .map_resolver_block_with_p::<AndH<ExeH>>(|ip, er| {
+        .map_resolver_block_with_p::<VrH<(DecEP, u32), (MemR, WbR)>>(|ip, er| {
             let (memr, wbr) = er.inner;
             (ip, memr, wbr)
         })
