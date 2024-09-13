@@ -38,9 +38,6 @@ pub struct WbR {
 
     /// Register file.
     pub rf: Regfile,
-
-    /// Indicates that the writeback stage is valid or not.
-    pub retire: bool,
 }
 
 /// Writeback stage.
@@ -48,7 +45,6 @@ pub fn wb(i: I<VrH<MemEP, WbR>, { Dep::Demanding }>) {
     i.map_resolver_inner::<(HOption<MemEP>, Regfile)>(|(wb, rf)| WbR {
         wb: wb.and_then(|p| p.wb.map(|reg| Register::new(reg.addr, reg.data))),
         rf,
-        retire: wb.is_some(),
     })
     .reg_fwd(true)
     .sink_fsm_map(0.repeat(), |ip, rf| {

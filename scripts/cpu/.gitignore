@@ -7,7 +7,6 @@ openroad/results
 openroad/vsrc/*
 !openroad/vsrc/Core.v
 !openroad/vsrc/CoreWrapper.v
-!openroad/vsrc/CSRFileWrapper.v
 
 /output/
 

@@ -43,7 +43,6 @@ def build_core():
     subprocess.run(f"cp {sodor_dir}/hf_verilog/Core.v {cpu_script_dir}/openroad/vsrc", shell=True)
     subprocess.run(f"cp {sodor_dir}/vsrc/core_top.v {cpu_script_dir}/openroad/vsrc", shell=True)
     subprocess.run(f"cp {sodor_dir}/vsrc/CoreWrapper.v {cpu_script_dir}/openroad/vsrc", shell=True)
-    subprocess.run(f"cp {sodor_dir}/vsrc/CSRFileWrapper.v {cpu_script_dir}/openroad/vsrc", shell=True)
 
     subprocess.run(f"cp {sodor_dir}/emulator/rv32_5stage_hf/emulator-debug {cpu_script_dir}", shell=True)
     logger.info(f"Emulator generated at {cpu_script_dir}")

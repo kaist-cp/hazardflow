@@ -4,11 +4,10 @@
 //!
 //! - Constants: <https://github.com/chipsalliance/rocket-chip/blob/master/src/main/scala/rocket/CSR.scala>
 
-use hazardflow_macro::magic;
-
 use super::exe::ExeEP;
 use super::riscv_isa::LEN_CSR_ADDR;
 use super::wb::WbR;
+use crate::hpanic;
 use crate::std::hazard::*;
 use crate::std::*;
 
@@ -32,16 +31,12 @@ pub struct CsrInfo {
 pub enum CsrCommand {
     /// TODO: Documentation
     R = 5,
-
     /// TODO: Documentation
     S = 2,
-
     /// TODO: Documentation
     C = 3,
-
     /// TODO: Documentation
     W = 1,
-
     /// TODO: Documentation
     I = 4,
 }
@@ -97,15 +92,205 @@ pub struct CsrResp {
 
     /// TODO: Documentation
     pub evec: u32,
+}
 
-    /// TODO: Documentation
-    pub time: u32,
+/// MStatus.
+///
+/// Omitted unused fields.
+#[derive(Debug, Default, Clone, Copy)]
+struct MStatus {
+    mpie: bool,
+    mie: bool,
+}
+
+impl MStatus {
+    fn into_u(self) -> U<35> {
+        0.into_u::<3>()
+            .append(self.mie.repeat::<1>())
+            .append(0.into_u::<3>())
+            .append(self.mpie.repeat::<1>())
+            .append(0x18.into_u::<5>())
+            .append(0x180000.into_u::<22>())
+    }
+}
+
+/// MIP.
+///
+/// Omitted unusd fields.
+#[derive(Debug, Default, Clone, Copy)]
+struct Mip {
+    mtip: bool,
+    msip: bool,
+}
+
+impl Mip {
+    fn into_u(self) -> U<16> {
+        0.into_u::<3>()
+            .append(self.msip.repeat::<1>())
+            .append(0.into_u::<3>())
+            .append(self.mtip.repeat::<1>())
+            .append(0.into_u::<8>())
+    }
+}
+
+/// CSR registers.
+#[derive(Debug, Clone, Copy)]
+enum CsrReg {
+    Mstatus,
+    Misa,
+    Mtvec,
+    Mip,
+    Mie,
+    Mscratch,
+    Mepc,
+    Mtval,
+    Mcause,
+    Mhartid,
+    Medeleg,
+}
+
+impl From<U<LEN_CSR_ADDR>> for CsrReg {
+    fn from(value: U<LEN_CSR_ADDR>) -> Self {
+        if value == 0x300.into_u() {
+            CsrReg::Mstatus
+        } else if value == 0x301.into_u() {
+            CsrReg::Misa
+        } else if value == 0x302.into_u() {
+            CsrReg::Medeleg
+        } else if value == 0x304.into_u() {
+            CsrReg::Mie
+        } else if value == 0x305.into_u() {
+            CsrReg::Mtvec
+        } else if value == 0x340.into_u() {
+            CsrReg::Mscratch
+        } else if value == 0x341.into_u() {
+            CsrReg::Mepc
+        } else if value == 0x342.into_u() {
+            CsrReg::Mcause
+        } else if value == 0x343.into_u() {
+            CsrReg::Mtval
+        } else if value == 0x344.into_u() {
+            CsrReg::Mip
+        } else if value == 0xf14.into_u() {
+            CsrReg::Mhartid
+        } else {
+            hpanic!("Unsupported CSR register type")
+        }
+    }
+}
+
+/// CSR state.
+#[derive(Debug, Clone, Copy)]
+struct CsrS {
+    mstatus: MStatus,
+    mepc: u32,
+    mcause: u32,
+    mtval: u32,
+    mscratch: u32,
+    medeleg: u32,
+    mip: Mip,
+    mie: Mip,
+}
+
+impl Default for CsrS {
+    fn default() -> Self {
+        CsrS {
+            mstatus: MStatus::default(),
+            mepc: 0,
+            mcause: 0,
+            mtval: 0,
+            mscratch: 0,
+            medeleg: 0,
+            mip: Mip { mtip: true, msip: false },
+            mie: Mip::default(),
+        }
+    }
 }
 
 /// CSR file.
-#[magic(ffi::CSRFileWrapper())]
-pub fn csr(_csr_req: Valid<CsrReq>) -> I<ValidH<CsrResp, bool>, { Dep::Helpful }> {
-    unreachable!("csr_wrapper.v")
+pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
+    i.fsm_map::<CsrResp, CsrS>(CsrS::default(), |ip, s| {
+        let system_insn = matches!(ip.rw.cmd, CsrCommand::I);
+        let cpu_ren = !system_insn;
+
+        let decoded_addr = CsrReg::from(ip.decode.csr);
+
+        let rdata = match decoded_addr {
+            CsrReg::Misa => 0,
+            CsrReg::Mstatus => u32::from(s.mstatus.into_u()),
+            CsrReg::Mtvec => 0x100,
+            CsrReg::Mip => u32::from(s.mip.into_u()),
+            CsrReg::Mie => u32::from(s.mie.into_u()),
+            CsrReg::Mscratch => s.mscratch,
+            CsrReg::Mepc => s.mepc,
+            CsrReg::Mtval => s.mtval,
+            CsrReg::Mcause => s.mcause,
+            CsrReg::Medeleg => s.medeleg,
+            CsrReg::Mhartid => 0,
+        };
+
+        let read_only = ip.decode.csr.clip_const::<2>(10) == 0b11.into_u();
+        let cpu_wen = cpu_ren && !matches!(ip.rw.cmd, CsrCommand::R);
+        let wen = cpu_wen && !read_only;
+        let wdata = (if matches!(ip.rw.cmd, CsrCommand::S | CsrCommand::C) { rdata } else { 0 } | ip.rw.wdata)
+            & !if matches!(ip.rw.cmd, CsrCommand::C) { ip.rw.wdata } else { 0 };
+
+        let opcode = 0.into_u::<7>().set(ip.decode.csr.clip_const::<3>(0), true);
+        let insn_call = system_insn && opcode[0];
+        let insn_break = system_insn && opcode[1];
+        let insn_ret = system_insn && opcode[2];
+
+        let eret = insn_call || insn_break || insn_ret;
+
+        let ep = CsrResp {
+            rw: CsrRwE { rdata },
+            eret,
+            evec: if insn_ret && !ip.decode.csr[10] { s.mepc } else { 0x80000004 },
+        };
+
+        let s_next = CsrS {
+            mstatus: if wen && matches!(decoded_addr, CsrReg::Mstatus) {
+                MStatus { mie: U::<32>::from(wdata)[3], mpie: U::<32>::from(wdata)[7] }
+            } else if insn_ret && !ip.decode.csr[10] {
+                MStatus { mie: s.mstatus.mpie, mpie: true }
+            } else {
+                s.mstatus
+            },
+            mepc: if wen && matches!(decoded_addr, CsrReg::Mepc) {
+                (wdata >> 2) << 2
+            } else if ip.exception || insn_call || insn_break {
+                ip.pc
+            } else {
+                s.mepc
+            },
+            mcause: if wen && matches!(decoded_addr, CsrReg::Mcause) {
+                wdata & 0x8000001F
+            } else if ip.exception {
+                0x2
+            } else if insn_call {
+                0xb
+            } else if insn_break {
+                0x3
+            } else {
+                s.mcause
+            },
+            mtval: if wen && matches!(decoded_addr, CsrReg::Mtval) { wdata } else { s.mtval },
+            mscratch: if wen && matches!(decoded_addr, CsrReg::Mscratch) { wdata } else { s.mscratch },
+            medeleg: if wen && matches!(decoded_addr, CsrReg::Medeleg) { wdata } else { s.medeleg },
+            mip: if wen && matches!(decoded_addr, CsrReg::Mip) {
+                Mip { mtip: s.mip.mtip, msip: U::<32>::from(wdata)[3] }
+            } else {
+                s.mip
+            },
+            mie: if wen && matches!(decoded_addr, CsrReg::Mie) {
+                Mip { msip: U::<32>::from(wdata)[3], mtip: U::<32>::from(wdata)[7] }
+            } else {
+                s.mie
+            },
+        };
+
+        (ep, s_next)
+    })
 }
 
 /// TODO: Documentation
@@ -132,9 +317,7 @@ pub fn csr_wrap<P: Copy>(
             (),
             |(ip1, ip2), er, s| {
                 let ep = ip1.zip(ip2);
-                let ir1 = er.inner.1.retire;
-                let ir2 = er;
-                (ep, (ir1, ir2), s)
+                (ep, ((), er), s)
             },
         )
     }

@@ -4,7 +4,6 @@ export CURR        = $(dir $(DESIGN_CONFIG))
 
 export VERILOG_FILES = $(CURR)../vsrc/Core.v \
                        $(CURR)../vsrc/CoreWrapper.v \
-                       $(CURR)../vsrc/CSRFileWrapper.v \
                        $(CURR)../vsrc/core_top.v
 
 
