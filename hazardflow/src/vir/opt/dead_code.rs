@@ -80,37 +80,37 @@ impl OptimizeDeadcodeWalk for Vec<Statement> {
 impl OptimizeDeadcodeWalk for Statement {
     fn walk(&self, used: &mut HashSet<Expression>) {
         match self {
-            Self::BlockingAssignment(lhs, expr, _) => {
+            Statement::BlockingAssignment(lhs, expr, _) => {
                 if let Some(range) = get_range(lhs) {
                     range.walk(used);
                 }
                 expr.walk(used);
             }
-            Self::Conditional(cond_expr_pairs, else_stmt, _) if else_stmt.is_empty() => {
+            Statement::Conditional(cond_expr_pairs, else_stmt, _) if else_stmt.is_empty() => {
                 for (cond, stmt) in cond_expr_pairs {
                     cond.walk(used);
                     stmt.walk(used);
                 }
             }
-            Self::Conditional(cond_expr_pairs, else_stmt, _) => {
+            Statement::Conditional(cond_expr_pairs, else_stmt, _) => {
                 for (cond, stmt) in cond_expr_pairs {
                     cond.walk(used);
                     stmt.walk(used);
                 }
                 else_stmt.walk(used)
             }
-            Self::Loop(ident, count, stmt, _) => {
+            Statement::Loop(ident, count, stmt, _) => {
                 used.insert(Expression::ident(ident.clone()));
                 count.walk(used);
                 stmt.walk(used);
             }
-            Self::NonblockingAssignment(lhs, expr, _) => {
+            Statement::NonblockingAssignment(lhs, expr, _) => {
                 if let Some(range) = get_range(lhs) {
                     range.walk(used);
                 }
                 expr.walk(used)
             }
-            Self::Case(case_expr, case_items, default, _) => {
+            Statement::Case(case_expr, case_items, default, _) => {
                 case_expr.walk(used);
                 for (cond, stmts) in case_items {
                     cond.walk(used);
@@ -123,7 +123,7 @@ impl OptimizeDeadcodeWalk for Statement {
                     arg.walk(used)
                 }
             }
-            Statement::Finish => {}
+            Statement::Fatal => {}
         }
     }
 }
@@ -131,13 +131,13 @@ impl OptimizeDeadcodeWalk for Statement {
 impl OptimizeDeadcodeWalk for Expression {
     fn walk(&self, used: &mut HashSet<Expression>) {
         match self {
-            Self::Primary(prim) => prim.walk(used),
-            Self::Unary(_, prim) => prim.walk(used),
-            Self::Binary(lhs, _, rhs) => {
+            Expression::Primary(prim) => prim.walk(used),
+            Expression::Unary(_, prim) => prim.walk(used),
+            Expression::Binary(lhs, _, rhs) => {
                 lhs.walk(used);
                 rhs.walk(used);
             }
-            Self::Conditional(cond, then_expr, else_expr) => {
+            Expression::Conditional(cond, then_expr, else_expr) => {
                 cond.walk(used);
                 then_expr.walk(used);
                 else_expr.walk(used);
@@ -149,8 +149,8 @@ impl OptimizeDeadcodeWalk for Expression {
 impl OptimizeDeadcodeWalk for Range {
     fn walk(&self, used: &mut HashSet<Expression>) {
         match self {
-            Self::Index(index) => index.walk(used),
-            Self::Range(base, offset) => {
+            Range::Index(index) => index.walk(used),
+            Range::Range(base, offset) => {
                 base.walk(used);
                 offset.walk(used);
             }
@@ -161,17 +161,17 @@ impl OptimizeDeadcodeWalk for Range {
 impl OptimizeDeadcodeWalk for Primary {
     fn walk(&self, used: &mut HashSet<Expression>) {
         match self {
-            Self::Number(_) => {}
-            Self::HierarchicalIdentifier(ident, Some(range)) => {
+            Primary::Number(_) => {}
+            Primary::HierarchicalIdentifier(ident, Some(range)) => {
                 used.insert(Expression::ident(ident.clone()));
                 range.walk(used);
             }
-            Self::HierarchicalIdentifier(ident, None) => {
+            Primary::HierarchicalIdentifier(ident, None) => {
                 used.insert(Expression::ident(ident.clone()));
             }
-            Self::Concatenation(concat) => concat.walk(used),
-            Self::MultipleConcatenation(_, concat) => concat.walk(used),
-            Self::MintypmaxExpression(expr) => expr.walk(used),
+            Primary::Concatenation(concat) => concat.walk(used),
+            Primary::MultipleConcatenation(_, concat) => concat.walk(used),
+            Primary::MintypmaxExpression(expr) => expr.walk(used),
         }
     }
 }
@@ -315,7 +315,7 @@ impl OptimizeDeadcode for Vec<Statement> {
                 Statement::Display(fstring, args, span) => {
                     Some(Statement::Display(fstring.clone(), args.clone(), *span))
                 }
-                Statement::Finish => Some(Statement::Finish),
+                Statement::Fatal => Some(Statement::Fatal),
             })
             .collect()
     }

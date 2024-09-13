@@ -177,7 +177,7 @@ impl DetectCombLoop {
             Statement::Display(..) => {
                 panic!("Disable --display option to run comb loop analysis")
             }
-            Statement::Finish => Ok(()),
+            Statement::Fatal => Ok(()),
         }
     }
 

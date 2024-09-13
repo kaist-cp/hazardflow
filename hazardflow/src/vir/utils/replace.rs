@@ -171,7 +171,7 @@ impl Replace for Statement {
             Statement::Display(fstring, args, span) => {
                 Statement::Display(fstring.clone(), args.replace(replaces), *span)
             }
-            Statement::Finish => Statement::Finish,
+            Statement::Fatal => Statement::Fatal,
         }
     }
 }

@@ -387,8 +387,8 @@ pub enum Statement {
     /// Display
     Display(String, Vec<Expression>, rustc_span::Span),
 
-    /// Finish
-    Finish,
+    /// Fatal
+    Fatal,
 }
 
 impl Statement {
@@ -508,7 +508,7 @@ impl ToString for Statement {
                     )
                 }
             }
-            Statement::Finish => "$finish;".to_string(),
+            Statement::Fatal => "$fatal;".to_string(),
         }
     }
 }

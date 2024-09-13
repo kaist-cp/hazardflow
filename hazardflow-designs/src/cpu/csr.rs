@@ -7,7 +7,6 @@
 use super::exe::ExeEP;
 use super::riscv_isa::LEN_CSR_ADDR;
 use super::wb::WbR;
-use crate::hpanic;
 use crate::std::hazard::*;
 use crate::std::*;
 
@@ -137,7 +136,6 @@ impl Mip {
 #[derive(Debug, Clone, Copy)]
 enum CsrReg {
     Mstatus,
-    Misa,
     Mtvec,
     Mip,
     Mie,
@@ -145,16 +143,14 @@ enum CsrReg {
     Mepc,
     Mtval,
     Mcause,
-    Mhartid,
     Medeleg,
+    Unsupported,
 }
 
 impl From<U<LEN_CSR_ADDR>> for CsrReg {
     fn from(value: U<LEN_CSR_ADDR>) -> Self {
         if value == 0x300.into_u() {
             CsrReg::Mstatus
-        } else if value == 0x301.into_u() {
-            CsrReg::Misa
         } else if value == 0x302.into_u() {
             CsrReg::Medeleg
         } else if value == 0x304.into_u() {
@@ -171,10 +167,8 @@ impl From<U<LEN_CSR_ADDR>> for CsrReg {
             CsrReg::Mtval
         } else if value == 0x344.into_u() {
             CsrReg::Mip
-        } else if value == 0xf14.into_u() {
-            CsrReg::Mhartid
         } else {
-            hpanic!("Unsupported CSR register type")
+            CsrReg::Unsupported
         }
     }
 }
@@ -216,7 +210,6 @@ pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
         let decoded_addr = CsrReg::from(ip.decode.csr);
 
         let rdata = match decoded_addr {
-            CsrReg::Misa => 0,
             CsrReg::Mstatus => u32::from(s.mstatus.into_u()),
             CsrReg::Mtvec => 0x100,
             CsrReg::Mip => u32::from(s.mip.into_u()),
@@ -226,7 +219,7 @@ pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
             CsrReg::Mtval => s.mtval,
             CsrReg::Mcause => s.mcause,
             CsrReg::Medeleg => s.medeleg,
-            CsrReg::Mhartid => 0,
+            CsrReg::Unsupported => 0,
         };
 
         let read_only = ip.decode.csr.clip_const::<2>(10) == 0b11.into_u();

@@ -186,30 +186,30 @@ impl OptimizeWireCache for Vec<Statement> {
 impl OptimizeWireCache for Statement {
     fn optimize(&self, wire_cache: &mut WireCache) -> Self {
         match self {
-            Self::BlockingAssignment(lvalue, expr, span) => {
-                Self::BlockingAssignment(lvalue.optimize(wire_cache), expr.optimize(wire_cache), *span)
+            Statement::BlockingAssignment(lvalue, expr, span) => {
+                Statement::BlockingAssignment(lvalue.optimize(wire_cache), expr.optimize(wire_cache), *span)
             }
-            Self::Conditional(cond_expr_pairs, else_stmt, span) if else_stmt.is_empty() => {
+            Statement::Conditional(cond_expr_pairs, else_stmt, span) if else_stmt.is_empty() => {
                 let cond_expr_pairs = cond_expr_pairs
                     .iter()
                     .map(|(cond, expr)| (cond.optimize(wire_cache), expr.optimize(wire_cache)))
                     .collect();
-                Self::Conditional(cond_expr_pairs, Vec::new(), *span)
+                Statement::Conditional(cond_expr_pairs, Vec::new(), *span)
             }
-            Self::Conditional(cond_expr_pairs, else_stmt, span) => {
+            Statement::Conditional(cond_expr_pairs, else_stmt, span) => {
                 let cond_expr_pairs = cond_expr_pairs
                     .iter()
                     .map(|(cond, expr)| (cond.optimize(wire_cache), expr.optimize(wire_cache)))
                     .collect();
-                Self::Conditional(cond_expr_pairs, else_stmt.optimize(wire_cache), *span)
+                Statement::Conditional(cond_expr_pairs, else_stmt.optimize(wire_cache), *span)
             }
-            Self::Loop(ident, count, stmt, span) => {
-                Self::Loop(ident.clone(), count.optimize(wire_cache), stmt.optimize(wire_cache), *span)
+            Statement::Loop(ident, count, stmt, span) => {
+                Statement::Loop(ident.clone(), count.optimize(wire_cache), stmt.optimize(wire_cache), *span)
             }
-            Self::NonblockingAssignment(lvalue, expr, span) => {
-                Self::NonblockingAssignment(lvalue.optimize(wire_cache), expr.optimize(wire_cache), *span)
+            Statement::NonblockingAssignment(lvalue, expr, span) => {
+                Statement::NonblockingAssignment(lvalue.optimize(wire_cache), expr.optimize(wire_cache), *span)
             }
-            Self::Case(case_expr, case_items, default, span) => Self::Case(
+            Statement::Case(case_expr, case_items, default, span) => Statement::Case(
                 case_expr.optimize(wire_cache),
                 case_items
                     .iter()
@@ -218,10 +218,10 @@ impl OptimizeWireCache for Statement {
                 default.optimize(wire_cache),
                 *span,
             ),
-            Self::Display(fstring, args, span) => {
-                Self::Display(fstring.clone(), args.iter().map(|arg| arg.optimize(wire_cache)).collect(), *span)
+            Statement::Display(fstring, args, span) => {
+                Statement::Display(fstring.clone(), args.iter().map(|arg| arg.optimize(wire_cache)).collect(), *span)
             }
-            Self::Finish => Self::Finish,
+            Statement::Fatal => Statement::Fatal,
         }
     }
 }
@@ -229,12 +229,12 @@ impl OptimizeWireCache for Statement {
 impl OptimizeWireCache for Expression {
     fn optimize(&self, wire_cache: &mut WireCache) -> Self {
         match self {
-            Self::Primary(prim) => Self::Primary(prim.optimize(wire_cache)),
-            Self::Unary(op, prim) => Self::Unary(*op, prim.optimize(wire_cache)),
-            Self::Binary(lhs, op, rhs) => {
-                Self::Binary(Box::new(lhs.optimize(wire_cache)), *op, Box::new(rhs.optimize(wire_cache)))
+            Expression::Primary(prim) => Expression::Primary(prim.optimize(wire_cache)),
+            Expression::Unary(op, prim) => Expression::Unary(*op, prim.optimize(wire_cache)),
+            Expression::Binary(lhs, op, rhs) => {
+                Expression::Binary(Box::new(lhs.optimize(wire_cache)), *op, Box::new(rhs.optimize(wire_cache)))
             }
-            Self::Conditional(cond, then_expr, else_expr) => Self::Conditional(
+            Expression::Conditional(cond, then_expr, else_expr) => Expression::Conditional(
                 Box::new(cond.optimize(wire_cache)),
                 Box::new(then_expr.optimize(wire_cache)),
                 Box::new(else_expr.optimize(wire_cache)),
@@ -246,9 +246,9 @@ impl OptimizeWireCache for Expression {
 impl OptimizeWireCache for Range {
     fn optimize(&self, wire_cache: &mut WireCache) -> Self {
         match self {
-            Self::Index(index) => Self::Index(Box::new(index.optimize(wire_cache))),
-            Self::Range(base, offset) => {
-                Self::Range(Box::new(base.optimize(wire_cache)), Box::new(offset.optimize(wire_cache)))
+            Range::Index(index) => Range::Index(Box::new(index.optimize(wire_cache))),
+            Range::Range(base, offset) => {
+                Range::Range(Box::new(base.optimize(wire_cache)), Box::new(offset.optimize(wire_cache)))
             }
         }
     }
@@ -257,19 +257,19 @@ impl OptimizeWireCache for Range {
 impl OptimizeWireCache for Primary {
     fn optimize(&self, wire_cache: &mut WireCache) -> Self {
         match self {
-            Self::Number(num) => Self::Number(num.clone()),
-            Self::HierarchicalIdentifier(ident, Some(range)) => Self::HierarchicalIdentifier(
+            Primary::Number(num) => Primary::Number(num.clone()),
+            Primary::HierarchicalIdentifier(ident, Some(range)) => Primary::HierarchicalIdentifier(
                 wire_cache.get(&Expression::ident(ident.clone())).to_string(),
                 Some(range.optimize(wire_cache)),
             ),
-            Self::HierarchicalIdentifier(ident, None) => {
-                Self::HierarchicalIdentifier(wire_cache.get(&Expression::ident(ident.clone())).to_string(), None)
+            Primary::HierarchicalIdentifier(ident, None) => {
+                Primary::HierarchicalIdentifier(wire_cache.get(&Expression::ident(ident.clone())).to_string(), None)
             }
-            Self::Concatenation(concat) => Self::Concatenation(concat.optimize(wire_cache)),
-            Self::MultipleConcatenation(count, concat) => {
-                Self::MultipleConcatenation(*count, concat.optimize(wire_cache))
+            Primary::Concatenation(concat) => Primary::Concatenation(concat.optimize(wire_cache)),
+            Primary::MultipleConcatenation(count, concat) => {
+                Primary::MultipleConcatenation(*count, concat.optimize(wire_cache))
             }
-            Self::MintypmaxExpression(expr) => Self::MintypmaxExpression(Box::new(expr.optimize(wire_cache))),
+            Primary::MintypmaxExpression(expr) => Primary::MintypmaxExpression(Box::new(expr.optimize(wire_cache))),
         }
     }
 }

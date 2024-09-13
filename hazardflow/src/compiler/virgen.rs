@@ -1608,7 +1608,7 @@ impl<'tcx> Virgen<'tcx> {
                 let display_stmt = Statement::Display(format!("ERROR: {fstring}"), arg_exprs, span);
 
                 let assert_stmt =
-                    Statement::Conditional(vec![(cond, vec![display_stmt, Statement::Finish])], vec![], span);
+                    Statement::Conditional(vec![(cond, vec![display_stmt, Statement::Fatal])], vec![], span);
 
                 Ok((
                     [decls_for_assert_cond, decls_for_cond, decls_for_args].concat(),
