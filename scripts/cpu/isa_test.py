@@ -80,7 +80,7 @@ if __name__ == "__main__":
     if base_flag:
         logger.info("Running base ISA tests")
         base_dir = curr_dir / "program/isa/base"
-        run_tests(base_dir, 43)
+        run_tests(base_dir, 42)
 
     elif mext_flag:
         logger.info("Running M-extension ISA tests")

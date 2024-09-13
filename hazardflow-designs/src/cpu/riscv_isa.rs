@@ -1,12 +1,10 @@
 //! RISC-V Instruction.
 //! Currently supports
 //! - RV32I Base Instruction Set
-//! - RV32 Zifencei Standard Extension
-//! - RV32 Zicsr Standard Extension
+//! - RV32/RV64 Zicsr Standard Extension
 //! - Partial RISC-V Privileged Instruction Set including:
 //!   + Trap-Return Instructions
 //!   + Interrupt-Management Instructions
-// TODO: Extend to 64-bit architecture
 
 #![allow(missing_docs)]
 
@@ -58,7 +56,6 @@ pub struct Instruction {
     pub imm: u32,
     pub alu_op: BaseAluOp,
     pub wb_sel: HOption<WbSel>,
-    pub is_fencei: bool,
     pub csr_info: HOption<CsrInfo>,
     pub mem_info: HOption<(MemOpFcn, MemOpTyp)>,
     jmp_target_sel: HOption<JmpTargetSel>,
@@ -148,8 +145,6 @@ impl From<u32> for Instruction {
         let is_and = funct7 == 0b0000000 && funct3 == 0b111 && opcode == 0b0110011;
 
         let is_fence = funct3 == 0b000 && opcode == 0b0001111;
-        let is_fencei = funct3 == 0b001 && opcode == 0b0001111;
-
         let is_ecall = value == 0b00000000000000000000000001110011;
         let is_ebreak = value == 0b00000000000100000000000001110011;
 
@@ -171,7 +166,7 @@ impl From<u32> for Instruction {
         let l5 = is_jal || is_jalr || is_beq || is_bne || is_bge || is_bgeu || is_blt || is_bltu;
         let l6 = is_csrrwi || is_csrrsi || is_csrrw || is_csrrs || is_csrrc || is_csrrci;
         let l7 = is_ecall || is_mret || is_ebreak || is_wfi;
-        let l8 = is_fencei || is_fence;
+        let l8 = is_fence;
 
         let is_illegal = !(l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8);
         let is_rtype = l4;
@@ -224,7 +219,7 @@ impl From<u32> for Instruction {
         let imm = if is_lui || is_auipc {
             (value >> 12) << 12
         } else if is_jal {
-            let imm_20 = value.clip_const::<1>(31); // this should  be sign-extneded
+            let imm_20 = value.clip_const::<1>(31); // this should be sign-extneded
             let imm_10_1 = value.clip_const::<10>(21);
             let imm_11 = value.clip_const::<1>(20);
             let imm_19_12 = value.clip_const::<8>(12);
@@ -242,7 +237,7 @@ impl From<u32> for Instruction {
         } else if is_lb || is_lh || is_lw || is_lbu || is_lhu {
             itype_sext
         } else if is_sb || is_sh || is_sw {
-            let imm_11 = value.clip_const::<1>(31); // this should  be sign-extneded
+            let imm_11 = value.clip_const::<1>(31); // this should be sign-extneded
             let imm_10_5 = value.clip_const::<6>(25);
             let imm_4_0 = value.clip_const::<5>(7);
             imm_4_0.append(imm_10_5).append(imm_11.repeat::<21>().concat())
@@ -361,7 +356,7 @@ impl From<u32> for Instruction {
             Some(Op1Sel::Pc)
         } else if is_csri {
             Some(Op1Sel::Imm)
-        } else if is_lui || is_ecall || is_ebreak || is_fencei || is_fence || is_mret || is_wfi || is_illegal {
+        } else if is_lui || is_ecall || is_ebreak || is_fence || is_mret || is_wfi || is_illegal {
             None
         } else {
             Some(Op1Sel::Rs1)
@@ -398,7 +393,6 @@ impl From<u32> for Instruction {
             imm,
             alu_op,
             wb_sel,
-            is_fencei,
             csr_info,
             mem_info,
             jmp_target_sel,

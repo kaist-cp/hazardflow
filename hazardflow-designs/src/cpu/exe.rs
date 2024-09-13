@@ -36,11 +36,8 @@ pub struct ExeEP {
 /// Hazard from execute stage to decode stage.
 #[derive(Debug, Clone, Copy)]
 pub struct ExeR {
-    /// Indicates that the fetch stage is killed or not.
-    pub if_kill: bool,
-
-    /// Indicates that the decode stage is killed or not.
-    pub dec_kill: bool,
+    /// Indicates that the previous stages are killed or not.
+    pub kill: bool,
 
     /// Next PC selector.
     pub pc_sel: PcSel,
@@ -55,9 +52,6 @@ pub struct ExeR {
 
     /// Indicates that the instruction is load or not.
     pub is_load: bool,
-
-    /// Indicates that the instruction is FENCE.I or not.
-    pub is_fencei: bool,
 }
 
 /// Returns PC selector based on the given payload.
@@ -67,25 +61,25 @@ fn get_pc_sel(p: DecEP, alu_out: u32) -> PcSel {
     let alu_true = alu_out != 0;
 
     match p.br_type {
-        BranchType::N => PcSel::Plus4,
+        BranchType::N => PcSel::Predict,
         BranchType::J => {
             // From J-instruction
-            PcSel::Jmp(target)
+            PcSel::Redirect(target)
         }
         BranchType::Eq | BranchType::Ge | BranchType::Geu => {
             // From Br-instruction
             if !alu_true {
-                PcSel::Jmp(target)
+                PcSel::Redirect(target)
             } else {
-                PcSel::Plus4
+                PcSel::Predict
             }
         }
         BranchType::Ne | BranchType::Lt | BranchType::Ltu => {
             // From Br-instruction
             if alu_true {
-                PcSel::Jmp(target)
+                PcSel::Redirect(target)
             } else {
-                PcSel::Plus4
+                PcSel::Predict
             }
         }
     }
@@ -101,33 +95,18 @@ fn gen_resolver(er: (HOption<(DecEP, u32)>, MemR, WbR)) -> (ExeR, MemR, WbR) {
         _ => false,
     });
 
-    let is_fencei = p.is_some_and(|p| p.is_fencei);
-
     if memr.pipeline_kill {
-        let exer = ExeR {
-            if_kill: true,
-            dec_kill: true,
-            pc_sel: PcSel::Exception(memr.csr_evec),
-            wb: None,
-            is_csr,
-            is_load: false,
-            is_fencei,
-        };
-
+        let exer = ExeR { kill: true, pc_sel: PcSel::Redirect(memr.csr_evec), wb: None, is_csr, is_load: false };
         return (exer, memr, wbr);
     }
 
     let Some(p) = p else {
-        let exer =
-            ExeR { if_kill: false, dec_kill: false, pc_sel: PcSel::Plus4, wb: None, is_csr, is_load: false, is_fencei };
-
+        let exer = ExeR { kill: false, pc_sel: PcSel::Predict, wb: None, is_csr, is_load: false };
         return (exer, memr, wbr);
     };
 
     let Some(alu_out) = alu_out else {
-        let exer =
-            ExeR { if_kill: false, dec_kill: false, pc_sel: PcSel::Plus4, wb: None, is_csr, is_load: false, is_fencei };
-
+        let exer = ExeR { kill: false, pc_sel: PcSel::Predict, wb: None, is_csr, is_load: false };
         return (exer, memr, wbr);
     };
 
@@ -136,13 +115,11 @@ fn gen_resolver(er: (HOption<(DecEP, u32)>, MemR, WbR)) -> (ExeR, MemR, WbR) {
     let exer_wb = p.wb.map(|(addr, _)| Register::new(addr, alu_out));
 
     let exer = ExeR {
-        if_kill: !matches!(pc_sel, PcSel::Plus4) || p.is_fencei,
-        dec_kill: !matches!(pc_sel, PcSel::Plus4),
+        kill: !matches!(pc_sel, PcSel::Predict),
         pc_sel,
         wb: exer_wb,
         is_csr,
         is_load: matches!(p.mem_op, MemOp::Dmem { fcn: MemOpFcn::Load, .. }),
-        is_fencei,
     };
 
     (exer, memr, wbr)

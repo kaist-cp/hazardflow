@@ -32,9 +32,6 @@ pub struct DecEP {
     /// Memory operation.
     pub mem_op: MemOp,
 
-    /// Indicates that the instruction is `FenceI` or not.
-    pub is_fencei: bool,
-
     /// Indicates that the instruction is illegal/unsupported or not.
     pub is_illegal: bool,
 
@@ -76,29 +73,17 @@ impl Hazard for DecH {
 }
 
 /// Generates resolver from decode stage to fetch stage.
-fn gen_resolver(er: (HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)) -> DecR {
-    let (p, exer, memr, _) = er;
+fn gen_resolver(er: (ExeR, MemR, WbR)) -> DecR {
+    let (exer, memr, _) = er;
 
-    let inst = p.map(|(_, inst)| inst);
-    let is_fencei = inst.is_some_and(|inst| inst.is_fencei);
-    let kill = exer.if_kill || is_fencei || memr.pipeline_kill;
-
-    let pc_sel = if matches!(exer.pc_sel, PcSel::Jmp { .. } | PcSel::Exception(_)) {
-        exer.pc_sel
-    } else if is_fencei || exer.is_fencei {
-        PcSel::Curr
-    } else {
-        exer.pc_sel
-    };
-
-    DecR { kill, pc_sel }
+    DecR { kill: exer.kill || memr.pipeline_kill, pc_sel: exer.pc_sel }
 }
 
 /// Generates payload from decode stage to execute stage.
 fn gen_payload(ip: FetEP, inst: Instruction, er: (ExeR, MemR, WbR)) -> HOption<DecEP> {
     let (exer, memr, wbr) = er;
 
-    if exer.dec_kill || memr.pipeline_kill {
+    if exer.kill || memr.pipeline_kill {
         return None;
     }
 
@@ -149,7 +134,6 @@ fn gen_payload(ip: FetEP, inst: Instruction, er: (ExeR, MemR, WbR)) -> HOption<D
         } else {
             MemOp::None
         },
-        is_fencei: inst.is_fencei,
         // If it is returning from trap (`csr_eret`), clear instruction exception.
         is_illegal: inst.is_illegal,
         pc: ip.imem_resp.addr,
@@ -159,12 +143,9 @@ fn gen_payload(ip: FetEP, inst: Instruction, er: (ExeR, MemR, WbR)) -> HOption<D
 
 /// Decode stage.
 pub fn decode(i: I<VrH<FetEP, DecR>, { Dep::Demanding }>) -> I<VrH<DecEP, (ExeR, MemR, WbR)>, { Dep::Demanding }> {
-    i.map_resolver_inner::<(HOption<(FetEP, Instruction)>, ExeR, MemR, WbR)>(gen_resolver)
+    i.map_resolver_inner::<(ExeR, MemR, WbR)>(gen_resolver)
         .reg_fwd(true)
         .map(|p| (p, Instruction::from(p.imem_resp.data)))
-        .map_resolver_block_with_p::<AndH<DecH>>(|ip, er| {
-            let (exer, memr, wbr) = er.inner;
-            (ip, exer, memr, wbr)
-        })
+        .map_resolver_block::<AndH<DecH>>(|er| er.inner)
         .filter_map_drop_with_r(|(p, inst), er| gen_payload(p, inst, er.inner))
 }
