@@ -81,7 +81,7 @@ fn get_wb(p: ExeEP, dmem_resp: HOption<MemRespWithAddr>, csr_resp: HOption<CsrRe
             WbSel::Alu => p.alu_out,
             WbSel::Mem => dmem_resp.unwrap().data,
             WbSel::Pc4 => p.pc + 4,
-            WbSel::Csr => csr_resp.unwrap().rw.rdata,
+            WbSel::Csr => csr_resp.unwrap().rdata,
         };
 
         Register::new(addr, data)
@@ -159,12 +159,8 @@ pub fn mem(
         .map(|ip| {
             let MemOp::Csr(csr) = ip.mem_op else { unsafe { x() } };
 
-            let csr_req = CsrReq {
-                rw: CsrRwI { cmd: csr.cmd, wdata: ip.alu_out },
-                decode: CsrDecodeI { csr: csr.addr },
-                exception: ip.exception,
-                pc: ip.pc,
-            };
+            let csr_req =
+                CsrReq { cmd: csr.cmd, wdata: ip.alu_out, decode: csr.addr, exception: ip.exception, pc: ip.pc };
 
             (csr_req, ip)
         })

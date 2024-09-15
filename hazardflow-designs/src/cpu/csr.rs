@@ -13,12 +13,10 @@ use crate::std::*;
 /// Contains information that is needed to interact with CSR.
 #[derive(Debug, Clone, Copy)]
 pub struct CsrInfo {
-    /// CSR address
-    /// `csr.io.rw.addr`
+    /// CSR address.
     pub addr: U<LEN_CSR_ADDR>,
 
     /// CSR command.
-    /// `csr.io.rw.cmd`
     pub cmd: CsrCommand,
 }
 
@@ -40,38 +38,17 @@ pub enum CsrCommand {
     I = 4,
 }
 
-/// TODO: Documentation
+/// TODO: Documentation, Add remaining fields
 #[derive(Debug, Clone, Copy)]
-pub struct CsrDecodeI {
-    /// TODO: Documentation
-    pub csr: U<LEN_CSR_ADDR>,
-}
-
-/// TODO: Documentation
-#[derive(Debug, Clone, Copy)]
-pub struct CsrRwI {
+pub struct CsrReq {
     /// TODO: Documentation
     pub cmd: CsrCommand,
 
     /// TODO: Documentation
     pub wdata: u32,
-}
-
-/// TODO: Documentation
-#[derive(Debug, Clone, Copy)]
-pub struct CsrRwE {
-    /// TODO: Documentation
-    pub rdata: u32,
-}
-
-/// TODO: Documentation, Add remaining fields
-#[derive(Debug, Clone, Copy)]
-pub struct CsrReq {
-    /// TODO: Documentation
-    pub rw: CsrRwI,
 
     /// TODO: Documentation
-    pub decode: CsrDecodeI,
+    pub decode: U<LEN_CSR_ADDR>,
 
     /// TODO: Documentation
     pub exception: bool,
@@ -84,7 +61,7 @@ pub struct CsrReq {
 #[derive(Debug, Clone, Copy)]
 pub struct CsrResp {
     /// TODO: Documentation
-    pub rw: CsrRwE,
+    pub rdata: u32,
 
     /// TODO: Documentation
     pub eret: bool,
@@ -204,10 +181,10 @@ impl Default for CsrS {
 /// CSR file.
 pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
     i.fsm_map::<CsrResp, CsrS>(CsrS::default(), |ip, s| {
-        let system_insn = matches!(ip.rw.cmd, CsrCommand::I);
+        let system_insn = matches!(ip.cmd, CsrCommand::I);
         let cpu_ren = !system_insn;
 
-        let decoded_addr = CsrReg::from(ip.decode.csr);
+        let decoded_addr = CsrReg::from(ip.decode);
 
         let rdata = match decoded_addr {
             CsrReg::Mstatus => u32::from(s.mstatus.into_u()),
@@ -222,29 +199,25 @@ pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
             CsrReg::Unsupported => 0,
         };
 
-        let read_only = ip.decode.csr.clip_const::<2>(10) == 0b11.into_u();
-        let cpu_wen = cpu_ren && !matches!(ip.rw.cmd, CsrCommand::R);
+        let read_only = ip.decode.clip_const::<2>(10) == 0b11.into_u();
+        let cpu_wen = cpu_ren && !matches!(ip.cmd, CsrCommand::R);
         let wen = cpu_wen && !read_only;
-        let wdata = (if matches!(ip.rw.cmd, CsrCommand::S | CsrCommand::C) { rdata } else { 0 } | ip.rw.wdata)
-            & !if matches!(ip.rw.cmd, CsrCommand::C) { ip.rw.wdata } else { 0 };
+        let wdata = (if matches!(ip.cmd, CsrCommand::S | CsrCommand::C) { rdata } else { 0 } | ip.wdata)
+            & !if matches!(ip.cmd, CsrCommand::C) { ip.wdata } else { 0 };
 
-        let opcode = 0.into_u::<7>().set(ip.decode.csr.clip_const::<3>(0), true);
+        let opcode = 0.into_u::<7>().set(ip.decode.clip_const::<3>(0), true);
         let insn_call = system_insn && opcode[0];
         let insn_break = system_insn && opcode[1];
         let insn_ret = system_insn && opcode[2];
 
         let eret = insn_call || insn_break || insn_ret;
 
-        let ep = CsrResp {
-            rw: CsrRwE { rdata },
-            eret,
-            evec: if insn_ret && !ip.decode.csr[10] { s.mepc } else { 0x80000004 },
-        };
+        let ep = CsrResp { rdata, eret, evec: if insn_ret && !ip.decode[10] { s.mepc } else { 0x80000004 } };
 
         let s_next = CsrS {
             mstatus: if wen && matches!(decoded_addr, CsrReg::Mstatus) {
                 MStatus { mie: U::<32>::from(wdata)[3], mpie: U::<32>::from(wdata)[7] }
-            } else if insn_ret && !ip.decode.csr[10] {
+            } else if insn_ret && !ip.decode[10] {
                 MStatus { mie: s.mstatus.mpie, mpie: true }
             } else {
                 s.mstatus
