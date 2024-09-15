@@ -17,7 +17,7 @@ pub struct CsrInfo {
     pub addr: U<LEN_CSR_ADDR>,
 
     /// CSR command.
-    pub cmd: CsrCommand,
+    pub cmd: CsrCmd,
 }
 
 /// CSR Commands.
@@ -25,7 +25,7 @@ pub struct CsrInfo {
 /// NOTE: This type should be represented as 3-bits.
 /// - <https://github.com/chipsalliance/rocket-chip/blob/master/src/main/scala/rocket/CSR.scala#L168-L178>
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CsrCommand {
+pub enum CsrCmd {
     /// TODO: Documentation
     R = 5,
     /// TODO: Documentation
@@ -42,7 +42,7 @@ pub enum CsrCommand {
 #[derive(Debug, Clone, Copy)]
 pub struct CsrReq {
     /// TODO: Documentation
-    pub cmd: CsrCommand,
+    pub cmd: CsrCmd,
 
     /// TODO: Documentation
     pub wdata: u32,
@@ -181,7 +181,7 @@ impl Default for CsrS {
 /// CSR file.
 pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
     i.fsm_map::<CsrResp, CsrS>(CsrS::default(), |ip, s| {
-        let system_insn = matches!(ip.cmd, CsrCommand::I);
+        let system_insn = matches!(ip.cmd, CsrCmd::I);
         let cpu_ren = !system_insn;
 
         let decoded_addr = CsrReg::from(ip.decode);
@@ -200,10 +200,10 @@ pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
         };
 
         let read_only = ip.decode.clip_const::<2>(10) == 0b11.into_u();
-        let cpu_wen = cpu_ren && !matches!(ip.cmd, CsrCommand::R);
+        let cpu_wen = cpu_ren && !matches!(ip.cmd, CsrCmd::R);
         let wen = cpu_wen && !read_only;
-        let wdata = (if matches!(ip.cmd, CsrCommand::S | CsrCommand::C) { rdata } else { 0 } | ip.wdata)
-            & !if matches!(ip.cmd, CsrCommand::C) { ip.wdata } else { 0 };
+        let wdata = (if matches!(ip.cmd, CsrCmd::S | CsrCmd::C) { rdata } else { 0 } | ip.wdata)
+            & !if matches!(ip.cmd, CsrCmd::C) { ip.wdata } else { 0 };
 
         let opcode = 0.into_u::<7>().set(ip.decode.clip_const::<3>(0), true);
         let insn_call = system_insn && opcode[0];

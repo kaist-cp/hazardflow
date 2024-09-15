@@ -60,19 +60,24 @@ pub struct MemEP {
 /// Hazard from memory stage to execute stage.
 #[derive(Debug, Clone, Copy)]
 pub struct MemR {
-    /// Exception target.
-    pub csr_evec: u32,
+    /// Bypassed data from MEM.
+    pub bypass_from_mem: HOption<Register>,
 
-    /// CSR eret.
-    pub csr_eret: bool,
+    /// Bypassed data from WB.
+    pub bypass_from_wb: HOption<Register>,
 
-    /// Writeback.
-    ///
-    /// It contains the writeback address and data.
-    pub wb: HOption<Register>,
+    /// Indicates that the pipeline should be redirected.
+    pub redirect: HOption<u32>,
 
-    /// Indicates that the pipeline killed or not.
-    pub pipeline_kill: bool,
+    /// Register file.
+    pub rf: Regfile,
+}
+
+impl MemR {
+    /// Creates a new memory resolver.
+    pub fn new(wbr: WbR, bypass_from_mem: HOption<Register>, redirect: HOption<u32>) -> Self {
+        Self { bypass_from_mem, bypass_from_wb: wbr.bypass_from_wb, redirect, rf: wbr.rf }
+    }
 }
 
 fn get_wb(p: ExeEP, dmem_resp: HOption<MemRespWithAddr>, csr_resp: HOption<CsrResp>) -> HOption<Register> {
@@ -88,9 +93,7 @@ fn get_wb(p: ExeEP, dmem_resp: HOption<MemRespWithAddr>, csr_resp: HOption<CsrRe
     })
 }
 
-fn gen_resolver(
-    er: (HOption<(MemRespWithAddr, ExeEP)>, (HOption<(CsrResp, ExeEP)>, WbR), HOption<ExeEP>),
-) -> (MemR, WbR) {
+fn gen_resolver(er: (HOption<(MemRespWithAddr, ExeEP)>, (HOption<(CsrResp, ExeEP)>, WbR), HOption<ExeEP>)) -> MemR {
     // Extracts resolver from each branch.
     let (er_dmem, er_csr, er_none) = er;
 
@@ -100,21 +103,16 @@ fn gen_resolver(
     let wbr = er_csr.1;
 
     let exception = exep.is_some_and(|p| p.exception);
-    let pipeline_kill = csr_resp.is_some_and(|r| r.eret) || exception;
 
-    let memr = MemR {
-        csr_evec: csr_resp.map(|r| r.evec).unwrap_or(0),
-        csr_eret: csr_resp.is_some_and(|r| r.eret),
-        wb: exep.and_then(|p| get_wb(p, dmem_resp, csr_resp)),
-        pipeline_kill,
-    };
+    let bypass = exep.and_then(|p| get_wb(p, dmem_resp, csr_resp));
+    let redirect = csr_resp.and_then(|r| if r.eret || exception { Some(r.evec) } else { None });
 
-    (memr, wbr)
+    MemR::new(wbr, bypass, redirect)
 }
 
 /// Memory stage.
 pub fn mem(
-    i: I<VrH<ExeEP, (MemR, WbR)>, { Dep::Demanding }>,
+    i: I<VrH<ExeEP, MemR>, { Dep::Demanding }>,
     dmem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
 ) -> I<VrH<MemEP, WbR>, { Dep::Demanding }> {
     let exep = i

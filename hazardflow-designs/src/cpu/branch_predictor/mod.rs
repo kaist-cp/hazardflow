@@ -8,8 +8,7 @@ pub use bht::*;
 pub use btb::*;
 pub use pre_decode::*;
 
-use super::MemRespWithAddr;
-use crate::std::*;
+use super::*;
 
 /// Number of BHT entries.
 pub const BHT_ENTRIES: usize = 128;

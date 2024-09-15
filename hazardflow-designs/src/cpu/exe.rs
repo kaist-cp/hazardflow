@@ -36,105 +36,100 @@ pub struct ExeEP {
 /// Hazard from execute stage to decode stage.
 #[derive(Debug, Clone, Copy)]
 pub struct ExeR {
-    /// Indicates that the previous stages are killed or not.
-    pub kill: bool,
+    /// Bypassed data from EXE.
+    pub bypass_from_exe: HOption<Register>,
 
-    /// Next PC selector.
-    pub pc_sel: PcSel,
+    /// Bypassed data from MEM.
+    pub bypass_from_mem: HOption<Register>,
 
-    /// Writeback.
+    /// Bypassed data from WB.
+    pub bypass_from_wb: HOption<Register>,
+
+    /// Stall.
     ///
-    /// It contains the writeback address and data.
-    pub wb: HOption<Register>,
+    /// It contains the rd address of load or CSR instructions.
+    pub stall: HOption<U<LEN_REG_ADDR>>,
 
-    /// Indicates that the instruction access CSR or not.
-    pub is_csr: bool,
+    /// Indicates that the pipeline should be redirected.
+    pub redirect: HOption<u32>,
 
-    /// Indicates that the instruction is load or not.
-    pub is_load: bool,
+    /// Register file.
+    pub rf: Regfile,
 }
 
-/// Returns PC selector based on the given payload.
-fn get_pc_sel(p: DecEP, alu_out: u32) -> PcSel {
+impl ExeR {
+    /// Creates a new execute resolver.
+    pub fn new(memr: MemR, bypass: HOption<Register>, stall: HOption<U<LEN_REG_ADDR>>, redirect: HOption<u32>) -> Self {
+        Self {
+            bypass_from_exe: bypass,
+            bypass_from_mem: memr.bypass_from_mem,
+            bypass_from_wb: memr.bypass_from_wb,
+            stall,
+            redirect: memr.redirect.or(redirect),
+            rf: memr.rf,
+        }
+    }
+}
+
+/// Returns redirected PC based on the given payload.
+fn get_redirect(p: DecEP, alu_out: u32) -> HOption<u32> {
     let target = p.jmp_target.0 + p.jmp_target.1;
 
     let alu_true = alu_out != 0;
 
     match p.br_type {
-        BranchType::N => PcSel::Predict,
+        BranchType::N => None,
         BranchType::J => {
             // From J-instruction
-            PcSel::Redirect(target)
+            Some(target)
         }
         BranchType::Eq | BranchType::Ge | BranchType::Geu => {
             // From Br-instruction
             if !alu_true {
-                PcSel::Redirect(target)
+                Some(target)
             } else {
-                PcSel::Predict
+                None
             }
         }
         BranchType::Ne | BranchType::Lt | BranchType::Ltu => {
             // From Br-instruction
             if alu_true {
-                PcSel::Redirect(target)
+                Some(target)
             } else {
-                PcSel::Predict
+                None
             }
         }
     }
 }
 
 /// Generates resolver from execute stage to decode stage.
-fn gen_resolver(er: (HOption<(DecEP, u32)>, MemR, WbR)) -> (ExeR, MemR, WbR) {
-    let (p, memr, wbr) = er;
+fn gen_resolver(er: (HOption<(DecEP, u32)>, MemR)) -> ExeR {
+    let (p, memr) = er;
 
-    let (p, alu_out) = p.unzip();
-    let is_csr = p.is_some_and(|p| match p.mem_op {
-        MemOp::Csr(csr_info) => !matches!(csr_info.cmd, csr::CsrCommand::I),
-        _ => false,
+    let stall = p.and_then(|(p, _)| {
+        p.wb.and_then(|(addr, wb_sel)| if matches!(wb_sel, WbSel::Mem | WbSel::Csr) { Some(addr) } else { None })
     });
 
-    if memr.pipeline_kill {
-        let exer = ExeR { kill: true, pc_sel: PcSel::Redirect(memr.csr_evec), wb: None, is_csr, is_load: false };
-        return (exer, memr, wbr);
-    }
-
-    let Some(p) = p else {
-        let exer = ExeR { kill: false, pc_sel: PcSel::Predict, wb: None, is_csr, is_load: false };
-        return (exer, memr, wbr);
+    let Some((p, alu_out)) = p else {
+        return ExeR::new(memr, None, stall, None);
     };
 
-    let Some(alu_out) = alu_out else {
-        let exer = ExeR { kill: false, pc_sel: PcSel::Predict, wb: None, is_csr, is_load: false };
-        return (exer, memr, wbr);
-    };
-
-    let pc_sel = get_pc_sel(p, alu_out);
-
+    let redirect = get_redirect(p, alu_out);
     let exer_wb = p.wb.map(|(addr, _)| Register::new(addr, alu_out));
 
-    let exer = ExeR {
-        kill: !matches!(pc_sel, PcSel::Predict),
-        pc_sel,
-        wb: exer_wb,
-        is_csr,
-        is_load: matches!(p.mem_op, MemOp::Dmem { fcn: MemOpFcn::Load, .. }),
-    };
-
-    (exer, memr, wbr)
+    ExeR::new(memr, exer_wb, stall, redirect)
 }
 
 /// Generates payload from execute stage to memory stage.
-fn gen_payload(ip: DecEP, alu_out: u32, (memr, _): (MemR, WbR)) -> HOption<ExeEP> {
-    if memr.pipeline_kill {
+fn gen_payload(ip: DecEP, alu_out: u32, memr: MemR) -> HOption<ExeEP> {
+    if memr.redirect.is_some() {
         None
     } else {
         Some(ExeEP {
             alu_out,
             wb: ip.wb,
             mem_op: ip.mem_op,
-            st_data: ip.rs2.map(|rs2| rs2.data),
+            st_data: ip.st_data,
             exception: ip.is_illegal,
             pc: ip.pc,
             debug_inst: ip.debug_inst,
@@ -143,13 +138,10 @@ fn gen_payload(ip: DecEP, alu_out: u32, (memr, _): (MemR, WbR)) -> HOption<ExeEP
 }
 
 /// Execute stage.
-pub fn exe(i: I<VrH<DecEP, (ExeR, MemR, WbR)>, { Dep::Demanding }>) -> I<VrH<ExeEP, (MemR, WbR)>, { Dep::Demanding }> {
-    i.map_resolver_inner::<(HOption<(DecEP, u32)>, MemR, WbR)>(gen_resolver)
+pub fn exe(i: I<VrH<DecEP, ExeR>, { Dep::Demanding }>) -> I<VrH<ExeEP, MemR>, { Dep::Demanding }> {
+    i.map_resolver_inner::<(HOption<(DecEP, u32)>, MemR)>(gen_resolver)
         .reg_fwd(true)
         .map(|p| (p, exe_alu(p.alu_input.op1_data, p.alu_input.op2_data, p.alu_input.op)))
-        .map_resolver_block_with_p::<VrH<(DecEP, u32), (MemR, WbR)>>(|ip, er| {
-            let (memr, wbr) = er.inner;
-            (ip, memr, wbr)
-        })
+        .map_resolver_block_with_p::<VrH<(DecEP, u32), MemR>>(|ip, er| (ip, er.inner))
         .filter_map_drop_with_r(|(ip, alu_out), er| gen_payload(ip, alu_out, er.inner))
 }

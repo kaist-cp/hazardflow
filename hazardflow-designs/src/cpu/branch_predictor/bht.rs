@@ -1,7 +1,6 @@
 //! Branch history table.
 
 use super::*;
-use crate::std::*;
 
 /// 2-bit saturation counter.
 #[derive(Debug, Default, Clone, Copy)]

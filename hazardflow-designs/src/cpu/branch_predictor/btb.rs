@@ -1,7 +1,6 @@
 //! Branch target buffer.
 
 use super::*;
-use crate::std::*;
 
 /// BTB.
 #[derive(Debug, Default, Clone, Copy)]

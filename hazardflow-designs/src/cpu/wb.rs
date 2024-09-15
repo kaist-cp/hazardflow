@@ -31,10 +31,8 @@ impl Register {
 /// Hazard from writeback stage to memory stage.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct WbR {
-    /// Writeback.
-    ///
-    /// It contains the writeback address and data.
-    pub wb: HOption<Register>,
+    /// Bypassed data from WB.
+    pub bypass_from_wb: HOption<Register>,
 
     /// Register file.
     pub rf: Regfile,
@@ -43,7 +41,7 @@ pub struct WbR {
 /// Writeback stage.
 pub fn wb(i: I<VrH<MemEP, WbR>, { Dep::Demanding }>) {
     i.map_resolver_inner::<(HOption<MemEP>, Regfile)>(|(wb, rf)| WbR {
-        wb: wb.and_then(|p| p.wb.map(|reg| Register::new(reg.addr, reg.data))),
+        bypass_from_wb: wb.and_then(|p| p.wb.map(|reg| Register::new(reg.addr, reg.data))),
         rf,
     })
     .reg_fwd(true)

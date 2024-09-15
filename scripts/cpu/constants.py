@@ -15,17 +15,17 @@ BENCHES = [
 ]
 # Cached CPI values for baseline
 BASELINE_CPI = {
-    "aes": 1.2000873267110577,
-    "coremark": 1.5222068826183581,
-    "gemm": 1.5291745730550284,
-    "radix": 1.2879425703930862,
+    "aes": 1.1996944565691838,
+    "coremark": 1.522181254945536,
+    "gemm": 1.5291416003622484,
+    "radix": 1.2878887138814936,
 }
 # Cached CPI values for branch prediction
 BRANCH_PREDICTION_CPI = {
-    "aes": 1.073133514986376,
-    "coremark": 1.1979357129607546,
-    "gemm": 1.181595521343597,
-    "radix": 1.0883295248415745,
+    "aes": 1.0727827413379822,
+    "coremark": 1.1978880983610902,
+    "gemm": 1.1815364622382167,
+    "radix": 1.0882910684208666,
 }
 
 FORMAT = "%(message)s"  # Logger format

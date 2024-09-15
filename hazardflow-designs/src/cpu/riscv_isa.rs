@@ -9,7 +9,7 @@
 #![allow(missing_docs)]
 
 use super::alu::*;
-use super::csr::{CsrCommand, CsrInfo};
+use super::csr::{CsrCmd, CsrInfo};
 use super::mem_interface::*;
 use super::wb::Register;
 use crate::prelude::*;
@@ -61,6 +61,29 @@ pub struct Instruction {
     jmp_target_sel: HOption<JmpTargetSel>,
     op1_sel: HOption<Op1Sel>,
     op2_sel: HOption<Op2Sel>,
+}
+
+/// Extracts immediate for B-type instruction.
+#[inline]
+pub fn imm_btype(value: U<32>) -> U<32> {
+    false
+        .repeat::<1>()
+        .append(value.clip_const::<4>(8))
+        .append(value.clip_const::<6>(25))
+        .append(value[7].repeat::<1>())
+        .append(value[31].repeat::<1>())
+        .append(value[31].repeat::<19>())
+}
+
+/// Extracts immediate for J-type instruction.
+#[inline]
+pub fn imm_jtype(value: U<32>) -> U<32> {
+    false
+        .repeat::<1>()
+        .append(value.clip_const::<10>(21))
+        .append(value[20].repeat::<1>())
+        .append(value.clip_const::<8>(12))
+        .append(value[31].repeat::<12>())
 }
 
 impl Instruction {
@@ -148,6 +171,7 @@ impl From<u32> for Instruction {
         let is_ecall = value == 0b00000000000000000000000001110011;
         let is_ebreak = value == 0b00000000000100000000000001110011;
 
+        /* RV32/RV64 Zicsr Standard Extension */
         let is_csrrw = funct3 == 0b001 && opcode == 0b1110011;
         let is_csrrs = funct3 == 0b010 && opcode == 0b1110011;
         let is_csrrc = funct3 == 0b011 && opcode == 0b1110011;
@@ -201,10 +225,6 @@ impl From<u32> for Instruction {
         let rs2_addr = value.clip_const::<5>(20);
         let rd_addr = value.clip_const::<5>(7);
         let csr_addr = value.clip_const::<12>(20);
-        let itype_sext: U<32> = {
-            let sign_bit = value.clip_const::<1>(31);
-            (value.clip_const::<11>(20)).append(sign_bit.repeat::<21>().concat())
-        };
 
         let rs1_addr = if is_rtype || is_itype || is_stype || is_btype || is_csr { Some(rs1_addr) } else { None };
         let rs2_addr = if is_rtype || is_stype || is_btype { Some(rs2_addr) } else { None };
@@ -216,33 +236,24 @@ impl From<u32> for Instruction {
             None
         };
 
+        let imm_utype = false.repeat::<12>().append(value.clip_const::<20>(12));
+        let imm_itype = value.clip_const::<11>(20).append(value[31].repeat::<21>());
+        let imm_stype = value.clip_const::<5>(7).append(value.clip_const::<6>(25)).append(value[31].repeat::<21>());
+
         let imm = if is_lui || is_auipc {
-            (value >> 12) << 12
+            imm_utype
         } else if is_jal {
-            let imm_20 = value.clip_const::<1>(31); // this should be sign-extneded
-            let imm_10_1 = value.clip_const::<10>(21);
-            let imm_11 = value.clip_const::<1>(20);
-            let imm_19_12 = value.clip_const::<8>(12);
-            let imm_0 = U::from(false);
-            imm_0.append(imm_10_1).append(imm_11).append(imm_19_12).append(imm_20.repeat::<12>().concat())
+            imm_jtype(value)
         } else if is_jalr {
-            itype_sext
+            imm_itype
         } else if is_btype {
-            let imm_12 = value.clip_const::<1>(31); // this should be sign-extended
-            let imm_10_5 = value.clip_const::<6>(25);
-            let imm_4_1 = value.clip_const::<4>(8);
-            let imm_11 = value.clip_const::<1>(7);
-            let imm_0 = U::from(false);
-            imm_0.append(imm_4_1).append(imm_10_5).append(imm_11).append(imm_12.repeat::<20>().concat())
+            imm_btype(value)
         } else if is_lb || is_lh || is_lw || is_lbu || is_lhu {
-            itype_sext
+            imm_itype
         } else if is_sb || is_sh || is_sw {
-            let imm_11 = value.clip_const::<1>(31); // this should be sign-extneded
-            let imm_10_5 = value.clip_const::<6>(25);
-            let imm_4_0 = value.clip_const::<5>(7);
-            imm_4_0.append(imm_10_5).append(imm_11.repeat::<21>().concat())
+            imm_stype
         } else if is_addi || is_slti || is_sltiu || is_xori || is_ori || is_andi {
-            itype_sext
+            imm_itype
         } else if is_slli || is_srli || is_srai {
             value.clip_const::<5>(20).append(U::<27>::from(0u32))
         } else if is_csri {
@@ -315,19 +326,13 @@ impl From<u32> for Instruction {
         let imm = u32::from(imm);
 
         let csr_info = if is_csrrc || is_csrrci {
-            Some(CsrInfo {
-                addr: csr_addr,
-                cmd: if rs1_addr == Some(U::from(0)) { CsrCommand::R } else { CsrCommand::C },
-            })
+            Some(CsrInfo { addr: csr_addr, cmd: if rs1_addr == Some(U::from(0)) { CsrCmd::R } else { CsrCmd::C } })
         } else if is_csrrw || is_csrrwi {
-            Some(CsrInfo { addr: csr_addr, cmd: CsrCommand::W })
+            Some(CsrInfo { addr: csr_addr, cmd: CsrCmd::W })
         } else if is_csrrs || is_csrrsi {
-            Some(CsrInfo {
-                addr: csr_addr,
-                cmd: if rs1_addr == Some(U::from(0)) { CsrCommand::R } else { CsrCommand::S },
-            })
+            Some(CsrInfo { addr: csr_addr, cmd: if rs1_addr == Some(U::from(0)) { CsrCmd::R } else { CsrCmd::S } })
         } else if is_ecall || is_ebreak || is_mret {
-            Some(CsrInfo { addr: csr_addr, cmd: CsrCommand::I })
+            Some(CsrInfo { addr: csr_addr, cmd: CsrCmd::I })
         } else {
             None
         };
