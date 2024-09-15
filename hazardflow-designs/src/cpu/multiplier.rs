@@ -1,6 +1,6 @@
 //! Multiplier.
 
-use crate::std::*;
+use super::*;
 
 /// Multiplier function.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

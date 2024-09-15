@@ -1,7 +1,6 @@
 //! RISCV 5-stage pipeline CPU
 
 use super::*;
-use crate::std::*;
 
 const START_ADDR: u32 = 0x80000000;
 

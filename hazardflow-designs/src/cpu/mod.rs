@@ -22,6 +22,7 @@ pub mod wb;
 
 pub use alu::*;
 pub use branch_predictor::*;
+pub use csr::*;
 pub use decode::*;
 pub use exe::*;
 pub use fetch::*;
@@ -32,3 +33,4 @@ pub use riscv_isa::*;
 pub use wb::*;
 
 use crate::prelude::*;
+use crate::std::*;

@@ -8,18 +8,14 @@
 
 #![allow(missing_docs)]
 
-use super::alu::*;
-use super::csr::{CsrCmd, CsrInfo};
-use super::mem_interface::*;
-use super::wb::Register;
-use crate::prelude::*;
+use super::*;
 
 // =========== Constants =========== //
 /// CSR Address is 12-bit.
 pub const LEN_CSR_ADDR: usize = 12;
 
-/// There are 32 integer registers, thus encoded as 5-bit.
-pub const LEN_REG_ADDR: usize = 5;
+/// Number of registers.
+pub const REGS: usize = 32;
 
 /// Op1 data selector.
 #[derive(Debug, Clone, Copy)]
@@ -50,9 +46,9 @@ pub enum JmpTargetSel {
 pub struct Instruction {
     pub is_illegal: bool,
     pub br_type: BranchType,
-    pub rs1_addr: HOption<U<LEN_REG_ADDR>>,
-    pub rs2_addr: HOption<U<LEN_REG_ADDR>>,
-    pub rd_addr: HOption<U<LEN_REG_ADDR>>,
+    pub rs1_addr: HOption<U<{ clog2(REGS) }>>,
+    pub rs2_addr: HOption<U<{ clog2(REGS) }>>,
+    pub rd_addr: HOption<U<{ clog2(REGS) }>>,
     pub imm: u32,
     pub alu_op: BaseAluOp,
     pub wb_sel: HOption<WbSel>,

@@ -1,13 +1,7 @@
 //! Writeback stage.
 
 use super::*;
-use crate::prelude::*;
-use crate::std::clog2;
-use crate::std::hazard::*;
-use crate::std::valid_ready::*;
 
-/// Number of registers.
-pub const REGS: usize = 32;
 /// Register file.
 pub type Regfile = Array<u32, REGS>;
 
@@ -38,43 +32,47 @@ pub struct WbR {
     pub rf: Regfile,
 }
 
+impl WbR {
+    /// Creates a new writeback register.
+    pub fn new(bypass_from_wb: HOption<Register>, rf: Regfile) -> Self {
+        Self { bypass_from_wb, rf }
+    }
+}
+
 /// Writeback stage.
 pub fn wb(i: I<VrH<MemEP, WbR>, { Dep::Demanding }>) {
-    i.map_resolver_inner::<(HOption<MemEP>, Regfile)>(|(wb, rf)| WbR {
-        bypass_from_wb: wb.and_then(|p| p.wb.map(|reg| Register::new(reg.addr, reg.data))),
-        rf,
-    })
-    .reg_fwd(true)
-    .sink_fsm_map(0.repeat(), |ip, rf| {
-        let ir = Ready::valid((ip, rf));
-        let rf_next = match ip {
-            Some(MemEP { wb: Some(r), .. }) => rf.set(r.addr, r.data),
-            _ => rf,
-        };
+    i.map_resolver_inner::<(HOption<MemEP>, Regfile)>(|(wb, rf)| WbR::new(wb.and_then(|p| p.wb), rf))
+        .reg_fwd(true)
+        .sink_fsm_map(0.repeat(), |ip, rf| {
+            let ir = Ready::valid((ip, rf));
+            let rf_next = match ip {
+                Some(MemEP { wb: Some(r), .. }) => rf.set(r.addr, r.data),
+                _ => rf,
+            };
 
-        if let Some(p) = ip {
-            match p.wb {
-                Some(r) => {
-                    display!(
-                        "retire=[1] pc=[%x] inst=[%x] write=[r%d=%x]",
-                        ip.map(|x| x.debug_pc).unwrap_or(0),
-                        ip.map(|x| x.debug_inst).unwrap_or(0),
-                        r.addr,
-                        r.data
-                    );
+            if let Some(p) = ip {
+                match p.wb {
+                    Some(r) => {
+                        display!(
+                            "retire=[1] pc=[%x] inst=[%x] write=[r%d=%x]",
+                            ip.map(|x| x.debug_pc).unwrap_or(0),
+                            ip.map(|x| x.debug_inst).unwrap_or(0),
+                            r.addr,
+                            r.data
+                        );
+                    }
+                    None => {
+                        display!(
+                            "retire=[1] pc=[%x] inst=[%x]",
+                            ip.map(|x| x.debug_pc).unwrap_or(0),
+                            ip.map(|x| x.debug_inst).unwrap_or(0)
+                        );
+                    }
                 }
-                None => {
-                    display!(
-                        "retire=[1] pc=[%x] inst=[%x]",
-                        ip.map(|x| x.debug_pc).unwrap_or(0),
-                        ip.map(|x| x.debug_inst).unwrap_or(0)
-                    );
-                }
+            } else {
+                display!("retire=[0]");
             }
-        } else {
-            display!("retire=[0]");
-        }
 
-        (ir, rf_next)
-    })
+            (ir, rf_next)
+        })
 }

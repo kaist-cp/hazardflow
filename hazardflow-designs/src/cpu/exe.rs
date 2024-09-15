@@ -1,8 +1,6 @@
 //! Execute stage.
 
 use super::*;
-use crate::prelude::*;
-use crate::std::*;
 
 /// Payload from execute stage to memory stage.
 #[derive(Debug, Clone, Copy)]
@@ -10,7 +8,7 @@ pub struct ExeEP {
     /// Writeback.
     ///
     /// It contains the writeback address and selector.
-    pub wb: HOption<(U<LEN_REG_ADDR>, WbSel)>,
+    pub wb: HOption<(U<{ clog2(REGS) }>, WbSel)>,
 
     /// ALU output.
     pub alu_out: u32,
@@ -48,7 +46,7 @@ pub struct ExeR {
     /// Stall.
     ///
     /// It contains the rd address of load or CSR instructions.
-    pub stall: HOption<U<LEN_REG_ADDR>>,
+    pub stall: HOption<U<{ clog2(REGS) }>>,
 
     /// Indicates that the pipeline should be redirected.
     pub redirect: HOption<u32>,
@@ -59,7 +57,12 @@ pub struct ExeR {
 
 impl ExeR {
     /// Creates a new execute resolver.
-    pub fn new(memr: MemR, bypass: HOption<Register>, stall: HOption<U<LEN_REG_ADDR>>, redirect: HOption<u32>) -> Self {
+    pub fn new(
+        memr: MemR,
+        bypass: HOption<Register>,
+        stall: HOption<U<{ clog2(REGS) }>>,
+        redirect: HOption<u32>,
+    ) -> Self {
         Self {
             bypass_from_exe: bypass,
             bypass_from_mem: memr.bypass_from_mem,

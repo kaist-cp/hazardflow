@@ -1,8 +1,6 @@
 //! Fetch stage.
 
 use super::*;
-use crate::std::hazard::*;
-use crate::std::*;
 
 /// Payload from fetch stage to decode stage.
 #[derive(Debug, Clone, Copy)]

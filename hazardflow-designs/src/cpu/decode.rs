@@ -1,8 +1,6 @@
 //! Decode stage.
 
 use super::*;
-use crate::prelude::*;
-use crate::std::*;
 
 /// Payload from decode stage to execute stage.
 #[derive(Debug, Clone, Copy)]
@@ -10,7 +8,7 @@ pub struct DecEP {
     /// Writeback.
     ///
     /// It contains the writeback address and selector.
-    pub wb: HOption<(U<LEN_REG_ADDR>, WbSel)>,
+    pub wb: HOption<(U<{ clog2(REGS) }>, WbSel)>,
 
     /// Store data.
     ///
@@ -83,7 +81,7 @@ fn gen_payload(ip: FetEP, inst: Instruction, er: ExeR) -> HOption<DecEP> {
     let rs1_addr = inst.rs1_addr;
     let rs2_addr = inst.rs2_addr;
 
-    let bypass = |addr: U<LEN_REG_ADDR>| -> u32 {
+    let bypass = |addr: U<{ clog2(REGS) }>| -> u32 {
         // Check that the data can be bypassed.
         let from_exe = er.bypass_from_exe.filter(|r| addr == r.addr).map(|r| r.data);
         let from_mem = er.bypass_from_mem.filter(|r| addr == r.addr).map(|r| r.data);

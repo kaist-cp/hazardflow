@@ -4,11 +4,7 @@
 //!
 //! - Constants: <https://github.com/chipsalliance/rocket-chip/blob/master/src/main/scala/rocket/CSR.scala>
 
-use super::exe::ExeEP;
-use super::riscv_isa::LEN_CSR_ADDR;
-use super::wb::WbR;
-use crate::std::hazard::*;
-use crate::std::*;
+use super::*;
 
 /// Contains information that is needed to interact with CSR.
 #[derive(Debug, Clone, Copy)]

@@ -1,9 +1,6 @@
 //! Memory stage.
 
-use super::csr::*;
 use super::*;
-use crate::std::hazard::*;
-use crate::std::*;
 
 /// Operation at memory stage.
 #[derive(Debug, Clone, Copy)]
