@@ -1,17 +1,28 @@
 //! ALU.
 
+use super::*;
+
 /// Alu Input
 /// Belongs to DecodeEP, and this will be used to determine what to operate with what value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AluInput {
     /// Operator.
-    pub op: BaseAluOp,
+    pub op: AluOp,
 
     /// First operand data.
     pub op1_data: u32,
 
     /// Second operand data.
     pub op2_data: u32,
+}
+
+/// ALU operation signal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AluOp {
+    /// Base op.
+    Base(BaseAluOp),
+    /// M extension op.
+    Mext(MulOp),
 }
 
 /// Base ALU.

@@ -144,7 +144,10 @@ fn gen_payload(ip: DecEP, alu_out: u32, memr: MemR) -> HOption<ExeEP> {
 pub fn exe(i: I<VrH<DecEP, ExeR>, { Dep::Demanding }>) -> I<VrH<ExeEP, MemR>, { Dep::Demanding }> {
     i.map_resolver_inner::<(HOption<(DecEP, u32)>, MemR)>(gen_resolver)
         .reg_fwd(true)
-        .map(|p| (p, exe_alu(p.alu_input.op1_data, p.alu_input.op2_data, p.alu_input.op)))
+        .map(|p| match p.alu_input.op {
+            AluOp::Base(op) => (p, exe_alu(p.alu_input.op1_data, p.alu_input.op2_data, op)),
+            AluOp::Mext(_) => todo!("assignment 3"),
+        })
         .map_resolver_block_with_p::<VrH<(DecEP, u32), MemR>>(|ip, er| (ip, er.inner))
         .filter_map_drop_with_r(|(ip, alu_out), er| gen_payload(ip, alu_out, er.inner))
 }

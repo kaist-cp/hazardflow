@@ -50,7 +50,7 @@ pub struct Instruction {
     pub rs2_addr: HOption<U<{ clog2(REGS) }>>,
     pub rd_addr: HOption<U<{ clog2(REGS) }>>,
     pub imm: u32,
-    pub alu_op: BaseAluOp,
+    pub alu_op: AluOp,
     pub wb_sel: HOption<WbSel>,
     pub csr_info: HOption<CsrInfo>,
     pub mem_info: HOption<(MemOpFcn, MemOpTyp)>,
@@ -259,43 +259,43 @@ impl From<u32> for Instruction {
         };
 
         let alu_op = if is_sll || is_slli {
-            BaseAluOp::Sll
+            AluOp::Base(BaseAluOp::Sll)
         } else if is_add || is_addi || is_jalr {
-            BaseAluOp::Add
+            AluOp::Base(BaseAluOp::Add)
         } else if is_sub {
-            BaseAluOp::Sub
+            AluOp::Base(BaseAluOp::Sub)
         } else if is_slt || is_slti {
-            BaseAluOp::Slt
+            AluOp::Base(BaseAluOp::Slt)
         } else if is_sltu || is_sltiu {
-            BaseAluOp::Sltu
+            AluOp::Base(BaseAluOp::Sltu)
         } else if is_and || is_andi {
-            BaseAluOp::And
+            AluOp::Base(BaseAluOp::And)
         } else if is_or || is_ori {
-            BaseAluOp::Or
+            AluOp::Base(BaseAluOp::Or)
         } else if is_xor || is_xori {
-            BaseAluOp::Xor
+            AluOp::Base(BaseAluOp::Xor)
         } else if is_sra || is_srai {
-            BaseAluOp::Sra
+            AluOp::Base(BaseAluOp::Sra)
         } else if is_srl || is_srli {
-            BaseAluOp::Srl
+            AluOp::Base(BaseAluOp::Srl)
         } else if is_lw || is_lh || is_lhu || is_lb || is_lbu || is_jtype || is_stype || is_auipc {
-            BaseAluOp::Add
+            AluOp::Base(BaseAluOp::Add)
         } else if is_lui {
-            BaseAluOp::CopyOp2
+            AluOp::Base(BaseAluOp::CopyOp2)
         } else if is_beq || is_bne {
-            BaseAluOp::Xor
+            AluOp::Base(BaseAluOp::Xor)
         } else if is_bge {
-            BaseAluOp::Slt
+            AluOp::Base(BaseAluOp::Slt)
         } else if is_bgeu {
-            BaseAluOp::Sltu
+            AluOp::Base(BaseAluOp::Sltu)
         } else if is_blt {
-            BaseAluOp::Slt
+            AluOp::Base(BaseAluOp::Slt)
         } else if is_bltu {
-            BaseAluOp::Sltu
+            AluOp::Base(BaseAluOp::Sltu)
         } else if is_csr || is_csri {
-            BaseAluOp::CopyOp1
+            AluOp::Base(BaseAluOp::CopyOp1)
         } else {
-            BaseAluOp::Zero
+            AluOp::Base(BaseAluOp::Zero)
         };
 
         let wb_sel = if is_rtype {
