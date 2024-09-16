@@ -2,8 +2,7 @@
 
 use super::*;
 
-/// Alu Input
-/// Belongs to DecodeEP, and this will be used to determine what to operate with what value.
+/// ALU input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AluInput {
     /// Operator.
@@ -70,7 +69,7 @@ pub enum BaseAluOp {
 
 /// Execute alu
 pub fn exe_alu(alu_op1: u32, alu_op2: u32, op: BaseAluOp) -> u32 {
-    let alu_shamt = alu_op2 & 0x1f; // TODO: Use `I<5>` instead of `u32`.
+    let alu_shamt = alu_op2 & 0x1f;
 
     match op {
         BaseAluOp::Add => alu_op1 + alu_op2,

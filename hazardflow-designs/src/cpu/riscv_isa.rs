@@ -17,7 +17,7 @@ pub const LEN_CSR_ADDR: usize = 12;
 /// Number of registers.
 pub const REGS: usize = 32;
 
-/// Op1 data selector.
+/// ALU first operand data selector.
 #[derive(Debug, Clone, Copy)]
 pub enum Op1Sel {
     Rs1,
@@ -25,7 +25,7 @@ pub enum Op1Sel {
     Imm,
 }
 
-/// Op2 data selector.
+/// ALU second operand data selector.
 #[derive(Debug, Clone, Copy)]
 pub enum Op2Sel {
     Four,
@@ -33,19 +33,13 @@ pub enum Op2Sel {
     Rs2,
 }
 
-/// Jmp target selector.
-#[derive(Debug, Clone, Copy)]
-pub enum JmpTargetSel {
-    BType,
-    JType,
-    Jalr,
-}
-
-/// Instruction2.
+/// Decoded instruction.
+///
+/// It does not contain the resolved register values.
 #[derive(Debug, Clone, Copy)]
 pub struct Instruction {
     pub is_illegal: bool,
-    pub br_type: BranchType,
+    pub br_type: HOption<BrType>,
     pub rs1_addr: HOption<U<{ clog2(REGS) }>>,
     pub rs2_addr: HOption<U<{ clog2(REGS) }>>,
     pub rd_addr: HOption<U<{ clog2(REGS) }>>,
@@ -54,7 +48,6 @@ pub struct Instruction {
     pub wb_sel: HOption<WbSel>,
     pub csr_info: HOption<CsrInfo>,
     pub mem_info: HOption<(MemOpFcn, MemOpTyp)>,
-    jmp_target_sel: HOption<JmpTargetSel>,
     op1_sel: HOption<Op1Sel>,
     op2_sel: HOption<Op2Sel>,
 }
@@ -103,14 +96,12 @@ impl Instruction {
             .unwrap_or(0)
     }
 
-    pub fn jmp_target(self, rs1: HOption<Register>, pc: u32) -> (u32, u32) {
-        self.jmp_target_sel
-            .map(|sel| match sel {
-                JmpTargetSel::BType => (pc, self.imm),
-                JmpTargetSel::JType => (self.imm, pc),
-                JmpTargetSel::Jalr => (rs1.unwrap().data, self.imm),
-            })
-            .unwrap_or((0, 0))
+    pub fn br_info(self, rs1: HOption<Register>, pc: u32) -> HOption<BrInfo> {
+        self.br_type.map(|typ| BrInfo {
+            typ,
+            base: if matches!(typ, BrType::Jalr) { rs1.unwrap().data } else { pc },
+            offset: self.imm,
+        })
     }
 }
 
@@ -199,21 +190,23 @@ impl From<u32> for Instruction {
         let is_csri = is_csrrwi || is_csrrsi || is_csrrci;
 
         let br_type = if is_beq {
-            BranchType::Eq
+            Some(BrType::Beq)
         } else if is_bne {
-            BranchType::Ne
+            Some(BrType::Bne)
         } else if is_bge {
-            BranchType::Ge
+            Some(BrType::Bge)
         } else if is_bgeu {
-            BranchType::Geu
+            Some(BrType::Bgeu)
         } else if is_blt {
-            BranchType::Lt
+            Some(BrType::Blt)
         } else if is_bltu {
-            BranchType::Ltu
-        } else if is_jtype || is_jalr {
-            BranchType::J
+            Some(BrType::Bltu)
+        } else if is_jtype {
+            Some(BrType::Jal)
+        } else if is_jalr {
+            Some(BrType::Jalr)
         } else {
-            BranchType::N
+            None
         };
 
         let value = U::<32>::from(value);
@@ -236,24 +229,22 @@ impl From<u32> for Instruction {
         let imm_itype = value.clip_const::<11>(20).append(value[31].repeat::<21>());
         let imm_stype = value.clip_const::<5>(7).append(value.clip_const::<6>(25)).append(value[31].repeat::<21>());
 
-        let imm = if is_lui || is_auipc {
-            imm_utype
-        } else if is_jal {
-            imm_jtype(value)
-        } else if is_jalr {
-            imm_itype
+        let imm = if is_itype {
+            if is_slli || is_srli || is_srai {
+                value.clip_const::<5>(20).append(U::<27>::from(0u32))
+            } else {
+                imm_itype
+            }
+        } else if is_stype {
+            imm_stype
         } else if is_btype {
             imm_btype(value)
-        } else if is_lb || is_lh || is_lw || is_lbu || is_lhu {
-            imm_itype
-        } else if is_sb || is_sh || is_sw {
-            imm_stype
-        } else if is_addi || is_slti || is_sltiu || is_xori || is_ori || is_andi {
-            imm_itype
-        } else if is_slli || is_srli || is_srai {
-            value.clip_const::<5>(20).append(U::<27>::from(0u32))
+        } else if is_utype {
+            imm_utype
+        } else if is_jtype {
+            imm_jtype(value)
         } else if is_csri {
-            value.clip_const::<5>(15).append(0.into_u())
+            value.clip_const::<5>(15).append(false.repeat::<27>())
         } else {
             U::from(0)
         };
@@ -303,15 +294,11 @@ impl From<u32> for Instruction {
         } else if is_itype {
             if is_lw || is_lh || is_lhu || is_lb || is_lbu {
                 Some(WbSel::Mem)
-            } else if is_jalr {
-                Some(WbSel::Pc4)
             } else {
                 Some(WbSel::Alu)
             }
-        } else if is_utype {
+        } else if is_utype || is_jtype {
             Some(WbSel::Alu)
-        } else if is_jtype {
-            Some(WbSel::Pc4)
         } else if is_stype || is_btype {
             None
         } else if is_csr || is_csri {
@@ -353,7 +340,7 @@ impl From<u32> for Instruction {
             None
         };
 
-        let op1_sel = if is_auipc || is_jtype {
+        let op1_sel = if is_auipc || is_jtype || is_jalr {
             Some(Op1Sel::Pc)
         } else if is_csri {
             Some(Op1Sel::Imm)
@@ -365,22 +352,10 @@ impl From<u32> for Instruction {
 
         let op2_sel = if is_rtype || is_btype {
             Some(Op2Sel::Rs2)
-        } else if is_jtype {
+        } else if is_jtype || is_jalr {
             Some(Op2Sel::Four)
         } else if is_itype || is_stype || is_utype {
             Some(Op2Sel::Imm)
-        } else {
-            None
-        };
-
-        let jmp_target_sel = if is_btype {
-            Some(JmpTargetSel::BType)
-        } else if is_jtype {
-            // JAL: Jump to `imm`.
-            Some(JmpTargetSel::JType)
-        } else if is_jalr {
-            // JALR: Jump to `rs1` + `imm`.
-            Some(JmpTargetSel::Jalr)
         } else {
             None
         };
@@ -396,54 +371,64 @@ impl From<u32> for Instruction {
             wb_sel,
             csr_info,
             mem_info,
-            jmp_target_sel,
             op1_sel,
             op2_sel,
         }
     }
 }
 
-/// Branch Type
-// NOTE: We ordered variants for comb logic optimization
+/// Branch information.
 #[derive(Debug, Clone, Copy)]
-pub enum BranchType {
-    /// Next
-    N,
+pub struct BrInfo {
+    /// Branch type.
+    pub typ: BrType,
 
-    /// Jump
-    J,
+    /// Base address.
+    pub base: u32,
 
-    /// Branch on Equal
-    Eq,
-
-    /// Branch on NotEqual
-    Ne,
-
-    /// Branch on Greater/Equal
-    Ge,
-
-    /// Branch on Less Than
-    Lt,
-
-    /// Branch on Greater/Equal Unsigned
-    Geu,
-
-    /// Branch on Less Than Unsigned
-    Ltu,
+    /// Offset.
+    pub offset: u32,
 }
 
-/// Writeback Select Signal
+/// Branch type.
+#[derive(Debug, Clone, Copy)]
+pub enum BrType {
+    /// JAL.
+    Jal,
+
+    /// JALR.
+    Jalr,
+
+    /// Branch on equal.
+    Beq,
+
+    /// Branch on not equal.
+    Bne,
+
+    /// Branch on greater or equal.
+    Bge,
+
+    /// Branch on less.
+    Blt,
+
+    /// Branch on greater or equal (unsigned).
+    Bgeu,
+
+    /// Branch on less (unsigned).
+    Bltu,
+}
+
+/// Writeback selector.
+///
+/// Indicates which value should be writeback to the regfile.
 #[derive(Debug, Clone, Copy)]
 pub enum WbSel {
-    /// ALU
+    /// Writeback ALU output (e.g., `add`, `sub`, ...).
     Alu,
 
-    /// Memory
+    /// Writeback DMEM response (e.g., `lb`, `lh`, ...).
     Mem,
 
-    /// PC + 4
-    Pc4,
-
-    /// CSR
+    /// Writeback CSR response (e.g., `csrr`, `csrw`, ...).
     Csr,
 }

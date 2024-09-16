@@ -41,17 +41,17 @@ impl WbR {
 
 /// Writeback stage.
 pub fn wb(i: I<VrH<MemEP, WbR>, { Dep::Demanding }>) {
-    i.map_resolver_inner::<(HOption<MemEP>, Regfile)>(|(wb, rf)| WbR::new(wb.and_then(|p| p.wb), rf))
+    i.map_resolver_inner::<(HOption<MemEP>, Regfile)>(|(p, rf)| WbR::new(p.and_then(|p| p.wb_info), rf))
         .reg_fwd(true)
-        .sink_fsm_map(0.repeat(), |ip, rf| {
+        .sink_fsm_map(Regfile::default(), |ip, rf| {
             let ir = Ready::valid((ip, rf));
             let rf_next = match ip {
-                Some(MemEP { wb: Some(r), .. }) => rf.set(r.addr, r.data),
+                Some(MemEP { wb_info: Some(r), .. }) => rf.set(r.addr, r.data),
                 _ => rf,
             };
 
             if let Some(p) = ip {
-                match p.wb {
+                match p.wb_info {
                     Some(r) => {
                         display!(
                             "retire=[1] pc=[%x] inst=[%x] write=[r%d=%x]",

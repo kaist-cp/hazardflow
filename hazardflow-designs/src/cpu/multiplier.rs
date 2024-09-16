@@ -5,21 +5,21 @@ use super::*;
 /// Multiplier function.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MulOp {
-    /// TODO: Documentation
+    /// MUL operation.
     Mul,
-    /// TODO: Documentation
+    /// MULH operation.
     Mulh,
-    /// TODO: Documentation
+    /// MULHU operation.
     Mulhu,
-    /// TODO: Documentation
+    /// MULHSU operation.
     Mulhsu,
-    /// TODO: Documentation
+    /// DIV operation.
     Div,
-    /// TODO: Documentation
+    /// REM operation.
     Rem,
-    /// TODO: Documentation
+    /// DIVU operation.
     Divu,
-    /// TODO: Documentation
+    /// REMU operation.
     Remu,
 }
 
@@ -48,7 +48,6 @@ pub struct MulReq {
     pub in2: U<32>,
 }
 
-/// TODO: Documentation
 #[derive(Debug, Default, Clone, Copy)]
 enum Status {
     #[default]

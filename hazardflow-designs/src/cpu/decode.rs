@@ -5,37 +5,30 @@ use super::*;
 /// Payload from decode stage to execute stage.
 #[derive(Debug, Clone, Copy)]
 pub struct DecEP {
-    /// Writeback.
+    /// Writeback information.
     ///
     /// It contains the writeback address and selector.
-    pub wb: HOption<(U<{ clog2(REGS) }>, WbSel)>,
+    pub wb_info: HOption<(U<{ clog2(REGS) }>, WbSel)>,
 
-    /// Store data.
-    ///
-    /// The `SW`, `SH`, and `SB` instructions store 32-bit, 16-bit, and 8-bit values from the low bits of `rs2` to memory.
-    pub st_data: HOption<u32>,
-
-    /// Branch type.
-    pub br_type: BranchType,
-
-    /// Jump target.
-    ///
-    /// It contains the base address and offset.
-    pub jmp_target: (u32, u32),
+    /// Branch information.
+    pub br_info: HOption<BrInfo>,
 
     /// ALU input.
     pub alu_input: AluInput,
 
-    /// Memory operation.
-    pub mem_op: MemOp,
+    /// Memory information.
+    pub mem_info: HOption<MemInfo>,
 
-    /// Indicates that the instruction is illegal/unsupported or not.
+    /// CSR information.
+    pub csr_info: HOption<CsrInfo>,
+
+    /// Indicates that the instruction is illegal or not.
     pub is_illegal: bool,
 
     /// PC.
     pub pc: u32,
 
-    /// Instruciton (To calculate CPI)
+    /// Instruction (for debugging purpose).
     pub debug_inst: u32,
 }
 
@@ -109,21 +102,18 @@ fn gen_payload(ip: FetEP, inst: Instruction, er: ExeR) -> HOption<DecEP> {
         AluInput { op: inst.alu_op, op1_data, op2_data }
     };
 
-    let jmp_target = inst.jmp_target(rs1, ip.imem_resp.addr);
+    let br_info = inst.br_info(rs1, ip.imem_resp.addr);
 
     Some(DecEP {
-        wb: inst.rd_addr.zip(inst.wb_sel),
-        st_data: rs2.map(|rs2| rs2.data),
-        br_type: inst.br_type,
-        jmp_target,
+        wb_info: inst.rd_addr.zip(inst.wb_sel),
+        br_info,
         alu_input,
-        mem_op: if let Some((fcn, typ)) = inst.mem_info {
-            MemOp::Dmem { fcn, typ }
-        } else if let Some(csr_info) = inst.csr_info {
-            MemOp::Csr(csr_info)
-        } else {
-            MemOp::None
-        },
+        mem_info: inst.mem_info.map(|(fcn, typ)| MemInfo {
+            fcn,
+            typ,
+            data: rs2.map(|r| r.data).unwrap_or(unsafe { x() }),
+        }),
+        csr_info: inst.csr_info,
         is_illegal: inst.is_illegal,
         pc: ip.imem_resp.addr,
         debug_inst: ip.imem_resp.data,

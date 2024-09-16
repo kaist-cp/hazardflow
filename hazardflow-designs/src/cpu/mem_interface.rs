@@ -74,10 +74,3 @@ pub struct MemRespWithAddr {
     /// address
     pub addr: u32,
 }
-
-/// Memory Response.
-#[derive(Debug, Clone, Copy)]
-pub struct MemResp {
-    /// data
-    pub data: u32,
-}

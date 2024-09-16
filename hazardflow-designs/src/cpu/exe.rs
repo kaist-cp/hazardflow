@@ -5,29 +5,27 @@ use super::*;
 /// Payload from execute stage to memory stage.
 #[derive(Debug, Clone, Copy)]
 pub struct ExeEP {
-    /// Writeback.
+    /// Writeback information.
     ///
     /// It contains the writeback address and selector.
-    pub wb: HOption<(U<{ clog2(REGS) }>, WbSel)>,
+    pub wb_info: HOption<(U<{ clog2(REGS) }>, WbSel)>,
 
     /// ALU output.
     pub alu_out: u32,
 
-    /// Memory operation.
-    pub mem_op: MemOp,
+    /// Memory information.
+    pub mem_info: HOption<MemInfo>,
 
-    /// Store data.
-    ///
-    /// The `SW`, `SH`, and `SB` instructions store 32-bit, 16-bit, and 8-bit values from the low bits of `rs2` to memory.
-    pub st_data: HOption<u32>,
+    /// CSR information.
+    pub csr_info: HOption<CsrInfo>,
 
-    /// Indicates that exception happened or not.
-    pub exception: bool,
+    /// Indicates that the instruction is illegal or not.
+    pub is_illegal: bool,
 
     /// PC.
     pub pc: u32,
 
-    /// Instruciton (To calculate CPI)
+    /// Instruction (for debugging purpose).
     pub debug_inst: u32,
 }
 
@@ -76,26 +74,23 @@ impl ExeR {
 
 /// Returns redirected PC based on the given payload.
 fn get_redirect(p: DecEP, alu_out: u32) -> HOption<u32> {
-    let target = p.jmp_target.0 + p.jmp_target.1;
+    let Some(br_info) = p.br_info else {
+        return None;
+    };
 
+    let target = br_info.base + br_info.offset;
     let alu_true = alu_out != 0;
 
-    match p.br_type {
-        BranchType::N => None,
-        BranchType::J => {
-            // From J-instruction
-            Some(target)
-        }
-        BranchType::Eq | BranchType::Ge | BranchType::Geu => {
-            // From Br-instruction
+    match br_info.typ {
+        BrType::Jal | BrType::Jalr => Some(target),
+        BrType::Beq | BrType::Bge | BrType::Bgeu => {
             if !alu_true {
                 Some(target)
             } else {
                 None
             }
         }
-        BranchType::Ne | BranchType::Lt | BranchType::Ltu => {
-            // From Br-instruction
+        BrType::Bne | BrType::Blt | BrType::Bltu => {
             if alu_true {
                 Some(target)
             } else {
@@ -110,17 +105,21 @@ fn gen_resolver(er: (HOption<(DecEP, u32)>, MemR)) -> ExeR {
     let (p, memr) = er;
 
     let stall = p.and_then(|(p, _)| {
-        p.wb.and_then(|(addr, wb_sel)| if matches!(wb_sel, WbSel::Mem | WbSel::Csr) { Some(addr) } else { None })
+        p.wb_info.and_then(|(addr, wb_sel)| if matches!(wb_sel, WbSel::Mem | WbSel::Csr) { Some(addr) } else { None })
     });
 
     let Some((p, alu_out)) = p else {
         return ExeR::new(memr, None, stall, None);
     };
 
-    let redirect = get_redirect(p, alu_out);
-    let exer_wb = p.wb.map(|(addr, _)| Register::new(addr, alu_out));
+    let bypass =
+        p.wb_info.and_then(
+            |(addr, wb_sel)| if matches!(wb_sel, WbSel::Alu) { Some(Register::new(addr, alu_out)) } else { None },
+        );
 
-    ExeR::new(memr, exer_wb, stall, redirect)
+    let redirect = get_redirect(p, alu_out);
+
+    ExeR::new(memr, bypass, stall, redirect)
 }
 
 /// Generates payload from execute stage to memory stage.
@@ -130,10 +129,10 @@ fn gen_payload(ip: DecEP, alu_out: u32, memr: MemR) -> HOption<ExeEP> {
     } else {
         Some(ExeEP {
             alu_out,
-            wb: ip.wb,
-            mem_op: ip.mem_op,
-            st_data: ip.st_data,
-            exception: ip.is_illegal,
+            wb_info: ip.wb_info,
+            mem_info: ip.mem_info,
+            csr_info: ip.csr_info,
+            is_illegal: ip.is_illegal,
             pc: ip.pc,
             debug_inst: ip.debug_inst,
         })

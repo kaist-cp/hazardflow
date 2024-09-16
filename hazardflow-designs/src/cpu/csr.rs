@@ -4,6 +4,8 @@
 //!
 //! - Constants: <https://github.com/chipsalliance/rocket-chip/blob/master/src/main/scala/rocket/CSR.scala>
 
+#![allow(missing_docs)]
+
 use super::*;
 
 /// Contains information that is needed to interact with CSR.
@@ -22,47 +24,42 @@ pub struct CsrInfo {
 /// - <https://github.com/chipsalliance/rocket-chip/blob/master/src/main/scala/rocket/CSR.scala#L168-L178>
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CsrCmd {
-    /// TODO: Documentation
-    R = 5,
-    /// TODO: Documentation
-    S = 2,
-    /// TODO: Documentation
-    C = 3,
-    /// TODO: Documentation
     W = 1,
-    /// TODO: Documentation
+    S = 2,
+    C = 3,
     I = 4,
+    R = 5,
 }
 
-/// TODO: Documentation, Add remaining fields
+/// CSR request.
 #[derive(Debug, Clone, Copy)]
 pub struct CsrReq {
-    /// TODO: Documentation
+    /// CSR command.
     pub cmd: CsrCmd,
 
-    /// TODO: Documentation
+    /// Write data.
     pub wdata: u32,
 
-    /// TODO: Documentation
+    /// CSR register.
     pub decode: U<LEN_CSR_ADDR>,
 
-    /// TODO: Documentation
+    /// Exception happened?
     pub exception: bool,
 
-    /// TODO: Documentation
+    /// PC.
     pub pc: u32,
 }
 
-/// TODO: Documentation
+/// CSR response.
 #[derive(Debug, Clone, Copy)]
 pub struct CsrResp {
-    /// TODO: Documentation
+    /// Read data.
     pub rdata: u32,
 
-    /// TODO: Documentation
+    /// Returning from exception?
     pub eret: bool,
 
-    /// TODO: Documentation
+    /// Redirected PC when returning from exception.
     pub evec: u32,
 }
 
@@ -255,12 +252,11 @@ pub fn csr(i: Valid<CsrReq>) -> Valid<CsrResp> {
     })
 }
 
-/// TODO: Documentation
 pub fn csr_wrap<P: Copy>(
-    i: I<VrH<(CsrReq, P), (HOption<(CsrResp, ExeEP)>, WbR)>, { Dep::Helpful }>,
-) -> I<VrH<(CsrResp, P), (HOption<(CsrResp, ExeEP)>, WbR)>, { Dep::Helpful }> {
+    i: I<VrH<(CsrReq, P), HOption<(CsrResp, ExeEP)>>, { Dep::Helpful }>,
+) -> I<VrH<(CsrResp, P), HOption<(CsrResp, ExeEP)>>, { Dep::Helpful }> {
     let (i1, i2) = unsafe {
-        Interface::fsm::<(Valid<CsrReq>, I<VrH<P, (HOption<(CsrResp, ExeEP)>, WbR)>, { Dep::Helpful }>), ()>(
+        Interface::fsm::<(Valid<CsrReq>, I<VrH<P, HOption<(CsrResp, ExeEP)>>, { Dep::Helpful }>), ()>(
             i,
             (),
             |ip, er, s| {
@@ -275,7 +271,7 @@ pub fn csr_wrap<P: Copy>(
     let e1 = i1.comb(csr);
 
     unsafe {
-        (e1, i2).fsm::<I<VrH<(CsrResp, P), (HOption<(CsrResp, ExeEP)>, WbR)>, { Dep::Helpful }>, ()>(
+        (e1, i2).fsm::<I<VrH<(CsrResp, P), HOption<(CsrResp, ExeEP)>>, { Dep::Helpful }>, ()>(
             (),
             |(ip1, ip2), er, s| {
                 let ep = ip1.zip(ip2);
