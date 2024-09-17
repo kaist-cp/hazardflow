@@ -148,5 +148,5 @@ pub fn exe(i: I<VrH<DecEP, ExeR>, { Dep::Demanding }>) -> I<VrH<ExeEP, MemR>, { 
             AluOp::Mext(_) => todo!("assignment 3"),
         })
         .map_resolver_block_with_p::<VrH<(DecEP, u32), MemR>>(|ip, er| (ip, er.inner))
-        .filter_map_drop_with_r(|(ip, alu_out), er| gen_payload(ip, alu_out, er.inner))
+        .filter_map_drop_with_r_inner(|(ip, alu_out), er| gen_payload(ip, alu_out, er))
 }

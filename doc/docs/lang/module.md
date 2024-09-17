@@ -15,14 +15,14 @@ We can construct a module as a class of interface combinators. Please refer to t
 The `comb` method within the interface trait is used to combine the black box module to the given interface and return the egress interface.
 ```rust,noplayground
 fn comb<E: Interface>(self, m: impl FnOnce(Self) -> E) -> E {
-  m(self)
+    m(self)
 }
 ```
 
 - Applying the given interface to the module is essentially applying the module function `m` to the ingress interface.
 - It is useful when we want to combine multiple modules together.
 
-In the CPU core, we can combine the multiple stage modules by using `comb`.
+For example, we can combine multiple stage modules with `comb` in the CPU core.
 
 ```rust,noplayground
 pub fn core(
@@ -40,7 +40,21 @@ pub fn core(
 - `imem` and `dmem` are modules for instruction memory and data memory, respectively.
 - We chain the 5 sub-modules `fetch`, `decode`, `exe`, `mem`, and `wb` by using the `comb` method.
 
-TODO: more module combinators @minseong
+## Module Combinators
+
+We provide some handy module combinators that manipulates modules.
+
+### `from_fn`
+
+TODO(@minseong)
+
+### `seq`
+
+TODO(@minseong)
+
+### `flip`
+
+TODO(@minseong)
 
 <!--TODO: should we introduce the following function?-->
 <!---->

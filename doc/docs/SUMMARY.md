@@ -19,7 +19,14 @@
 
 # Case Studies
 
-- [CPU Core (5-Stage Pipelined)](./examples/cpu.md)
+- [CPU Core (5-Stage Pipelined)](./examples/cpu/overview.md)
+  + [Hazards](./examples/cpu/hazard.md)
+  + [Implementation](./examples/cpu/implementation.md)
+    + [Fetch](./examples/cpu/fetch.md)
+    + [Decode](./examples/cpu/decode.md)
+    + [Execute](./examples/cpu/exe.md)
+    + [Memory](./examples/cpu/mem.md)
+    + [Writeback](./examples/cpu/wb.md)
 - [NPU Core (Based on Systolic Array)](./examples/npu.md)
 
 # Appendix

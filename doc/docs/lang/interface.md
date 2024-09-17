@@ -64,13 +64,11 @@ pub trait Hazard {
 }
 ```
 
-For any hazard type `H`, its member type and functions has the following meaning:
+For any hazard type `H`, its member type and functions have the following meaning:
 
 - `H::P`: Payload signal type.
 - `H::R`: Resolver signal type.
-- `H::ready`: Indicates whether the receiver is ready to receive with current pair of payload and resolver.
-
-<!-- 너는 더 많은 종류의 custom hazard를 CPU case study에서 확인할 수 있다. -->
+- `H::ready`: Returns if the receiver is ready to receive with the current payload and resolver pair.
 
 ### Examples
 
@@ -82,9 +80,9 @@ We provide a few handy primitive hazard interfaces for developers.
   <img src="../figure/hazard-valid.svg" width=60% />
 </p>
 
-`ValidH` represents a communication without backpressure.
+`ValidH` represents a communication without backpressure (always ready to receive).
 
-It always ready to receive the payload, it has the following specification:
+It has the following specification:
 
 ```rust,noplayground
 struct ValidH<P: Copy, R: Copy>;
@@ -99,9 +97,7 @@ impl<P: Copy, R: Copy> Hazard for ValidH<P, R> {
 }
 ```
 
-For reusability, we allow `ValidH` to have resolver signals that simply flow from the receiver to the sender.
-
-<!-- For more information about dependency, please refer to the [dependency section](../advanced/dependency.md). -->
+For reusability, we added additional resolver signals that simply flow from the receiver to the sender.
 
 #### `AndH`
 
@@ -141,13 +137,13 @@ The `ready` field of the `Ready` struct represents the availability of the recei
   <img src="../figure/hazard-vr.svg" width=60% />
 </p>
 
-We define the valid-ready `VrH` specification as `AndH<ValidH<P, R>>`.
-
-For reusability, we allow `VrH` to have resolver signals that simply flow from the receiver to the sender.
+We defined the valid-ready hazard `VrH<P, R>` as `AndH<ValidH<P, R>>`.
 
 ```rust,noplayground
 type VrH<P: Copy, R: Copy> = AndH<ValidH<P, R>>;
 ```
+
+For reusability, we added additional resolver signals that simply flow from the receiver to the sender.
 
 <!-- * The payload type of the Valid-Ready Interface is `HOption<P>`.
 * The resolver type of the Valid-Ready Interface is `Ready<()>`.
@@ -157,10 +153,8 @@ type VrH<P: Copy, R: Copy> = AndH<ValidH<P, R>>;
 ## Interface
 
 An interface is an abstraction that represents the IO of a hardware module.
-Typically, a single interface is composed of zero, one, or multiple hazard interfaces.
 
-<!-- We define the interface as a protocol with forward signal, backward signal, and some other methods.
-The other methods are related to the [combinator](./combinator.md) and [module](./module.md), please refer to the corresponding section. -->
+Typically, a single interface is composed of zero, one, or multiple hazard interfaces.
 
 ### Specification
 
@@ -173,17 +167,20 @@ pub trait Interface {
 }
 ```
 
-For any interface type `I`, its member type has the following meaning:
+For any interface type `I`, its member types have the following meaning:
 
 - `I::Fwd`: Forward signal type.
 - `I::Bwd`: Backward signal type.
 
-It contains the other functions related to the [combinator](./combinator.md) and [module](./module.md), please refer to these sections for further reading.
+It contains the other methods related to the [module](./module.md) and [combinator](./combinator.md), please refer to these sections for further reading.
+
+<!-- We define the interface as a protocol with forward signal, backward signal, and some other methods.
+The other methods are related to the [combinator](./combinator.md) and [module](./module.md), please refer to the corresponding section. -->
 
 ### Hazard Interface
 
 <p align="center">
-  <img src="../figure/interface.drawio.svg" />
+  <img src="../figure/hazard.svg" width=60% />
 </p>
 
 For an arbitraty hazard specification `H`, we define the hazard interface `I<H, D>`, where `D` is the dependency type. (For more information of the dependency, please refer to the [dependency section](../advanced/dependency.md))
@@ -215,7 +212,7 @@ type Vr<P> = I<VrH<P, ()>, { Dep::Helpful }>;
 
 Compound types such as tuple, struct, and array also implement the `Interface` trait.
 
-These interfaces are commonly used for IO of "1-to-N" or "N-to-1" modules.
+These interfaces are commonly used for IO of [1-to-N](combinator.md#1-to-n) or [N-to-1](combinator.md#n-to-1) combinators.
 
 #### Tuple
 
@@ -229,8 +226,8 @@ impl<If1: Interface, If2: Interface> Interface for (If1, If2) {
 }
 ```
 
-- The forward signal of the array interface is the tuple of the interface's forward signal.
-- The backward signal of the array interface is the tuple of the interface's backward signal.
+- The forward signal of the array interface is the tuple of the interfaces' forward signals.
+- The backward signal of the array interface is the tuple of the interfaces' backward signals.
 
 #### Struct
 
@@ -242,7 +239,7 @@ struct<If1: Interface, If2: Interface> StructIf<If1, If2> {
 }
 ```
 
-By applying the `Interface` derive macro to a struct in which all fields are of interface type, the struct itself can also become an interface type.
+By applying the `Interface` derive macro to a struct in which all fields are interface type, the struct itself can also become an interface type.
 
 #### Array
 
@@ -255,5 +252,5 @@ impl<If: Interface, const N: usize> Interface for [If; N] {
 }
 ```
 
-- The forward signal of the array interface is the array of the interface's forward signal.
-- The backward signal of the array interface is the array of the interface's backward signal.
+- The forward signal of the array interface is the array of the interfaces' forward signal.
+- The backward signal of the array interface is the array of the interfaces' backward signal.

@@ -395,7 +395,7 @@ impl<P: Copy, const N: usize> Vr<(P, BoundedU<N>)> {
 
 * `self` is the ingress interface `Vr<(P, BoundedU<N>)>`.
 * We can interpret the `BoundedU<N>` as the selector to choose egress interfaces for transferring the ingress payload.
-* When the selected egress interface ready signal is `true,`, and also the ingress payload is valid, both ingress transfer and egress transfer happen, else both ingress and egress do not happen.
+* When the selected egress interface ready signal is `true`, and also the ingress payload is valid, both ingress transfer and egress transfer happen, else both ingress and egress do not happen.
 * Ingress payload will only be transferred to the selected egress interface when both ingress and egress transfer happen.
 * Ingress resolver and all the egress resolvers are `()`.
 
@@ -581,7 +581,6 @@ impl<P: Copy> MergeExt for (Vr<P>, Vr<P>) {
 }
 ```
 
-* `SelH<H: Hazard, const N: usize>` wraps `H` with additional selector bit in payload `P = (H::P, BoundedU<N>)`.
 * This combinator will select the first ingress interface, whose ingress payload is valid, from the array of the ingress interfaces, when the egress interface is ready to receive the payload.
 
 The example cycle-level behavior of `merge` is as follows:
@@ -655,16 +654,9 @@ Similar to other combinators, register style combinators have other variants too
 
 #### `reg_fwd`
 
-This combinator could be a pipeline when the `pipe` parameter is `true`.
-* The current state is the valid egress payload.
-* The ingress interface is ready to receive a valid payload whenever the current register is empty or the egress transfer happens.
-* If the ingress transfer happens, then the register stores the new valid payload as the next state.
-* If the egress transfer happens, but the ingress transfer does not happen, then the register will be empty in the next cycle.
-* If neither ingress transfer nor egress transfer happens, then the next state stays the same as the current state.
-* The only difference between `pipe` is `true` or `false` is the ingress transfer happens only when the current register is empty, delaying one cycle compared to the pipeline.
+We can use `reg_fwd` to reduce the clock cycle times.
 
-We demonstrate how to use `reg_fwd` with the ingress interface `Vr<P>` to reduce the clock cycle times.
-Let's assume we have a circuit:
+Let's assume we have a circuit with ingress interface `Vr<P>`:
 
 <p align="center">
   <img src="../figure/map_no_reg.drawio.svg" />
@@ -679,45 +671,171 @@ If we add a `reg_fwd` combinator between those two `map` combinators.
 
 The total clock times is reduced to `Max(lat(f1), lat(f2))`.
 
+<p align="center">
+  <img src="../figure/combinator-reg-fwd.svg" width=80% />
+</p>
+
+```rust,noplayground
+impl<P: Copy> Vr<P> {
+    fn reg_fwd(self, pipe: bool) -> Vr<P> {
+        self.fsm::<Vr<P>, HOption<P>>(None, |ip, er, s| {
+            let ep = s;
+            let et = ep.is_some_and(|p| er.ready);
+
+            let ir = if pipe {
+                Ready::new(s.is_none() || et, (er.inner, s))
+            } else {
+                Ready::new(s.is_none(), (er.inner, s))
+            };
+            let it = ip.is_some_and(|p| ir.ready);
+
+            let s_next = if it {
+                ip
+            } else if et {
+                None
+            } else {
+                s
+            };
+
+            (ep, ir, s_next)
+        })
+    }
+}
+```
+
+This combinator could be a pipeline when the `pipe` parameter is `true`.
+* The current state is the valid egress payload.
+* The ingress interface is ready to receive a valid payload whenever the current register is empty or the egress transfer happens.
+* If the ingress transfer happens, then the register stores the new valid payload as the next state.
+* If the egress transfer happens, but the ingress transfer does not happen, then the register will be empty in the next cycle.
+* If neither ingress transfer nor egress transfer happens, then the next state stays the same as the current state.
+* The only difference between `pipe` is `true` or `false` is the ingress transfer happens only when the current register is empty, delaying one cycle compared to the pipeline.
+
 Let's assume the ingress interface type is `Vr<u32>` and we turn on the `pipe`.
-The cycle level behavior of `reg_fwd`:
 
-| cycle | ip         | er  | state (= ep) | ir  |
-| ----- | ---------- | --- | ------------ | --- |
-| 0     | `Some(11)` | `T` | `None`       | `T` |
-| 1     | `Some(12)` | `T` | `Some(11)`   | `T` |
-| 2     | `Some(13)` | `F` | `Some(12)`   | `F` |
-| 3     | `Some(13)` | `T` | `Some(12)`   | `T` |
-| 4     | `Some(14)` | `T` | `Some(13)`   | `T` |
+The example cycle-level behavior of `reg_fwd` is as follows:
 
-- At cycle 0, 1, 3, 4, ingress transfer happens.
-- At cycle 1, 3, 4, egress transfer happens.
+<p align="center">
+  <img src="../figure/combinator-reg-fwd-waveform.svg" width=50% />
+</p>
+
+- Cycle 0, 1, 3, 5: Ingress transfer happens.
+- Cycle 1, 2, 5: Egress transfer happens.
+
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p.....'},
+    {},
+    ['ingress',
+      ['fwd',
+        {name: 'valid', wave: '1.01..'},
+        {name: 'payload', wave: '34x56.', data: ['11','12','13','14']},
+      ],  
+      ['bwd',
+        {name: 'ready', wave: '1...01'},
+      ]
+    ],
+    {},
+    {name: 'state', wave: 'x34x5.', data:['11', '12', '13', '14']},  
+    {},
+    ['egress',
+      ['fwd',
+        {name: 'valid', wave: '01.01.'},
+        {name: 'payload', wave: 'x34x5.', data: ['11','12','13','14','15']},
+      ],
+      ['bwd',
+        {name: 'ready', wave: '01..01'},
+      ]
+    ]
+  ],
+  head: {
+    tock:0,
+    every:1
+  }
+}
+-->
 
 #### fifo
 
 This combinator is a pipelined FIFO queue, it can accept a new element every cycle if the queue is not full.
 
-Let's assume the ingress interface type is `Vr<u32>` and queue size is 3.
-The cycle level behavior of `fifo`:
+<p align="center">
+  <img src="../figure/combinator-fifo.svg" width=80% />
+</p>
 
-| cycle | ip        | er  | state                         | ep        | ir  |
-| ----- | --------- | --- | ----------------------------- | --------- | --- |
-| 0     | `Some(0)` | `T` | `init_state (input): empty`   | `None`    | `T` |
-| 1     | `Some(1)` | `T` | `[Some(0)]`                   | `Some(0)` | `T` |
-| 2     | `Some(2)` | `F` | `[Some(1)]`                   | `Some(1)` | `T` |
-| 3     | `Some(3)` | `F` | `[Some(2), Some(1)]`          | `Some(1)` | `T` |
-| 4     | `Some(4)` | `F` | `[Some(3), Some(2), Some(1)]` | `Some(1)` | `F` |
-| 5     | `Some(4)` | `T` | `[Some(3), Some(2), Some(1)]` | `Some(1)` | `F` |
-| 6     | `Some(4)` | `T` | `[Some(3), Some(2)]`          | `Some(2)` | `T` |
-| 7     | `Some(5)` | `T` | `[Some(4), Some(3)]`          | `Some(3)` | `T` |
+```rust,noplayground
+impl<P: Copy> Vr<P> {
+    fn fifo<const N: usize>(self) -> Vr<P> {
+        self.fsm::<Vr<P>, FifoS<P, N>>(FifoS::default(), |ip, er, s| {
+            let FifoS { inner, raddr, waddr, len } = s;
 
-- At cycle 0, 1, 2, 3, 6, 7, ingress transfer happens.
-- At cycle 1, 5, 6, 7, egress transfer happens.
+            let empty = len == U::from(0);
+            let full = len == U::from(N);
+
+            let enq = ip.is_some() && !full;
+            let deq = er.ready && !empty;
+
+            let ep = if s.len == 0.into_u() { None } else { Some(s.inner[s.raddr]) };
+            let ir = Ready::new(!full, ());
+
+            let inner_next = if enq { inner.set(waddr.resize::<{ clog2(N) }>(), ip.unwrap()) } else { inner };
+            let len_next = (len + U::from(enq).resize() - if deq { 1.into_u() } else { 0.into_u() }).resize();
+            let raddr_next = if deq { wrapping_inc::<{ clog2(N) }>(raddr, N.into_u()) } else { raddr };
+            let waddr_next = if enq { wrapping_inc::<{ clog2(N) }>(waddr, N.into_u()) } else { waddr };
+
+            let s_next = FifoS { inner: inner_next, raddr: raddr_next, waddr: waddr_next, len: len_next };
+
+            (ep, ir, s_next)
+        })
+    }
+}
+```
+
+Let's assume the ingress interface type is `Vr<u32>` with capacity is 3.
+
+The example cycle-level behavior of `fifo` is as follows:
+
+<p align="center">
+  <img src="../figure/combinator-fifo-waveform.svg" width=60% />
+</p>
+
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p.......'},
+    {},
+    ['ingress',
+      ['fwd',
+        {name: 'valid', wave: '1......0'},
+        {name: 'payload', wave: '34567..x', data: ['0','1','2','3','4','5','6']},
+      ],  
+      ['bwd',
+        {name: 'ready', wave: '1...0.1.'},
+      ]
+    ],
+    {name: 'state', wave: 'x3444.56', data:['[0]', '[1]', '[2,1]', '[3,2,1]','[3,2]', '[4,3]']},  
+    ['egress',
+      ['fwd',
+        {name: 'valid', wave: '01......'},
+        {name: 'payload', wave: 'x34...56', data: ['0','1','2', '3']},
+      ],
+      ['bwd',
+        {name: 'ready', wave: '1.0..1..'},
+      ]
+    ]
+  ],
+  head: {
+    tock:0,
+    every:1
+  },
+}
+-->
 
 - The ingress ready signal is true as long as the queue is not full.
-- At `T5`, even though the egress transfer happens, the ingress transfer does not happen since the queue is still full.
-- The ingress transfer happens again at `T6` since the queue is not full anymore.
-- The state is updated in the next clock cycle.
+- Pipeline is disabled for the FIFO queue.
+- Cycle 0, 1, 2, 3, 6: Ingress transfer happens.
+- Cycle 1, 5, 6, 7: Egress transfer happens.
 
 ### Source and sink
 
@@ -730,12 +848,16 @@ We demonstrate the two most representative combinators: `source` and `sink`.
 This combinator immediately returns the data to the payload when the data is coming from resolver.
 The `source` combinator only has the egress interface.
 
+<p align="center">
+  <img src="../figure/combinator-source.svg" width=80% />
+</p>
+
 ```rust,noplayground
 impl<P: Copy> I<VrH<P, P>, { Dep::Demanding }> {
     fn source() -> I<VrH<P, P>, { Dep::Demanding }> {
         ().fsm::<I<VrH<P, P>, { Dep::Demanding }>, ()>((), |_, er, _| {
-            let ip = if er.ready { Some(er.inner) } else { None };
-            (ip, (), ())
+            let ep = if er.ready { Some(er.inner) } else { None };
+            (ep, (), ())
         })
     }
 }
@@ -745,24 +867,89 @@ impl<P: Copy> I<VrH<P, P>, { Dep::Demanding }> {
 - The egress transfer happens as long as the egress resolver ready signal is true.
 - It transfer the resolver to the payload within the same clock cycle with egress transfer happens.
 
+When `P` is `u32`, the example cycle-level behavior of `source` is as follows:
+
+<p align="center">
+  <img src="../figure/combinator-source-waveform.svg" width=50% />
+</p>
+
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p.....'},
+    {},
+    ['ingress',
+      ['fwd',
+        {name: 'valid', wave: '1..01.'},
+        {name: 'payload', wave: '345x67', data: ['0', '1', '2', '3', '4']},
+      ],
+      ['bwd',
+        {name: 'ready', wave: '1..01.'},
+        {name: 'inner', wave: '3456.7', data: ['0', '1', '2', '3', '4']},
+      ]
+    ]
+  ],
+  head: {
+    tock:0,
+    every:1
+  },
+}
+-->
+
+- Cycle 0, 1, 2, 4, 5: Egress transfer happens.
+- Cycle 3: Egress transfer does not happen because egress ready signal is `false`.
+
 #### sink
 
 This combinator maintains a state and calculates the ingress resolver with `f`, which takes the current state and ingress payload as inputs.
 The `sink` combinator only has the ingress interface.
 
+<p align="center">
+  <img src="../figure/combinator-sink.svg" width=80% />
+</p>
+
+
 ```rust,noplayground
-impl<P: Copy> Vr<P> {
+impl<P: Copy> I<VrH<P, HOption<P>>, { Dep::Helpful }> {
     fn sink(self) {
         self.fsm::<(), ()>((), |ip, _, _| {
-            let ir = Ready::valid(());
+            let ir = Ready::valid(ip);
             ((), ir, ())
         })
     }
 }
 ```
 
+When `P` is `u32`, the example cycle-level behavior of `sink` is as follows:
+
+<p align="center">
+  <img src="../figure/combinator-sink-waveform.svg" width=50% />
+</p>
+
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p.....'},
+    {},
+    ['ingress',
+      ['fwd',
+        {name: 'valid', wave: '1..01.'},
+        {name: 'payload', wave: '345x67', data: ['0', '1', '2', '3', '4']},
+      ],
+      ['bwd',
+        {name: 'ready', wave: '1..01.'},
+        {name: 'inner', wave: '345x67', data: ['0', '1', '2', '3', '4']},
+      ]
+    ]
+  ],
+  head: {
+    tock:0,
+    every:1
+  },
+}
+-->
+
 - The ingress resolver is calculated every clock cycle.
-- The state is updated only when ingress transfer happens.
 
 ### FSM
 
@@ -777,67 +964,138 @@ Since they have more complex behavior, we demonstrate their usage here.
 
 #### `fsm_ingress`
 
-This combinator allows you to accumulate successive ingress payloads into an internal FSM state, then output the
-resulting state once it is ready.
+It allows you to accumulate successive ingress payloads into an internal FSM state, then output the resulting state once it is ready.
 After the resulting state is transferred, the FSM is reset and starts accumulating again.
 
 ```rust,noplayground
-// @zhao: please fill out this.
-fn fsm_ingress<S: Copy>(self, init: S, f: impl Fn(P, R, S) -> (S, bool)) -> I<VrH<S, R>, { Dep::Helpful }>
-```
+impl<P: Copy> Vr<P> {
+    fn fsm_ingress<S: Copy>(self, init: S, f: impl Fn(P, S) -> (S, bool)) -> Vr<S> {
+        self.fsm::<Vr<S>, (S, bool)>((init, false), |ip, er, (s, done)| {
+            let ir = Ready::new(!done, er.inner);
 
-* `self` is the ingress interface `I<VrH<P, R>, D>`.
-* `init` is the initial state for the FSM.
-* `f` takes the ingress payload, the egress resolver, and the current FSM state as parameters. It returns the next state and whether the FSM is done.
-* The combinator outputs the resulting FSM state after the FSM is done.
+            let it = ip.is_some() && !done;
+            let et = er.ready && done;
 
-Let's assume there is an interface `input` which outputs a number that increases by 1 each transfer.
-If we want to sum 3 consecutive numbers and output the results (conceptually, [0, 1, 2, 3, 4, 5, ...] -> [3, 12, ...]), we can utilize `fsm_ingress`.
+            let ep = if done { Some(s) } else { None };
 
-```rust,noplayground
-fn sum_3(input: Vr<u32>) -> Vr<u32> {
-    input
-        .fsm_ingress((0, 0), |ip, _, (count, sum)| {
-            let count_next = count + 1;
-            let sum_next = sum + ip;
-            let done_next = count_next == 3;
-            ((count_next, sum_next), done_next)
+            let s_next = if it {
+                f(ip.unwrap(), s)
+            } else if et {
+                (init, false)
+            } else {
+                (s, done)
+            };
+
+            (ep, ir, s_next)
         })
-        .map(|(_, sum)| sum)
+    }
 }
 ```
 
-The cycle level behavior of `fsm_ingress` in `sum_3`:
+It takes the initial state and the combinational logic which calculate the next state and whether the FSM is done.
 
-| cycle | ip        | er  | state          | ep              | ir  |
-| ----- | --------- | --- | -------------- | --------------- | --- |
-| 0     | `Some(0)` | `T` | `((0, 0), F)`  | `None`          | `T` |
-| 1     | `Some(1)` | `T` | `((1, 0), F)`  | `None`          | `T` |
-| 2     | `Some(2)` | `T` | `((2, 1), F)`  | `None`          | `T` |
-| 3     | `Some(3)` | `T` | `((3, 3), T)`  | `Some((3, 3))`  | `F` |
-| 4     | `Some(3)` | `T` | `((0, 0), F)`  | `None`          | `T` |
-| 5     | `Some(4)` | `T` | `((1, 3), F)`  | `None`          | `T` |
-| 6     | `Some(5)` | `T` | `((2, 7), F)`  | `None`          | `T` |
-| 7     | `Some(6)` | `T` | `((3, 12), T)` | `Some((3, 12))` | `F` |
+For example, let's consider the following `sum_until_10` function.
 
-- At cycle 0-2, ingress transfer happens.
-- At cycle 3, egress transfer happens.
-- At cycle 4-6, ingress transfer happens.
-- At cycle 7, egress transfer happens.
+It accumulates the input numbers until it becomes greater or equal to 10, and outputs the result.
 
-* From T0 to T2, the combinator is accumulating.
-* At T2, `f` returns true for `done_next`, signaling that the FSM is done.
-* At T3, the combinator outputs the accumulated result `(3, 3)` and an egress transfer happens.
-* The FSM is reset and the same thing repeats for T4-T7, transferring `(3, 12)` at T7.
+```rust,noplayground
+fn sum_until_10(input: Vr<u32>) -> Vr<u32> {
+    input
+        .fsm_ingress(0, |ip, _, sum| {
+            let sum_next = sum + ip;
+            let done = sum >= 10;
+
+            (sum_next, done_next)
+        })
+}
+```
+
+The example cycle-level behavior of `fsm_ingress` is as follows:
+
+<p align="center">
+  <img src="../figure/combinator-fsm-ingress-waveform.svg" width=50% />
+</p>
+
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p.....'},
+    {},
+    ['ingress',
+      ['fwd',
+        {name: 'valid', wave: '1.....'},
+        {name: 'payload', wave: '345.67', data: ['3','9','5','6','2']},
+      ],  
+      ['bwd',
+        {name: 'ready', wave: '1.01.0'},
+      ]
+    ],
+    {},
+    {name: 'state', wave: '234256', data:['0, F','3, F', '12, T', '0, F', '5, F','11, T']},  
+    {},
+    ['egress',
+      ['fwd',
+        {name: 'valid', wave: '0.10.1'},
+        {name: 'payload', wave: 'x.4x.6', data: ['12', '11']},
+      ],
+      ['bwd',
+        {name: 'ready', wave: '1.....'},
+      ]
+    ]
+  ],
+  head: {
+    tock:0,
+    every:1
+  },
+}
+-->
+
+- At cycle 0-1 and cycle 3-4, ingress transfer happens (accumulates the input).
+- At cycle 2 and cycle 5, egress transfer happens (outputs the result).
 
 #### `fsm_egress`
 
-This combinator runs an FSM for each transferred ingress payload, allowing you to process an ingress payload using multiple FSM states.
+It runs an FSM for each transferred ingress payload, allowing you to process an ingress payload using multiple FSM states.
 Only after the FSM is finished, the combinator can accept a new ingress payload.
 
 ```rust,noplayground
-// @zhao: please fill out this.
-fn fsm_egress<EP: Copy, S: Copy>(self, init: S, flow: bool, f: impl Fn(P, S) -> (EP, S, bool)) -> I<VrH<EP, R>, D>
+impl<P: Copy> Vr<P> {
+    fn fsm_egress<EP: Copy, S: Copy>(self, init: S, flow: bool, f: impl Fn(P, S) -> (EP, S, bool)) -> Vr<EP> {
+        self.fsm::<Vr<EP>, (HOption<P>, S)>((None, init), |ip, er, (sp, s)| {
+            let (ep, s_next, is_last) = if let Some(p) = sp {
+                let (ep, s_next, is_last) = f(p, s);
+                (Some(ep), s_next, is_last)
+            } else if flow && ip.is_some() && sp.is_none() {
+                let (ep, s_next, is_last) = f(ip.unwrap(), s);
+                (Some(ep), s_next, is_last)
+            } else {
+                (None, s, false)
+            };
+
+            let et = ep.is_some() && er.ready;
+            let ir = Ready::new(sp.is_none() || (et && is_last), ());
+            let it = ip.is_some() && ir.ready;
+
+            let (sp_next, s_next) = if flow && it && et && sp.is_none() {
+                if is_last {
+                    (None, init)
+                } else {
+                    (ip, s_next)
+                }
+            } else if it {
+                (ip, init)
+            } else if et && is_last {
+                (None, init)
+            } else if et {
+                (sp, s_next)
+            } else {
+                (sp, s)
+            };
+
+            (ep, ir, (sp_next, s_next))
+        })
+    }
+}
 ```
 
 * `self` is the ingress interface `I<VrH<P, R>, D>`.
@@ -845,8 +1103,9 @@ fn fsm_egress<EP: Copy, S: Copy>(self, init: S, flow: bool, f: impl Fn(P, S) -> 
 * `flow` determines whether the FSM starts immediately or from the next cycle of an ingress transfer.
 * `f` takes the current saved ingress payload and the current FSM state. It returns an egress payload, the next state, and whether this is the last state for the FSM.
 
-Let's use the same interface `increasing` from the `fsm_ingress` example.
-If we want to output 3 consecutive numbers starting from each number (conceptually, [0, 1, ...] -> [0, 1, 2, 1, 2, 3, ...]), we can utilize `fsm_egress`.
+For example, let's consider the following `consecutive_3` example.
+
+It outputs 3 consecutive numbers starting from each input number.
 
 ```rust,noplayground
 fn consecutive_3(input: Vr<u32>) -> Vr<u32> {
@@ -859,8 +1118,47 @@ fn consecutive_3(input: Vr<u32>) -> Vr<u32> {
 }
 ```
 
-The cycle level behavior of `fsm_egress` in `consecutive_3`:
+The example cycle-level behavior of `fsm_egress` is as follows:
 
+<p align="center">
+  <img src="../figure/combinator-fsm-egress-waveform.svg" width=50% />
+</p>
+
+<!--
+{
+  signal: [
+    {name: 'clk', wave: 'p.....'},
+    {},
+    ['ingress',
+      ['fwd',
+        {name: 'valid', wave: '1.....'},
+        {name: 'payload', wave: '34.5..', data: ['0','1','2']},
+      ],  
+      ['bwd',
+        {name: 'ready', wave: '1010.1'},
+      ]
+    ],
+    {},
+    {name: 'state', wave: '333444', data:['(0, 0)', '(0, 1)', '(0, 2)', '(1, 0)', '(1, 1)', '(1, 2)']},  
+    {},
+    ['egress',
+      ['fwd',
+        {name: 'valid', wave: '1.....'},
+        {name: 'payload', wave: '333444', data: ['0', '1', '2', '1', '2', '3']},
+      ],
+      ['bwd',
+        {name: 'ready', wave: '1.....'},
+      ]
+    ]
+  ],
+  head: {
+    tock:0,
+    every:1
+  }
+}
+-->
+
+<!--
 | cycle | ip        | er  | state          | ep        | ir  |
 | ----- | --------- | --- | -------------- | --------- | --- |
 | 0     | `Some(0)` | `T` | `(None, 0)`    | `Some(0)` | `T` |
@@ -869,12 +1167,10 @@ The cycle level behavior of `fsm_egress` in `consecutive_3`:
 | 3     | `Some(2)` | `T` | `(Some(1), 0)` | `Some(1)` | `F` |
 | 4     | `Some(2)` | `T` | `(Some(1), 1)` | `Some(2)` | `F` |
 | 5     | `Some(2)` | `T` | `(Some(1), 2)` | `Some(3)` | `T` |
+-->
 
-- At cycle 0, both ingress and egress transfer happens.
-- At cycle 1, egress transfer happens.
-- At cycle 2, both ingress and egress transfer happens.
-- At cycle 3-4, egress transfer happens.
-- At cycle 5, both ingress and egress transfer happens.
+<!-- - At cycle 0, cycle 2, and cycle 5, ingress transfer happens (takes the input).
+- At cycle 0-2 and cycle 3-5, egress transfer happens (outputs the result). -->
 
 * At T0, an ingress transfer happens and an FSM is started immediately (since `flow` is true).
     * The ingress payload `Some(0)` is saved to `sp`, and will be available from the next cycle.

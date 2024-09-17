@@ -26,7 +26,7 @@ For example, the IO signals of a FIR filter of order 2 with coefficients [4, 2, 
 | 4   | 7    | 4·7 + 2·2 + 3·3 = 41 |
 | 5   | 0    | 4·0 + 2·7 + 3·2 = 20 |
 
-For more details, please consult [Wikipedia](https://en.wikipedia.org/wiki/Finite_impulse_response).
+For more details, please refer to [Wikipedia](https://en.wikipedia.org/wiki/Finite_impulse_response).
 
 ## Modular Design
 
@@ -65,7 +65,7 @@ fn fir_filter(input: Valid<u32>) -> Valid<u32> {
 ```
 
 We can describe the FIR filter with `window`, `weight`, and `sum` combinators in the HazardFlow HDL and we assume the input interface `Valid<u32>` is provided.
-`Valid<u32>` is a **valid hazard interface**, its payload is `Opt<u32>`, the resolver is empty `()`, and its `ready` function always returns `true`.
+`Valid<u32>` is a **valid interface**, its payload is `Opt<u32>`, the resolver is empty `()`, and its `ready` function always returns `true`.
 In other words, as long as the input interface's forward signal is `Some(u32)` at a specific clock cycle, the receiver receives a valid payload.
 We can interpret this input interface as a stream of signal values flowing through the wires.
 

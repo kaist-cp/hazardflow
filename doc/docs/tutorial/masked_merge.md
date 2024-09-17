@@ -12,9 +12,9 @@ The `masked_merge` combinator takes `N` valid-ready `Vr<P>` interfaces as the in
 * We can think of a valid-ready Interface as a valid interface `Valid<P>` with an extra ready signal (Boolean value) in its resolver.
 * The transfer happens only when the payload is `Some(P)`, and the ready signal in the resolver is `true`.
 * We can represent the ingress interface type as `[Vr<u32>; N]`.
-* For more information about the valid-ready interface please refer to the [valid-ready interface](../lang/interface.md#valid-ready).
+* For more information about the valid-ready interface please refer to the [valid-ready interface](../lang/interface.md#vrh).
 * For more information about the compound interface type, please refer to the [compound interface section](../lang/interface.md#compound-interface).
-The Masked Merge combinator egress interface is also a valid-ready interface `I<Self::EH, { Dep::Demanding }>`.
+The Masked Merge combinator egress interface is also a valid-ready hazard interface `I<Self::EH, { Dep::Demanding }>`.
 * We define the egress hazard as `type EH = VrH<(P, U<{ clog2(N) }>), Array<bool, N>>`.
   * The payload type is a tuple type.
     * `Opt<P>` contains the real data we want to send through the wires.
@@ -72,9 +72,9 @@ The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`.
 * We use `u32` as the actual payload type for demonstrating a more concrete example.
 * We also set the number of ingress interfaces as 5, the same as the queue size.
 * `fifo_s.inner` is the inner elements of the queue.
-* We `fold` the queue:
-  * The initializer is a Boolean array with all elements as `false` of size 5.
-  * The index of the array indicates the index of the ingress interfaces.
+* We `fold` the inner elements of the queue:
+  * The initializer is a Boolean array with all elements as `false` of size 5. 
+  * The index of the initializer array indicates the index of the ingress interfaces.
   * We iterate through all the elements within the queue and set the accumulator's value at the index in each queue element to `true`.
   * The final result indicates which ingress interfaces are present in the current queue.
 * We send back this resolver to the Masked Merge combinator to make decision for choosing the next ingress interface.
@@ -95,6 +95,6 @@ pub fn m(ingress: [Vr<u32>; 5]) -> Vr<u32> {
 }
 ```
 
-You can find the implementation in [masked_merge.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/masked_merge.rs).
+You can find the full implementation in [masked_merge.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/masked_merge.rs).
 
 Congratulations! You finished the tutorial!

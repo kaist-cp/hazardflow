@@ -89,10 +89,10 @@ pub fn mem(
     dmem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
 ) -> I<VrH<MemEP, WbR>, { Dep::Demanding }> {
     let exep = i
-        .reg_fwd(true)
         .map_resolver_inner::<(HOption<(MemRespWithAddr, ExeEP)>, HOption<(CsrResp, ExeEP)>, (HOption<ExeEP>, WbR))>(
             gen_resolver,
-        );
+        )
+        .reg_fwd(true);
 
     let (dmem_req, csr_req, exep) = exep
         .map(|p| {
@@ -121,7 +121,11 @@ pub fn mem(
         })
         .comb(attach_resolver(attach_payload(dmem)))
         .map_resolver_with_p::<WbR>(|ip, _| ip)
-        .map(|ip| (Some(ip), None, None));
+        .map(|(dmem_resp, ip)| MemEP {
+            wb_info: ip.wb_info.map(|(addr, _)| Register::new(addr, dmem_resp.data)),
+            debug_inst: ip.debug_inst,
+            debug_pc: ip.pc,
+        });
 
     let csr_resp = csr_req
         .map(|ip| {
@@ -133,15 +137,17 @@ pub fn mem(
         })
         .comb(csr_wrap)
         .map_resolver_with_p::<WbR>(|ip, _| ip)
-        .map(|ip| (None, Some(ip), None));
+        .map(|(csr_resp, ip)| MemEP {
+            wb_info: ip.wb_info.map(|(addr, _)| Register::new(addr, csr_resp.rdata)),
+            debug_inst: ip.debug_inst,
+            debug_pc: ip.pc,
+        });
 
-    let exep = exep.map_resolver_with_p::<WbR>(|ip, er| (ip, er.inner)).map(|ip| (None, None, Some(ip)));
+    let exep = exep.map_resolver_with_p::<WbR>(|ip, er| (ip, er.inner)).map(|ip| MemEP {
+        wb_info: ip.wb_info.map(|(addr, _)| Register::new(addr, ip.alu_out)),
+        debug_inst: ip.debug_inst,
+        debug_pc: ip.pc,
+    });
 
-    [dmem_resp, csr_resp, exep].merge().map(|(mem_resp, csr_resp, exep)| {
-        let exep = mem_resp.map(|(_, p)| p).or(csr_resp.map(|(_, p)| p)).or(exep).unwrap();
-        let mem_resp = mem_resp.map(|(p, _)| p);
-        let csr_resp = csr_resp.map(|(p, _)| p);
-
-        MemEP { wb_info: get_wb(exep, mem_resp, csr_resp), debug_inst: exep.debug_inst, debug_pc: exep.pc }
-    })
+    [dmem_resp, csr_resp, exep].merge()
 }
