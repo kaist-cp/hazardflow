@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import sys
+
 from constants import *
 from parse import compile
 
@@ -17,8 +19,12 @@ def check_trace():
     log_template = compile("Reg[{}]: [{}] -> [{}]\n")
     hf_reg_write_template = compile("[{}] retire=[1] pc=[{}] inst=[{}] write=[r{}={}]\n")
 
-    failed = False
+    count = 0
+    count_passed = 0
+    count_failed = 0
+
     for bench in BENCHES:
+        failed = False
         logger.info(f"[Check RF Trace] {bench} START")
 
         # File paths
@@ -81,8 +87,16 @@ def check_trace():
                     break
             logger.info(f"[Check RF Trace] {bench} END")
 
-    if failed:
-        exit(1)
+        if failed:
+            count_failed += 1
+        else:
+            count_passed += 1
+
+    logger.info(f"Number of success tests: {count_passed} / {len(BENCHES)}")
+
+    if count_failed > 0:
+        logger.error(f"You can check the log file for failed test cases in `{cpu_script_dir}/output` directory.")
+        sys.exit(1)
 
 if __name__ == "__main__":
     check_trace()

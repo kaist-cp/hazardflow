@@ -40,7 +40,10 @@ def calculate_cpi(arg):
 
     hf_retire_template = compile("[{}] retire=[1] pc=[{}]{}\n")
 
-    failed = False
+    count = 0
+    count_passed = 0
+    count_failed = 0
+
     for bench in BENCHES:
         start_benchmark = False
         logger.info(f"Start Calculating CPI of {bench}")
@@ -68,14 +71,23 @@ def calculate_cpi(arg):
         logger.info(f"CPI result of benchmark {bench}: {cpi} ({ratio:.2f} times of baseline CPI {BASELINE_CPI[bench]})")
 
         if arg == "bp":
-            if not math.isclose(cpi, BRANCH_PREDICTION_CPI[bench], abs_tol=0.01):
+            if math.isclose(cpi, BRANCH_PREDICTION_CPI[bench], abs_tol=0.01):
+                count_passed += 1
+            else:
                 logger.error(f"CPI result is not expected (expected: {BRANCH_PREDICTION_CPI[bench]})")
+                count_failed += 1
         else:
-            if not math.isclose(cpi, BASELINE_CPI[bench], abs_tol=0.01):
+            if math.isclose(cpi, BASELINE_CPI[bench], abs_tol=0.01):
+                count_passed += 1
+            else:
                 logger.error(f"CPI result is not expected (expected: {BASELINE_CPI[bench]})")
+                count_failed += 1
 
-    if failed:
-        exit(1)
+    logger.info(f"Number of success tests: {count_passed} / {len(BENCHES)}")
+
+    if count_failed > 0:
+        logger.error(f"You can check the log file for failed test cases in `{cpu_script_dir}/output` directory.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

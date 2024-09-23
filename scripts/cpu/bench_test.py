@@ -24,7 +24,7 @@ def run_tests(total_tests):
         vcd_option = f"-v{log_dir}/{tb_filename}.vcd" if waves_flag else ""
         txt_file = log_dir / f"{tb_filename}.txt"
 
-        console.print(f"Extract trace from benchmark ({count}/{total_tests}): {tb_filename} .. ", end="")
+        console.print(f"Extracting trace from benchmark ({count}/{total_tests}): {tb_filename} .. ", end="")
         result = subprocess.run(
             f"{emulator} {vcd_option} +max-cycles=100000 {tb}",
             stdout=open(txt_file, "w"),
