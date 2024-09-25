@@ -2,21 +2,27 @@
 
 ## Specification
 
-The `masked_merge` combinator performs the following operation:
-
 <p align="center">
   <img src="../figure/masked-merge.svg" width=80%/>
 </p>
 
 <!-- TODO: to explain masked merge, we don't need to think of FIFO queue. It can be an example of using masked merge, but the current text *assumes* there should be a FIFO queue: "It indicates which ingress interfaces are present in the current queue." -->
 
-The `masked_merge` combinator takes `N` valid-ready `Vr<P>` interfaces as the ingress interface.
+The `masked_merge` combinator performs the following operation:
 
-* We can think of a valid-ready Interface as a valid interface `Valid<P>` with an extra ready signal (Boolean value) in its resolver.
-* The transfer happens only when the payload is `Some(P)`, and the ready signal in the resolver is `true`.
-* We can represent the ingress interface type as `[Vr<u32>; N]`.
-* For more information about the valid-ready interface please refer to the [valid-ready interface](../lang/interface.md#vrh).
-* For more information about the compound interface type, please refer to the [compound interface section](../lang/interface.md#compound-interface).
+- It takes N valid-ready interfaces (`Vr<P>`).
+- It returns a valid-ready hazard interface (`I<VrH<(P, U<{ clog2(N) }>), U<N>>>`).
+  + The `U<{ clog2(N) }>` in the payload indicates the index of selected ingress interface.
+  + The `U<N>` in the resolver indicates the mask bits for the selection.
+- It will select the first ingress interface which has valid payload with the mask bit has `false`.
+  + For example, if `N` is 4 and the mask bits are `[true, true, false, true]`, then it will try to select from the third ingress interface.
+
+<!-- * We can think of a valid-ready Interface as a valid interface `Valid<P>` with an extra ready signal (Boolean value) in its resolver. -->
+<!-- * The transfer happens only when the payload is `Some(P)`, and the ready signal in the resolver is `true`. -->
+<!-- * We can represent the ingress interface type as `[Vr<u32>; N]`. -->
+<!-- * For more information about the valid-ready interface please refer to the [valid-ready interface](../lang/interface.md#vrh). -->
+<!-- * For more information about the compound interface type, please refer to the [compound interface section](../lang/interface.md#compound-interface). -->
+<!--
 The Masked Merge combinator egress interface is also a valid-ready hazard interface `I<Self::EH, { Dep::Demanding }>`.
 * We define the egress hazard as `type EH = VrH<(P, U<{ clog2(N) }>), Array<bool, N>>`.
   * The payload type is a tuple type.
@@ -28,10 +34,11 @@ The Masked Merge combinator egress interface is also a valid-ready hazard interf
     * This resolver is sent back from the FIFO queue.
     * It indicates which ingress interfaces are present in the current queue.
     * If there are 4 ingress interfaces and the array is `[true, false, false, true]`, it indicates the ingress interface 1's and ingress interface 2's payloads are not currently in the queue.
-
-The Masked Merge combinator will try to choose the ingress interface whose payload is not in the queue and send it to the FIFO queue in the next clock cycle.
+-->
 
 ## Modular Design
+
+It explain the example use-case of the `masked_merge` combinator.
 
 <p align="center">
   <img src="../figure/masked_merge_module.drawio.svg" />
@@ -91,7 +98,7 @@ pub fn m(ingress: [Vr<u32>; 5]) -> Vr<u32> {
             let (_, fifo_s) = er.inner;
             fifo_s.inner.fold(Array::from([false; 5]), |acc, (_p, idx)| acc.set(idx, true))
         })
-        .naked_fifo()
+        .transparent_fifo()
         .map(|(ip, _idx)| ip)
 }
 ```
