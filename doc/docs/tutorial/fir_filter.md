@@ -65,7 +65,7 @@ fn fir_filter(input: Valid<u32>) -> Valid<u32> {
 ```
 
 We can describe the FIR filter with `window`, `weight`, and `sum` combinators in the HazardFlow HDL and we assume the input interface `Valid<u32>` is provided.
-`Valid<u32>` is a **valid interface**, its payload is `Opt<u32>`, the resolver is empty `()`, and its `ready` function always returns `true`.
+`Valid<u32>` is a **valid interface**, its payload is `Option<u32>`, the resolver is empty `()`, and its `ready` function always returns `true`.
 In other words, as long as the input interface's forward signal is `Some(u32)` at a specific clock cycle, the receiver receives a valid payload.
 We can interpret this input interface as a stream of signal values flowing through the wires.
 
@@ -100,7 +100,7 @@ The anonymous function is where we specify the fsm logic from the `(ingress payl
 
 <!-- * `impl<P: Copy + Default> Valid<P>` is how we define a custom combinator for the input interface `Valid<P>`, where `P` should be able to be copied and should have a default value.
 * Then we define the `window` combinator as `pub fn window<const N: usize>(self) -> Valid<Array<P, N>>`, where `N` is the size of the FIR filter, and the egress interface's type is `Valid<Array<P, N>>`. -->
-<!-- * The egress interface's payload is `Opt<Array<P, N>>`, an optional type of array with `P` type elements, and the array size is `N`. The resolver is empty `()`. -->
+<!-- * The egress interface's payload is `Option<Array<P, N>>`, an optional type of array with `P` type elements, and the array size is `N`. The resolver is empty `()`. -->
 <!-- * The anonymous function takes the ingress payload and the current state as inputs and returns the egress payload and next state.
   * The `append` function concats two arrays together.
   * The `ip.repeat::<1>()` function transforms `ip` into an array of one element `ip`.

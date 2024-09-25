@@ -2,13 +2,16 @@
 
 ## Specification
 
+The `masked_merge` combinator performs the following operation:
+
 <p align="center">
-  <img src="../figure/masked_merge.drawio.svg" />
+  <img src="../figure/masked-merge.svg" width=80%/>
 </p>
 
-### `masked_merge` combinator
+<!-- TODO: to explain masked merge, we don't need to think of FIFO queue. It can be an example of using masked merge, but the current text *assumes* there should be a FIFO queue: "It indicates which ingress interfaces are present in the current queue." -->
 
 The `masked_merge` combinator takes `N` valid-ready `Vr<P>` interfaces as the ingress interface.
+
 * We can think of a valid-ready Interface as a valid interface `Valid<P>` with an extra ready signal (Boolean value) in its resolver.
 * The transfer happens only when the payload is `Some(P)`, and the ready signal in the resolver is `true`.
 * We can represent the ingress interface type as `[Vr<u32>; N]`.
@@ -17,24 +20,16 @@ The `masked_merge` combinator takes `N` valid-ready `Vr<P>` interfaces as the in
 The Masked Merge combinator egress interface is also a valid-ready hazard interface `I<Self::EH, { Dep::Demanding }>`.
 * We define the egress hazard as `type EH = VrH<(P, U<{ clog2(N) }>), Array<bool, N>>`.
   * The payload type is a tuple type.
-    * `Opt<P>` contains the real data we want to send through the wires.
+    * `Option<P>` contains the real data we want to send through the wires.
     * `U<{ clog2(N) }>` is the index of the ingress interfaces represented in bits. `clog2(N)` is the bit-width for representing integer `N`.
     * The payload will be sent to the FIFO queue. 
     * The element in the FIFO queue is a tuple containing the actual data and the index of the ingress interface that sends the data.
   * The resolver is an array of `bool` of size `N`.
-    * This resolver is send back from the FIFO queue.
+    * This resolver is sent back from the FIFO queue.
     * It indicates which ingress interfaces are present in the current queue.
     * If there are 4 ingress interfaces and the array is `[true, false, false, true]`, it indicates the ingress interface 1's and ingress interface 2's payloads are not currently in the queue.
 
 The Masked Merge combinator will try to choose the ingress interface whose payload is not in the queue and send it to the FIFO queue in the next clock cycle.
-
-### FIFO Queue
-
-The FIFO Queue ingress interface:
-* The payload is a tuple containing the actual data we want to transfer and also the index of the ingress interface of the Masked Merge combinator that sends the data.
-* The resolver indicates which ingress interfaces are present in the current queue.
-
-The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`.
 
 ## Modular Design
 
@@ -55,7 +50,7 @@ The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`.
 * `FifoS` indicates the current state of the FIFO queue.
 * This combinator will leave the payload untouched and transfer it from ingress interface to egress interface.
 
-**`naked_fifo` combinator:**
+**`transparent_fifo` combinator:**
 
 * This is a primitive combinator offered by the standard library.
 * It takes one element from the ingress payload and stores it in the queue every clock cycle.
@@ -63,9 +58,15 @@ The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`.
 * It pops out one element from the queue as the egress payload every clock cycle.
 * The egress resolver is a simple ready signal.
 
+<!-- The FIFO Queue ingress interface:
+* The payload is a tuple containing the actual data we want to transfer and also the index of the ingress interface of the Masked Merge combinator that sends the data.
+* The resolver indicates which ingress interfaces are present in the current queue.
+
+The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`. -->
+
 **`map` combinator:**
 
-* It transforms the ingress payload `Opt<P, idx>` into `Opt<P>` for filtering out the unnecessary index information.
+* It transforms the ingress payload `Option<P, idx>` into `Option<P>` for filtering out the unnecessary index information.
 
 ## Implementation
 
@@ -82,7 +83,7 @@ The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`.
 * The implementation of the `masked_merge()` combinator will be explained in the [Implementing Combinators](../advanced/combinator.md) section.
 
 ```rust,noplayground
-/// Masked Merge Combinator
+/// Example module using `masked_merge` combinator.
 pub fn m(ingress: [Vr<u32>; 5]) -> Vr<u32> {
     ingress
         .masked_merge()
