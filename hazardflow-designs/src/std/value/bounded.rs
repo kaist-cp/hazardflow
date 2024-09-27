@@ -47,3 +47,12 @@ pub fn wrapping_add<const N: usize>(a: U<N>, b: U<N>, max: U<{ N + 1 }>) -> U<N>
 pub fn wrapping_inc<const N: usize>(value: U<N>, max: U<{ N + 1 }>) -> U<N> {
     wrapping_add::<N>(value, U::from(1), max)
 }
+
+/// Returns `a.trunk_add(b)` if `a + b < max`, 0 otherwise.
+pub fn floor_add<const N: usize>(a: U<N>, b: U<N>, max: U<{ N + 1 }>) -> U<N> {
+    if a + b >= max {
+        0.into_u()
+    } else {
+        a.trunk_add(b)
+    }
+}

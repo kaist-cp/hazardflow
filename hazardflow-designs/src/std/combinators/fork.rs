@@ -172,8 +172,8 @@ impl<P: Copy, const D: Dep> Vr<P, D> {
 impl<const D: Dep, H: Hazard> I<H, D> {
     /// Lazy-forks a hazard interface unidirectionally.
     ///
-    /// - Payload: The payload for `I<H, D>` is preserved. The payload for `Valid<H::P>` is valid if the egress ready
-    ///     condition `H::ready` is true.
+    /// - Payload: The payload for `I<H, D>` is preserved. The payload for `Valid<H::P>` is valid if a transfer for
+    ///     `I<H, D>` happens.
     /// - Resolvers: The resolver is preserved through `I<H, D>`.
     ///
     /// | Interface | Ingress         | Egress                           |
@@ -185,6 +185,27 @@ impl<const D: Dep, H: Hazard> I<H, D> {
             Interface::fsm::<(Self, Valid<H::P>), ()>(self, (), |ip, (er, _), s| {
                 let ep1 = ip;
                 let ep2 = ip.filter(|p| H::ready(p, er));
+                let ir = er;
+                ((ep1, ep2), ir, s)
+            })
+        }
+    }
+
+    /// Forks the egress resolver to an egress payload.
+    ///
+    /// - Payload: The payload for `I<H, D>` is preserved. The payload for `Valid<H::R>` is from the egress resolver of
+    ///     `I<H, D>`, and is always valid.
+    /// - Resolvers: The resolver is preserved through `I<H, D>`, and forked to the payload of `Valid<H::R>`.
+    ///
+    /// | Interface | Ingress         | Egress                           |
+    /// | :-------: | --------------- | -------------------------------- |
+    /// |  **Fwd**  | `HOption<H::P>` | `(HOption<H::P>, HOption<H::R>)` |
+    /// |  **Bwd**  | `H::R`          | `(H::R, ())`                     |
+    pub fn fork_r_to_p(self) -> (Self, Valid<H::R>) {
+        unsafe {
+            Interface::fsm::<(Self, Valid<H::R>), ()>(self, (), |ip, (er, _), s| {
+                let ep1 = ip;
+                let ep2 = Some(er);
                 let ir = er;
                 ((ep1, ep2), ir, s)
             })
