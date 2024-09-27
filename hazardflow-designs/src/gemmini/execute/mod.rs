@@ -374,8 +374,8 @@ where
 
             (ep, Some(ip.0))
         })
-        .map_resolver_with_p(|ip, er| {
-            let (pop_count, any_matmul_in_progress, any_pending_robs) = er.inner;
+        .map_resolver_inner_with_p(|ip, er| {
+            let (pop_count, any_matmul_in_progress, any_pending_robs) = er;
 
             if let Some((cmd, _config)) = ip {
                 match cmd {
@@ -1368,6 +1368,7 @@ where
         .fsm_egress::<(bool, MeshControlSignals<EX_QUEUE_LENGTH>), CounterS>(
             CounterS::default(),
             true,
+            true,
             |(cmd_w_type, cfg, sram_read_req_readies), counters| {
                 let signals = compute_control_signals(cmd_w_type, cfg, counters, sram_read_req_readies);
                 let (about_to_fire_all_rows, s_next) = compute_last_and_s_next(cmd_w_type, cfg, signals, counters);
@@ -1428,7 +1429,7 @@ where
 
             let any_pending_robs = er.inner.1;
 
-            (pop_count, er.inner.0, any_pending_robs)
+            Ready::new(er.ready, (pop_count, er.inner.0, any_pending_robs))
         });
 
     let (compute_cmd, pending_completed_rob_ids) = compute_cmd.lfork();
@@ -1481,6 +1482,7 @@ where
         .fsm_egress::<HOption<U<{ clog2(RS_ENTRIES) }>>, U<2>>(
             0.into_u(),
             true,
+            true,
             |pending_rob_ids: Array<HOption<U<{ clog2(RS_ENTRIES) }>>, 2>, ptr: U<2>| {
                 let num_elements =
                     (U::from(pending_rob_ids[0].is_some()) + U::from(pending_rob_ids[1].is_some())).resize::<2>();
@@ -1492,7 +1494,7 @@ where
             },
         )
         .filter_map::<U<{ clog2(RS_ENTRIES) }>>(|p| p)
-        .map_resolver_with_p(|ip, _er| ip.is_some());
+        .map_resolver_inner_with_p(|ip, _er| ip.is_some());
 
     // 5. Process the mesh(compute, flush) command.
     //

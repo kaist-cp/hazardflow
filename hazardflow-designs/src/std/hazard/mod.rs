@@ -74,7 +74,6 @@ impl<R> Ready<R> {
     }
 
     /// Creates a new invalid signal.
-    ///
     // TODO: We should add `inner` as parameter to set the inner hazard value when creating invalid signal.
     // This is needed because the inner hazard value should be allowed as don't-care value only when explicit `unsafe` reasoning by user is given.
     #[allow(unreachable_code)]

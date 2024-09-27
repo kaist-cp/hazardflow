@@ -38,9 +38,11 @@ impl<P: Copy, R: Copy> I<ValidH<P, R>, { Dep::Helpful }> {
 impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// Maps the egress resolver into the ingress resolver.
     ///
+    /// Note that it disallows changing the ready signal, since if `D` is [`Dep::Demanding`], changing the ready signal
+    /// may break the [`Dep::Demanding`] condition.
+    ///
     /// - Payload: Preserved.
     /// - Resolver: The egress resolver `Ready<ER>` is mapped to the inner value `R` of the ingress resolver by `f`.
-    ///     Note that this disallows changing the ready signal.
     ///
     /// | Interface | Ingress      | Egress       |
     /// | :-------: | ------------ | ------------ |
@@ -71,21 +73,41 @@ impl<P: Copy, R: Copy> I<VrH<P, R>, { Dep::Helpful }> {
     ///
     /// This is possible because the ingress interface is [`Dep::Helpful`].
     ///
+    /// Note that it allows changing the ready signal unlike the original [`map_resolver`], since the egress interface
+    /// is [`Dep::Helpful`].
+    ///
     /// - Payload: Preserved.
-    /// - Resolver: The egress resolver `Ready<ER>` is mapped to the inner value `R` of the ingress resolver by `f`.
-    ///     Note that this disallows changing the ready signal.
+    /// - Resolver: Mapped by `f`.
+    ///
+    /// | Interface | Ingress      | Egress       |
+    /// | :-------: | ------------ | ------------ |
+    /// |  **Fwd**  | `HOption<P>` | `HOption<P>` |
+    /// |  **Bwd**  | `R`          | `ER`         |
+    pub fn map_resolver_with_p<ER: Copy>(
+        self,
+        f: impl Fn(HOption<P>, Ready<ER>) -> Ready<R>,
+    ) -> I<VrH<P, ER>, { Dep::Helpful }> {
+        unsafe { self.fsm::<(), { Dep::Helpful }, VrH<P, ER>>((), |ip, er, s| (ip, f(ip, er), s)) }
+    }
+
+    /// A variation of [`I::map_resolver_inner`] that allows `f` to consider the ingress payload in addition to the
+    /// egress resolver while calculating the ingress resolver.
+    ///
+    /// This is possible because the ingress interface is [`Dep::Helpful`].
+    ///
+    /// - Payload: Preserved.
+    /// - Resolver: The inner value `ER` of the egress resolver is mapped into the inner value `R` of the ingress
+    ///     resolver by `f`.
     ///
     /// | Interface | Ingress      | Egress       |
     /// | :-------: | ------------ | ------------ |
     /// |  **Fwd**  | `HOption<P>` | `HOption<P>` |
     /// |  **Bwd**  | `Ready<R>`   | `Ready<ER>`  |
-    pub fn map_resolver_with_p<ER: Copy>(
+    pub fn map_resolver_inner_with_p<ER: Copy>(
         self,
-        f: impl Fn(HOption<P>, Ready<ER>) -> R,
+        f: impl Fn(HOption<P>, ER) -> R,
     ) -> I<VrH<P, ER>, { Dep::Helpful }> {
-        unsafe {
-            self.fsm::<(), { Dep::Helpful }, VrH<P, ER>>((), |ip, er, s| (ip, Ready::new(er.ready, f(ip, er)), s))
-        }
+        self.map_resolver_with_p(|ip, er| Ready::new(er.ready, f(ip, er.inner)))
     }
 }
 

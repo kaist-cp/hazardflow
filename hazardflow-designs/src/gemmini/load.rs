@@ -175,6 +175,7 @@ where
         .fsm_egress::<ScratchpadMemReadReq<MVIN_SCALE_BITS>, U<{ clog2(BLOCK_ROWS) }>>(
             0.into_u(),
             true,
+            true,
             |(alloc_resp, cmd_decoded), row_counter| {
                 let ep = compute_dma_req(alloc_resp.cmd_id, cmd_decoded, row_counter);
                 let row_counter_next = (u32::from(row_counter) + 1).into_u();

@@ -5,7 +5,8 @@ use super::*;
 impl<P: Copy, R: Copy, const D: Dep> I<ValidH<P, R>, D> {
     /// A [`map`] with an internal state.
     ///
-    /// `f` additionally takes the current state and returns the next state. The state is updated every cycle.
+    /// `f` additionally takes the current state and returns the next state. The state is updated if the ingress payload
+    /// is valid and so an ingress transfer happens.
     ///
     /// - Payload: Mapped by `f`.
     /// - Resolver: Preserved.
@@ -20,7 +21,8 @@ impl<P: Copy, R: Copy, const D: Dep> I<ValidH<P, R>, D> {
 
     /// A [`filter_map`] with an internal state.
     ///
-    /// `f` additionally takes the current state and returns the next state. The state is updated every cycle.
+    /// `f` additionally takes the current state and returns the next state. The state is updated if the ingress payload
+    /// is valid and so an ingress transfer happens.
     ///
     /// - Payload: Filter-mapped by `f`.
     /// - Resolver: Preserved.
@@ -126,7 +128,7 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<ValidH<P, (R, S)>, D> {
 impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// A [`map`] with an internal state.
     ///
-    /// `f` additionally takes the current state and returns the next state. The state is updated if an egress transfer
+    /// `f` additionally takes the current state and returns the next state. The state is updated if an ingress transfer
     /// happens.
     ///
     /// - Payload: Mapped by `f`.
@@ -142,8 +144,8 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
 
     /// A [`filter_map`] with an internal state.
     ///
-    /// `f` additionally takes the current state and returns the next state. The state is updated if egress ready signal
-    /// is true.
+    /// `f` additionally takes the current state and returns the next state. The state is updated if an ingress transfer
+    /// happens.
     ///
     /// - Payload: Filter-mapped by `f`.
     /// - Resolver: Preserved.

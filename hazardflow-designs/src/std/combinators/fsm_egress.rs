@@ -22,6 +22,8 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// ## Parameters
     ///
     /// - `init`: The initial state for the FSM.
+    /// - `pipe`: If true, starts a new FSM immediately after an FSM finishes if an input is available. If false,
+    ///     transitions to a waiting case first then accept an input for a new FSM.
     /// - `flow`: If true, starts running the FSM immediately from the cycle of an ingress transfer. If false, starts
     ///     running the FSM from the next cycle of an ingress transfer.
     /// - `f`: The function that describes the FSM. If `let (ep, s_next, is_last) = f(p, s)`,
@@ -30,6 +32,9 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     ///     - `ep`: The calculated egress payload.
     ///     - `s_next`: The next FSM state.
     ///     - `is_last`: Whether this is the last state of the FSM for the current saved payload.
+    ///
+    /// The `pipe` and `flow` parameters are inspired by
+    /// <https://github.com/chipsalliance/chisel/blob/9c1829e6afe8a08630c90d5a0f30bce9c487075f/src/main/scala/chisel3/util/Decoupled.scala#L243>.
     ///
     /// ## High-level overview of the behavior
     ///
@@ -40,10 +45,10 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// FSM** case, and starts a new FSM. Whether this happens on the same cycle as the transfer or on the next cycle
     /// depends on `flow`.
     ///
-    /// In the **Running the FSM** case, the combinator runs the FSM with the saved payload, outputting egress payloads.
-    /// When `f` returns true for `is_last`, it will save a new ingress payload and start a new FSM if the new ingress
-    /// payload is already available. Otherwise, it will transition back to the **Waiting for an ingress transfer**
-    /// case next cycle.
+    /// In the **Running the FSM** case, the combinator runs the FSM with the saved payload outputting egress payloads.
+    /// When `f` returns true for `is_last`, it will save a new ingress payload and start a new FSM, if `pipe` is true
+    /// and the new ingress payload is already available. Otherwise, it will transition back to the **Waiting for an
+    /// ingress transfer** case next cycle.
     ///
     /// ## Detailed behavior
     ///
@@ -64,6 +69,8 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     ///     - Can accept a new ingress payload: `ir = (true, er.inner)`
     ///     - If an ingress transfer happens (`if it`),
     ///         - If `flow`,
+    ///             - (The description below is not how the actual code works, but conceptually the behavior should be
+    ///                 the same.)
     ///             - Conceptually save the ingress payload and transition to the **Running the FSM** case *this* cycle:
     ///                 `sp = ip`
     ///             - Start a new FSM with the initial state *this* cycle: `s = init`
@@ -80,11 +87,14 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// - **Running the FSM** (`sp == Some`)
     ///     - Run `f`: `let (ep_f, s_next_f, is_last) = f(sp.unwrap(), s)`
     ///     - Output the calculated egress payload: `ep = Some(ep_f)`
-    ///     - Let's say that "the FSM finishes" if an egress transfer happens and this is the last state of the FSM
-    ///         (`et && is_last`).
-    ///     - Do not accept a new ingress payload, but can accept one if the FSM finishes:
-    ///         `ir = (et && is_last, er.inner)`
+    ///     - (Let's say that "the FSM finishes" if an egress transfer happens and this is the last state of the FSM
+    ///         (`et && is_last`).)
+    ///     - For the ingress resolver,
+    ///         - If `pipe`, do not accept a new ingress payload but can accept one if the FSM finishes:
+    ///             `ir = (et && is_last, er.inner)`
+    ///         - If not `pipe`, do not accept a new ingress payload: `ir = (false, er.inner)`
     ///     - If the FSM finishes and an ingress transfer happens (`if it`),
+    ///         - (Note that this can only happen if `pipe`.)
     ///         - Save the new ingress payload and remain in the current case: `sp_next = ip`
     ///         - Start a new FSM with the initial state next cycle: `s_next = init`
     ///     - If the FSM finishes but no ingress transfer happens (`if et && is_last`),
@@ -100,6 +110,31 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     pub fn fsm_egress<EP: Copy, S: Copy>(
         self,
         init: S,
+        pipe: bool,
+        flow: bool,
+        f: impl Fn(P, S) -> (EP, S, bool),
+    ) -> I<VrH<EP, R>, D> {
+        self.map_resolver_inner::<(R, (HOption<P>, S))>(|(r, _)| r).naked_fsm_egress(init, pipe, flow, f)
+    }
+}
+
+// TODO: Change `(HOption<P>, S)` to `HOption<(P, S)>`? It's not the actual type of the internal state but it better
+//     represents the semantics.
+impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, (HOption<P>, S))>, D> {
+    /// A variation of [`I::fsm_egress`] that additionally outputs the internal state to the ingress resolver.
+    ///
+    /// - Payload: The same behavior as [`I::fsm_egress`].
+    /// - Resolver: The same behavior as [`I::fsm_egress`], but additionally the internal state `(HOption<P>, S)` is
+    ///     outputted.
+    ///
+    /// | Interface | Ingress                       | Egress        |
+    /// | :-------: | ----------------------------- | ------------- |
+    /// |  **Fwd**  | `HOption<P>`                  | `HOption<EP>` |
+    /// |  **Bwd**  | `Ready<(R, (HOption<P>, S))>` | `Ready<R>`    |
+    pub fn naked_fsm_egress<EP: Copy>(
+        self,
+        init: S,
+        pipe: bool,
         flow: bool,
         f: impl Fn(P, S) -> (EP, S, bool),
     ) -> I<VrH<EP, R>, D> {
@@ -116,7 +151,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
                 };
 
                 let et = ep.is_some() && er.ready;
-                let ir = Ready::new(sp.is_none() || (et && is_last), er.inner);
+                let ir = Ready::new(sp.is_none() || (et && is_last && pipe), (er.inner, (sp, s)));
                 let it = ip.is_some() && ir.ready;
 
                 let (sp_next, s_next) = if flow && it && et && sp.is_none() {
