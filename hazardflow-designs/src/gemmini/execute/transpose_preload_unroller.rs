@@ -90,5 +90,5 @@ fn chunk_cmds(
 pub fn transpose_preload_unroller(cmd: Vr<GemminiCmd>) -> Vr<GemminiCmd> {
     cmd.fsm_map::<(GemminiCmd, bool), bool>(false, |ip, s| ((ip, s), update_config(ip, s)))
         .fsm_ingress::<(Array<HOption<GemminiCmd>, 2>, bool)>((None.repeat(), false), |ip, _, s| accumulate_cmds(ip, s))
-        .fsm_egress::<GemminiCmd, U<2>>(0.into_u(), true, chunk_cmds)
+        .fsm_egress::<GemminiCmd, U<2>>(0.into_u(), true, true, chunk_cmds)
 }

@@ -120,7 +120,7 @@ pub fn mem(
             (mem_req, ip)
         })
         .comb(attach_resolver(attach_payload(dmem)))
-        .map_resolver_with_p::<WbR>(|ip, _| ip)
+        .map_resolver_inner_with_p::<WbR>(|ip, _| ip)
         .map(|(dmem_resp, ip)| MemEP {
             wb_info: ip.wb_info.map(|(addr, _)| Register::new(addr, dmem_resp.data)),
             debug_inst: ip.debug_inst,
@@ -136,14 +136,14 @@ pub fn mem(
             (csr_req, ip)
         })
         .comb(csr_wrap)
-        .map_resolver_with_p::<WbR>(|ip, _| ip)
+        .map_resolver_inner_with_p::<WbR>(|ip, _| ip)
         .map(|(csr_resp, ip)| MemEP {
             wb_info: ip.wb_info.map(|(addr, _)| Register::new(addr, csr_resp.rdata)),
             debug_inst: ip.debug_inst,
             debug_pc: ip.pc,
         });
 
-    let exep = exep.map_resolver_with_p::<WbR>(|ip, er| (ip, er.inner)).map(|ip| MemEP {
+    let exep = exep.map_resolver_inner_with_p::<WbR>(|ip, er| (ip, er)).map(|ip| MemEP {
         wb_info: ip.wb_info.map(|(addr, _)| Register::new(addr, ip.alu_out)),
         debug_inst: ip.debug_inst,
         debug_pc: ip.pc,

@@ -289,6 +289,7 @@ where
         .fsm_egress::<ScratchpadMemWriteReq<32, ACC_SCALE_BITS>, Counter>(
             Counter::default(),
             true,
+            true,
             |(alloc_resp, cmd_decoded), counter| {
                 let ep = compute_dma_req(alloc_resp.cmd_id, cmd_decoded, counter);
 
