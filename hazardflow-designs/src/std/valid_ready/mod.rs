@@ -36,21 +36,23 @@ pub type Vr<P, const D: Dep = { Dep::Helpful }> = I<VrH<P>, D>;
 ///                |     |<--------------------- bool
 ///                +-----+
 /// ```
-pub fn attach_ready<P1: Copy, R1: Copy, P2: Copy, R2: Copy, const D1: Dep, const D2: Dep>(
-    m: impl FnOnce(I<VrH<P1, R1>, D1>) -> I<ValidH<P2, R2>, D2>,
-) -> impl FnOnce(I<VrH<P1, R1>, D1>) -> I<VrH<P2, R2>, D2> {
-    |i: I<VrH<P1, R1>, D1>| -> I<VrH<P2, R2>, D2> {
-        let (i, ready) = unsafe {
-            Interface::fsm::<(I<VrH<P1, R1>, D1>, I<ValidH<(), bool>, { Dep::Helpful }>), ()>(
+pub fn attach_ready<P1: Copy, R1: Copy, P2: Copy, R2: Copy>(
+    m: impl FnOnce(I<VrH<P1, R1>, { Dep::Helpful }>) -> I<ValidH<P2, R2>, { Dep::Helpful }>,
+) -> impl FnOnce(I<VrH<P1, R1>, { Dep::Helpful }>) -> I<VrH<P2, R2>, { Dep::Helpful }> {
+    |i: I<VrH<P1, R1>, { Dep::Helpful }>| -> I<VrH<P2, R2>, { Dep::Helpful }> {
+        // `dummy` is used for additional ready signal.
+        let (i, dummy) = unsafe {
+            Interface::fsm::<(I<VrH<P1, R1>, { Dep::Helpful }>, I<ValidH<(), bool>, { Dep::Helpful }>), ()>(
                 i,
                 (),
                 |ip, (er1, er2), s| ((ip, None), Ready::new(er1.ready & er2, er1.inner), s),
             )
         };
 
-        let e = i.comb(m);
-
-        unsafe { (e, ready).fsm::<I<VrH<P2, R2>, D2>, ()>((), |(ip, _), er, s| (ip, (er.inner, er.ready), s)) }
+        unsafe {
+            (i.comb(m), dummy)
+                .fsm::<I<VrH<P2, R2>, { Dep::Helpful }>, ()>((), |(ip, _), er, s| (ip, (er.inner, er.ready), s))
+        }
     }
 }
 
@@ -66,29 +68,17 @@ pub fn attach_ready<P1: Copy, R1: Copy, P2: Copy, R2: Copy, const D1: Dep, const
 ///               +-----+
 ///          R <------------ R
 /// ```
-pub fn attach_resolver<P: Copy, EP: Copy, R: Copy, const D: Dep, const ED: Dep>(
-    m: impl FnOnce(Vr<P, D>) -> Vr<EP, ED>,
-) -> impl FnOnce(I<VrH<P, R>, D>) -> I<VrH<EP, R>, ED> {
-    |i: I<VrH<P, R>, D>| -> I<VrH<EP, R>, ED> {
-        // TODO: Need to consider `m` need multi-cycle
-        let (payload, hazard) = unsafe {
-            Interface::fsm::<(Vr<P, D>, I<ValidH<(), R>, { Dep::Helpful }>), ()>(i, (), |ip, (er1, er2), s| {
-                let ir = Ready::new(er1.ready, er2);
-                // let ep1 = ip.filter(|ip| ReadyH::<H>::ready(ip, ir));
-                let ep1 = ip;
-                let ep2 = Some(());
-                ((ep1, ep2), ir, s)
-            })
-        };
+pub fn attach_resolver<P: Copy, EP: Copy, R: Copy>(
+    m: impl FnOnce(Vr<P>) -> Vr<EP>,
+) -> impl FnOnce(I<VrH<P, R>, { Dep::Helpful }>) -> I<VrH<EP, R>, { Dep::Helpful }> {
+    |i: I<VrH<P, R>, { Dep::Helpful }>| -> I<VrH<EP, R>, { Dep::Helpful }> {
+        // Always transferred to the first interface, `dummy` is used for additional resolver.
+        let (i, dummy) = i.map(|p| (p, BoundedU::new(0.into_u()))).map_resolver_inner::<((), R)>(|(_, r)| r).branch();
 
-        unsafe {
-            (payload.comb(m), hazard).fsm::<I<VrH<EP, R>, ED>, ()>((), |(ip1, _), er, s| {
-                let ir1 = er.map(|_| ());
-                let ir2 = er.inner;
-                let ep = ip1;
-                (ep, (ir1, ir2), s)
-            })
-        }
+        // Always transferred from the first interface.
+        (i.comb(m), dummy.map(|_| unsafe { x::<EP>() }))
+            .mux(Valid::constant(0.into_u()))
+            .map_resolver_inner::<R>(|r| ((), r))
     }
 }
 
@@ -104,31 +94,19 @@ pub fn attach_resolver<P: Copy, EP: Copy, R: Copy, const D: Dep, const ED: Dep>(
 ///             bool <--------------------|     |<--------------------- bool
 ///                                       +-----+
 /// ```
-pub fn attach_payload<P: Copy, EP: Copy, AP: Copy, const D: Dep, const ED: Dep>(
-    m: impl FnOnce(Vr<P, D>) -> Vr<EP, ED>,
-) -> impl FnOnce(Vr<(P, AP), D>) -> Vr<(EP, AP), ED> {
-    |i: Vr<(P, AP), D>| -> Vr<(EP, AP), ED> {
-        // TODO: Need to consider `m` need multi-cycle
-        let (i1, i2) = unsafe {
-            Interface::fsm::<(Vr<P, D>, Vr<AP, D>), ()>(i, (), |ip, (er1, _er2), s| {
-                let ep1 = ip.map(|(p, _)| p);
-                let ep2 = ip.map(|(_, ap)| ap);
-                // let ir = Ready::new(er1.ready & er2.ready, ());
-                let ir = er1;
-                ((ep1, ep2), ir, s)
-            })
-        };
+///
+/// NOTE: Current implementation considered only when `m` returns its egress at the same cycle as takes its ingress.
+// TODO: Consider when `m` takes one or multi cycles.
+pub fn attach_payload<P: Copy, EP: Copy, AP: Copy>(
+    m: impl FnOnce(Vr<P>) -> Vr<EP>,
+) -> impl FnOnce(Vr<(P, AP)>) -> Vr<(EP, AP)> {
+    |i: Vr<(P, AP)>| -> Vr<(EP, AP)> {
+        // `dummy` is used for additional payload.
+        let (i, dummy) = i.lfork_uni();
 
-        let e1 = i1.comb(m);
-        let e2 = i2; // TODO: We should be add `reg_fwd` which have flow property.
+        let i = i.map(|(p, _)| p);
+        let dummy = dummy.map(|(_, ap)| ap); // TODO: Add `reg_fwd` with flow property to consider `m` takes one or multi cycles.
 
-        unsafe {
-            (e1, e2).fsm::<Vr<(EP, AP), ED>, ()>((), |(ip1, ip2), er, s| {
-                let ep = ip1.zip(ip2);
-                let ir1 = er;
-                let ir2 = er;
-                (ep, (ir1, ir2), s)
-            })
-        }
+        (i.comb(m), dummy).join()
     }
 }
