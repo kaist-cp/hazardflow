@@ -3,7 +3,7 @@
 With the existence of hazards, the 5-stage pipelined CPU core can be decomposed as follows:
 
 <p align="center">
-  <img src="../../figure/cpu-structure.svg" width=85% />
+  <img src="../../figure/cpu-structure.svg" width=100% />
 </p>
 
 with the following implementation ([riscv32_5stage.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/cpu/riscv32_5stage.rs)):

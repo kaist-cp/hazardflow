@@ -30,7 +30,7 @@ For more details, please refer to [Wikipedia](https://en.wikipedia.org/wiki/Fini
 
 ## Modular Design
 
-We could represent the FIR filter in modular way as follows:
+We could represent the FIR filter of order 2 in modular way as follows:
 
 <center><img src="../figure/fir-filter-modular.svg" width="80%"></center>
 
@@ -65,7 +65,7 @@ fn fir_filter(input: Valid<u32>) -> Valid<u32> {
 ```
 
 We can describe the FIR filter with `window`, `weight`, and `sum` combinators in the HazardFlow HDL and we assume the input interface `Valid<u32>` is provided.
-`Valid<u32>` is a **valid interface**, its payload is `Option<u32>`, the resolver is empty `()`, and its `ready` function always returns `true`.
+`Valid<u32>`, which is an alias of [`I<ValidH<u32, ()>>`](../lang/interface.md#validh) is a **valid interface** where its payload is `u32`, the resolver is empty `()`, and its `ready` function always returns `true`.
 In other words, as long as the input interface's forward signal is `Some(u32)` at a specific clock cycle, the receiver receives a valid payload.
 We can interpret this input interface as a stream of signal values flowing through the wires.
 
@@ -87,7 +87,7 @@ impl<P: Copy + Default> Valid<P> {
 
 It takes an `Valid<P>` and returns `Valid<Array<P, N>>`.
 It tracks the latest `N` valid input signals.
-The `fsm_map` interface combinator is a primitive combinator provided by the HazardFlow HDL standard library.
+The [`fsm_map` interface combinator](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.fsm_map) is provided by the HazardFlow HDL standard library.
 It transforms the ingress payload to the egress payload, calculates the next state for the next clock cycle, and leaves the resolver signal untouched.
 It takes an initial state, and an anonymous function, and returns a new interface.
 The initial state is defined as `P::default().repeat::<N>()` in our example.
@@ -119,11 +119,13 @@ impl<const N: usize> Valid<Array<u32, N>> {
 }
 ```
 
-It takes an `Valid<Array<u32, N>>` and returns another `Valid<Array<u32, N>>`.
+It takes an `Valid<Array<u32, N>>` and returns an egress hazard interface `Valid<Array<u32, N>>`.
 It transforms the `i`-th element of ingress payload `ip[i]` into `weight[i] * ip[i]`, and leaves the resolver as untouched.
-The `map` interface combinator is another primitive combinator provided by the HazardFlow HDL standard library.
+The [`map` interface combinator](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.map) is provided by the HazardFlow HDL standard library.
 We can interpret it as stateless version of `fsm_map`.
 In the application-specific logic in `map` interface combinator, we use `zip` and `map` methods for manipulating the ingress payload signal.
+
+<!-- It takes an `Valid<Array<u32, N>>` and returns another `Valid<Array<u32, N>>`. -->
 <!-- 
 * `impl<const M: usize, const N: usize> Valid<Array<U<M>, N>>` is how we define a custom combinator for the input interface `Valid<Array<U<M>, N>>`. -->
 <!-- * The `map` combinator is a primitive combinator provided by the HazardFlow HDL standard library.
@@ -144,7 +146,8 @@ impl<const N: usize> Valid<Array<u32, N>> {
 }
 ```
 
-It takes an `Valid<Array<u32, N>>` and returns `Valid<u32>`. It transforms the ingress payload to sum of them.
+It takes an `Valid<Array<u32, N>>` and returns `Valid<u32>`.
+It transforms the ingress payload to sum of them.
 In the application-specific logic in `map` interface combinator, we use `fold_assoc` method which aggregates the data within array of signal.
 
 You can find the implementation in [fir_filter.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/fir_filter.rs).
