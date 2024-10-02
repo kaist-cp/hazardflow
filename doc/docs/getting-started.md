@@ -1,63 +1,57 @@
 # Getting Started
 
-The HazardFlow HDL is a Rust library and compiler plugin.
+HazardFlow HDL allows users to modularly describe pipelined circuits with hazards, achieving cycle-level accuracy.
+It provides hazard interfaces and combinators to handle backward dependencies and simplify decomposition.
+By the end, users to design and compile hardware modules into Verilog.
+
+<!--
+HazardFlow HDL allows users to describe pipelined circuits with hazards in a modular way, achieving cycle-level accuracy.
+It introduces hazard interfaces that encapsulate pipeline-backward dependencies into a resolver signal within each interface.
+Additionally, HazardFlow HDL provides combinators, inspired by a map-reduce style, to simplify the decomposition of pipelined circuits.
+By the end, you will be able to design hardware modules using HazardFlow HDL and compile them into Verilog.
+-->
 
 ## Installation
 
-Prerequisite:
+Install [rustup](https://rustup.rs/). After the installation is complete, restart the terminal.
 
-```bash
-# Dependent packages
-apt update
-apt install -y curl build-essential git python3 pip
-
-# Install rust. If it asks to select option, choose 1 (default one)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-
-# Python packages
-pip install numpy scipy matplotlib seaborn parse
-
-# Run this command in our artifact directory (TODO: maybe tweak rust-toolchain.toml?)
-rustup component add rustc-dev llvm-tools rust-src llvm-tools-preview
+```
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-Script
+Clone the [HazardFlow repository](https://github.com/kaist-cp/hazardflow):
 
-1. Clone the repo from Github
-```bash
-TODO: Will change this part later when we decide how to host the barebone repo. @minseong
+```
+$ git clone https://github.com/kaist-cp/hazardflow.git
+$ cd hazardflow
 ```
 
-2. Build `hazardflow-macro`
-```bash
-# change directory to the macro directory
-cd hazardflow-macro
+## Compiling HazardFlow Modules to Verilog
 
-# build hazardflow-macro module
-cargo build
+First, build the Rust macros:
 
-# Back to root directory
-cd ..
+```
+$ cargo build -p hazardflow-macro
 ```
 
-3. Running the compiler
+To generate the Verilog code for 5-stage pipelined RISC-V CPU core:
+
 ```bash
-# Compile all modules without any optimization passes
-cargo run --release
+# Generate a separate Verilog file for each submodule.
+$ cargo run --release -- --target cpu --deadcode --wire-cache --system-task
 
-# Compile modules with "cpu" or "nic" in their definition path, without any optimization passes. For example, `src/cpu/*.rs` and `src/nic/cmac_pad.rs` will be compiled, but `src/netstack/ip_handler.rs` will not.
-cargo run --release -- --target cpu cmac_pad
-
-# Compile all modules with system tasks. By default, the compiler will not generate system tasks statements like `display!` or `hassert!`.
-cargo run --release -- --system-task
-
-# Compile all modules with deadcode and wire-cache optimizations. By default, the compiler will not perform any optimization passes.
-cargo run --release -- --deadcode --wire-cache
+# Generate an integrated Verilog file combining all submodules.
+$ cargo run --release -- --target cpu --deadcode --wire-cache --merge --system-task
 ```
 
-The generated code will reside in the `build` directory, with each top-level module with a `#[synthesize]` attribute in separate directories.
+To generate the Verilog code for systolic-array based NPU core:
 
-## Test Your Module
+```bash
+# Generate a separate Verilog file for each submodule.
+$ cargo run --release -- --target gemmini --deadcode --wire-cache --system-task
 
-TODO: How to test if the program works correctly. @minseong
+# Generate an integrated Verilog file combining all submodules.
+$ cargo run --release -- --target gemmini --deadcode --wire-cache --merge --system-task
+```
+
+The generated code is located in `build`, with each top-level module with a `#[synthesize]` attribute in separate directories.

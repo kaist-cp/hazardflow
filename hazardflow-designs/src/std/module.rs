@@ -63,8 +63,9 @@ pub fn interface_map<I: Interface, O: Interface, const N: usize>(is: [I; N], f: 
 }
 
 /// Flips a module's input and output.
-pub fn flip<I1: Interface, I2: Interface, O1: Interface, O2: Interface, T>(f: T) -> impl FnOnce(I2, I1) -> (O2, O1)
-where T: FnOnce(I1, I2) -> (O1, O2) {
+pub fn flip<I1: Interface, I2: Interface, O1: Interface, O2: Interface>(
+    f: impl FnOnce(I1, I2) -> (O1, O2),
+) -> impl FnOnce(I2, I1) -> (O2, O1) {
     move |i2, i1| {
         let (o1, o2) = f(i1, i2);
         (o2, o1)

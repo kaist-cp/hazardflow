@@ -1,8 +1,7 @@
-[Introduction](./introduction.md)
+[Getting Started](./getting-started.md)
 
 # Basics
 
-- [Getting Started](./getting-started.md)
 - [Tutorial](./tutorial/tutorial.md)
   + [FIR Filter](./tutorial/fir_filter.md)
   + [Masked Merge](./tutorial/masked_merge.md)
@@ -15,7 +14,7 @@
 # Advanced Features
 
 - [Implementing Your Own Combinators](./advanced/combinator.md)
-- [Dependency](./advanced/dependency.md)
+- [Dependency Types](./advanced/dependency.md)
 
 # Case Studies
 
@@ -29,6 +28,6 @@
     + [Writeback](./examples/cpu/wb.md)
 - [NPU Core (Based on Systolic Array)](./examples/npu.md)
 
-# Appendix
+---
 
-- [Contributors](./contributors.md)
+[Contributors](./contributors.md)

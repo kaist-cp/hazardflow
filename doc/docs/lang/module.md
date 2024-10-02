@@ -10,9 +10,9 @@ m: impl FnOnce(I) -> E
 
 We can construct a module as a class of interface combinators. Please refer to the [Interface Combinators](./combinator.md) for more information.
 
-## Combine Black Box Module to Interface
+## Combine Blackbox Module to Interface
 
-The `comb` method within the interface trait is used to combine the black box module to the given interface and return the egress interface.
+The `comb` method within the interface trait is used to combine the blackbox module to the given interface and return the egress interface.
 ```rust,noplayground
 fn comb<E: Interface>(self, m: impl FnOnce(Self) -> E) -> E {
     m(self)
@@ -44,17 +44,29 @@ pub fn core(
 
 We provide some handy module combinators that manipulates modules.
 
-### `from_fn`
-
-TODO(@minseong)
-
 ### `seq`
 
-TODO(@minseong)
+Generates a 1D systolic array from an array of modules.
+
+```rust
+fn seq<I: Interface, O: Interface, J: Interface, const N: usize>(
+    ms: [fn(I, J) -> (O, J); N],
+) -> impl FnOnce([I; N], J) -> ([O; N], J)
+```
+
+You can construct an array of modules explicitly from elements, or if all the modules have the same behavior, you can use the [`from_fn` API](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/module/fn.from_fn.html#).
 
 ### `flip`
 
-TODO(@minseong)
+Flips a module's input and output.
+
+```rust
+pub fn flip<I1: Interface, I2: Interface, O1: Interface, O2: Interface, T>(
+    f: T
+) -> impl FnOnce(I2, I1) -> (O2, O1)
+where
+    T: FnOnce(I1, I2) -> (O1, O2),
+```
 
 <!--TODO: should we introduce the following function?-->
 <!---->
