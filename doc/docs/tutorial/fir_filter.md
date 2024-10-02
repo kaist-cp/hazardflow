@@ -46,6 +46,7 @@ As in the above figure, it can be divide into 3 submodules: `window`, `weight`, 
 
 * It keeps the weight vector `[b0, b1, b2]` persistent throughout the program.
 * It takes the input vector `[v0, v1, v2]` and returns the output vector `[b0·v0, b1·v1, b2·v2]`.
+* This submodule can be simply represented by a `map` combinator.
 
 **`sum` submodule:**
 
@@ -88,9 +89,8 @@ impl<P: Copy + Default> Valid<P> {
 It takes an `Valid<P>` and returns `Valid<Array<P, N>>`.
 It tracks the latest `N` valid input signals.
 The [`fsm_map` interface combinator](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.fsm_map) is provided by the HazardFlow HDL standard library.
-It transforms the ingress payload to the egress payload, calculates the next state for the next clock cycle, and leaves the resolver signal untouched.
-It takes an initial state, and an anonymous function, and returns a new interface.
-The initial state is defined as `P::default().repeat::<N>()` in our example.
+It computes the egress payload and the next state based on the ingress payload and the current state, and updates the state when the ingress tranfser happens.
+The initial state is defined as `P::default().repeat::<{ N - 1 }>()` in our example.
 The anonymous function is where we specify the fsm logic from the `(ingress payload, current state)` to the `(egress payload, next state)`.
 
 <!-- 

@@ -1,7 +1,10 @@
-//! Masked Merge implementation
+//! Custom FIFO implementation
 
 use crate::prelude::*;
 use crate::std::*;
+
+const N: usize = 5;
+const M: usize = 5;
 
 /// Masked merge trait
 pub trait MaskedMergeExt<P: Copy + Default, const N: usize>: Interface
@@ -40,12 +43,18 @@ where [(); clog2(N)]:
 
 /// Masked Merge Combinator
 #[synthesize]
-pub fn custom_fifo(ingress: [Vr<u32>; 5]) -> Vr<u32> {
+pub fn custom_fifo(ingress: [Vr<u32>; N]) -> Vr<u32> {
     ingress
         .masked_merge()
-        .map_resolver::<((), FifoS<(u32, U<{ clog2(5) }>), 5>)>(|er| {
+        .map_resolver::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|er| {
             let (_, fifo_s) = er.inner;
-            fifo_s.inner.fold(Array::from([false; 5]), |acc, (_p, idx)| acc.set(idx, true))
+            range::<M>().fold(Array::from([false; N]), |acc, i| {
+                if i.resize() >= fifo_s.len {
+                    acc
+                } else {
+                    acc.set(fifo_s.inner[wrapping_add(fifo_s.raddr, i, M.into_u())].1, true)
+                }
+            })
         })
         .transparent_fifo()
         .map(|(ip, _idx)| ip)

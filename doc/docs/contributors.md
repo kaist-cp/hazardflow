@@ -12,7 +12,7 @@ Here is a list of all the people who have worked on HazardFlow:
 - [Gieun Jeong](https://cp.kaist.ac.kr/gieun.jeong/)
 - Jihoon Kim
 
-**Previous Contributos**
+**Previous Contributors**
 
 - Seunghyeon Jeong
 - Tanapoom Sermchaiwong

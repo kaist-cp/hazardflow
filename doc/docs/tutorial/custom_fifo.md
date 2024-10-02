@@ -106,22 +106,28 @@ The FIFO Queue egress interface is a simple valid-ready interface `Vr<P>`. -->
 Based on the above submodules, we can implement the custom FIFO in a concise and modular way:
 
 ```rust,noplayground
-fn custom_fifo(ingress: [Vr<u32>; 5]) -> Vr<u32> {
+fn custom_fifo(ingress: [Vr<u32>; N]) -> Vr<u32> {
     ingress
         .masked_merge()
-        .map_resolver::<((), FifoS<(u32, U<{ clog2(5) }>), 5>)>(|er| {
+        .map_resolver::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|er| {
             let (_, fifo_s) = er.inner;
-            fifo_s.inner.fold(Array::from([false; 5]), |acc, (_p, idx)| acc.set(idx, true))
+            range::<M>().fold(Array::from([false; N]), |acc, i| {
+                if i.resize() >= fifo_s.len {
+                    acc
+                } else {
+                    acc.set(fifo_s.inner[wrapping_add(fifo_s.raddr, i, M.into_u())].1, true)
+                }
+            })
         })
         .transparent_fifo()
         .map(|(ip, _idx)| ip)
 }
 ```
 
-- We used `u32` for the payload type, and 5 for the number of ingress interfaces and FIFO size.
+- We used `u32` for the payload type, `N` for the number of ingress interfaces and `M` for the FIFO size.
 - `fifo_s.inner` represents the inner elements of the FIFO.
 - We `fold` the inner elements of the FIFO in the `map_resolver` combinator:
-  - The initializer is a boolean array with all elements as `false` of size 5. 
+  - The initializer is a boolean array with all elements as `false` of size `N` 
   - The index of the initializer array indicates the index of the ingress interfaces.
   - We iterate through all the elements within the FIFO and set the accumulator's value at the index in each FIFO element to `true`.
   - The final result indicates which ingress interfaces are present in the current FIFO.
