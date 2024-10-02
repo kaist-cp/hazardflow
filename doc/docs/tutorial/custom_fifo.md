@@ -131,6 +131,16 @@ fn custom_fifo(ingress: [Vr<u32>; 5]) -> Vr<u32> {
 
 You can find the full implementation in [custom_fifo.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/custom_fifo.rs).
 
+You can generate the Verilog codes with the following commands:
+
+```bash
+# Generate a separate Verilog file for each submodule.
+$ cargo run --release -- --target custom_fifo --deadcode --wire-cache
+
+# Generate an integrated Verilog file combining all submodules.
+$ cargo run --release -- --target custom_fifo --deadcode --wire-cache --merge
+```
+
 ---
 
 Congratulations! You finished the tutorial!

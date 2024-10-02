@@ -147,3 +147,13 @@ It transforms the ingress payload to sum of them.
 In the application-specific logic in `map` interface combinator, we use `fold` method which aggregates the data within array of signal.
 
 You can find the implementation in [fir_filter.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/fir_filter.rs).
+
+You can generate the Verilog codes with the following commands:
+
+```bash
+# Generate a separate Verilog file for each submodule.
+$ cargo run --release -- --target fir_filter --deadcode --wire-cache
+
+# Generate an integrated Verilog file combining all submodules.
+$ cargo run --release -- --target fir_filter --deadcode --wire-cache --merge
+```
