@@ -318,7 +318,7 @@ where
 {
     let cmd = cmd
         .map_resolver_inner::<((), FifoS<GemminiCmd, EX_QUEUE_LENGTH>)>(|_| ())
-        .multi_headed_naked_fifo()
+        .multi_headed_transparent_fifo()
         .map(|fifo_s| {
             // Transforms `FifoS` into array of commands
             range::<EX_QUEUE_LENGTH>().map(|i| {
@@ -343,7 +343,7 @@ where
 
             (cmd_wrapped, cmd_wrapped.is_some())
         })
-        .naked_fsm_map::<(ExeCmdT<EX_QUEUE_LENGTH>, ConfigS)>(ConfigS::default(), |cmd, s_config| {
+        .transparent_fsm_map::<(ExeCmdT<EX_QUEUE_LENGTH>, ConfigS)>(ConfigS::default(), |cmd, s_config| {
             // Update the configuration state if the command is a `ex_config` command.
             let cmd = cmd.unwrap();
             let config_updated = update_ex_config(cmd, s_config);
@@ -393,7 +393,7 @@ where
 
         (pop_count, any_matmul_in_progress, any_pending_robs)
     })
-    .naked_reg_fwd::<ExeH<EX_QUEUE_LENGTH>>(true)
+    .transparent_reg_fwd::<ExeH<EX_QUEUE_LENGTH>>(true)
     .filter_map_drop_with_r::<VrH<((ExeCmdT<EX_QUEUE_LENGTH>, ConfigS), BoundedU<2>), (U<2>, TagsInProgress, bool)>>(
         |(cmd_decoded, config), _| match cmd_decoded {
             ExeCmdT::Config(_) => Some(((cmd_decoded, config), BoundedU::new(0.into_u()))),

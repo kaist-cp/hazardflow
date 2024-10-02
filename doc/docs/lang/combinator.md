@@ -650,7 +650,7 @@ These registers can maintain the states in their registers and could delay one o
 We demonstrate the two most representative combinators: `reg_fwd` and `fifo`.
 
 <!-- We demonstrate the usage of `reg_fwd` with ingress interface `I<VrH<P, R>, D>` and `fifo` with ingress interfaces `I<VrH<P, R>, D>`.
-Similar to other combinators, register style combinators have other variants too, e.g. `naked_reg_bwd`, `shift_reg_fwd`, etc. -->
+Similar to other combinators, register style combinators have other variants too, e.g. `transparent_reg_bwd`, `shift_reg_fwd`, etc. -->
 
 #### `reg_fwd`
 

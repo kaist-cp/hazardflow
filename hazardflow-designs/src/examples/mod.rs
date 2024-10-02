@@ -1,4 +1,4 @@
 //! HazardFlow examples.
 
+pub mod custom_fifo;
 pub mod fir_filter;
-pub mod masked_merge;

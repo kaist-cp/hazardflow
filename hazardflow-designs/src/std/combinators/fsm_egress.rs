@@ -114,7 +114,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
         flow: bool,
         f: impl Fn(P, S) -> (EP, S, bool),
     ) -> I<VrH<EP, R>, D> {
-        self.map_resolver_inner::<(R, (HOption<P>, S))>(|(r, _)| r).naked_fsm_egress(init, pipe, flow, f)
+        self.map_resolver_inner::<(R, (HOption<P>, S))>(|(r, _)| r).transparent_fsm_egress(init, pipe, flow, f)
     }
 }
 
@@ -131,7 +131,7 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, (HOption<P>, S))>, D>
     /// | :-------: | ----------------------------- | ------------- |
     /// |  **Fwd**  | `HOption<P>`                  | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<(R, (HOption<P>, S))>` | `Ready<R>`    |
-    pub fn naked_fsm_egress<EP: Copy>(
+    pub fn transparent_fsm_egress<EP: Copy>(
         self,
         init: S,
         pipe: bool,

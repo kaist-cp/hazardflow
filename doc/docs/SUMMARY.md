@@ -4,7 +4,7 @@
 
 - [Tutorial](./tutorial/tutorial.md)
   + [FIR Filter](./tutorial/fir_filter.md)
-  + [Masked Merge](./tutorial/masked_merge.md)
+  + [FIFO without duplication](./tutorial/custom_fifo.md)
 - [Concepts](./lang/concepts.md)
   + [Signals](./lang/signal.md)
   + [Interfaces](./lang/interface.md)

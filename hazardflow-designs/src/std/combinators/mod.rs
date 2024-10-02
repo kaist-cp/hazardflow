@@ -70,7 +70,7 @@
 //!     - Suffix `block`: If the egress hazard ready condition (`EH::ready`) is false, send an additional "not ready"
 //!         signal to the ingress resolver.
 //! - Combinators with an internal state (Register, FSM combinators)
-//!     - Prefix `naked`: Outputs the internal state to the ingress resolver.
+//!     - Prefix `transparent`: Outputs the internal state to the ingress resolver.
 //! - Conversion combinators
 //!     - Start with `into`: The combinator doesn't change the behavior in a meaningful way. You can just use it to get
 //!         the type you want.

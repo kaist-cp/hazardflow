@@ -59,12 +59,12 @@ Based on the above submodules, we can implement the FIR filter in a concise and 
 fn fir_filter(input: Valid<u32>) -> Valid<u32> {
     input
         .window::<3>()
-        .weight([4, 2, 3])
+        .map(|ip| ip.zip(Array::from([4, 2, 3])).map(|(e, wt)| e * wt))
         .sum()
 }
 ```
 
-We can describe the FIR filter with `window`, `weight`, and `sum` combinators in the HazardFlow HDL and we assume the input interface `Valid<u32>` is provided.
+We can describe the FIR filter with `window`, `map`, and `sum` combinators in the HazardFlow HDL and we assume the input interface `Valid<u32>` is provided.
 `Valid<u32>`, which is an alias of [`I<ValidH<u32, ()>>`](../lang/interface.md#validh) is a **valid interface** where its payload is `u32`, the resolver is empty `()`, and its `ready` function always returns `true`.
 In other words, as long as the input interface's forward signal is `Some(u32)` at a specific clock cycle, the receiver receives a valid payload.
 We can interpret this input interface as a stream of signal values flowing through the wires.
@@ -76,9 +76,9 @@ The `window` combinator is defined as follows:
 ```rust,noplayground
 impl<P: Copy + Default> Valid<P> {
     fn window<const N: usize>(self) -> Valid<Array<P, N>> {
-        self.fsm_map(P::default().repeat::<N>(), |ip, s| {
-            let ep = s.append(ip.repeat::<1>()).clip_const::<N>(0);
-            let s_next = ep;
+        self.fsm_map(P::default().repeat::<{ N - 1 }>(), |ip, s| {
+            let ep = ip.repeat::<1>().append(s).resize::<N>();
+            let s_next = ep.clip_const::<{ N - 1 }>(0);
             (ep, s_next)
         })
     }
@@ -107,20 +107,16 @@ The anonymous function is where we specify the fsm logic from the `(ingress payl
   * The `clip_const::<N>(0)` function clips the array from index 0 of size `N`.
   * Note that in HazardFlow HDL, the array index is in descending order from left to right, for more details please refer to the [signal](./signal.md) section. -->
 
-**`weight` combinator:**
+**`map` combinator:**
 
-The `weight` combinator is defined as follows:
+The `map` combinator is used to represent the `weight` submodule.
 
 ```rust,noplayground
-impl<const N: usize> Valid<Array<u32, N>> {
-    fn weight(self, weight: [u32; N]) -> Valid<Array<u32, N>> {
-        self.map(|ip| ip.zip(weight).map(|(ele, weight)| ele * weight))
-    }
-}
+map(|ip| ip.zip(Array::from([4, 2, 3])).map(|(e, wt)| e * wt))
 ```
 
 It takes an `Valid<Array<u32, N>>` and returns an egress hazard interface `Valid<Array<u32, N>>`.
-It transforms the `i`-th element of ingress payload `ip[i]` into `weight[i] * ip[i]`, and leaves the resolver as untouched.
+It transforms the `i`-th element of ingress payload `ip[i]` into `ip[i] * weight[i]`, and leaves the resolver as untouched.
 The [`map` interface combinator](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.map) is provided by the HazardFlow HDL standard library.
 We can interpret it as stateless version of `fsm_map`.
 In the application-specific logic in `map` interface combinator, we use `zip` and `map` methods for manipulating the ingress payload signal.
@@ -141,13 +137,13 @@ The `sum` combinator is defined as follows:
 ```rust,noplayground
 impl<const N: usize> Valid<Array<u32, N>> {
     fn sum(self) -> Valid<u32> {
-        self.map(|ip| ip.fold_assoc(|e1, e2| e1 + e2))
+        self.map(|ip| ip.fold(0, |acc, e| acc + e))
     }
 }
 ```
 
 It takes an `Valid<Array<u32, N>>` and returns `Valid<u32>`.
 It transforms the ingress payload to sum of them.
-In the application-specific logic in `map` interface combinator, we use `fold_assoc` method which aggregates the data within array of signal.
+In the application-specific logic in `map` interface combinator, we use `fold` method which aggregates the data within array of signal.
 
 You can find the implementation in [fir_filter.rs](https://github.com/kaist-cp/hazardflow/blob/main/hazardflow-designs/src/examples/fir_filter.rs).

@@ -48,7 +48,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
         [(); clog2(N) + 1]:,
         [(); clog2(N + 1) + 1]:,
     {
-        self.map_resolver_inner::<(R, _)>(|er| er.0).naked_fifo()
+        self.map_resolver_inner::<(R, _)>(|er| er.0).transparent_fifo()
     }
 }
 
@@ -73,12 +73,12 @@ where
     // If pipe bit is valid and FIFO is full, ingress payload can come in if egress payload goes out.
     // Refer to below link for more details:
     // <https://github.com/chipsalliance/chisel/blob/v3.2.1/src/main/scala/chisel3/util/Decoupled.scala#L235-L246>
-    pub fn naked_fifo(self) -> I<VrH<P, R>, { Dep::Helpful }>
+    pub fn transparent_fifo(self) -> I<VrH<P, R>, { Dep::Helpful }>
     where
         [(); clog2(N) + 1]:,
         [(); clog2(N + 1) + 1]:,
     {
-        self.multi_headed_naked_fifo().map_resolver_inner(|r| (r, U::from(1))).filter_map(|s| {
+        self.multi_headed_transparent_fifo().map_resolver_inner(|r| (r, U::from(1))).filter_map(|s| {
             if s.len == 0.into_u() {
                 None
             } else {
@@ -87,11 +87,11 @@ where
         })
     }
 
-    /// A variation of [`I::naked_fifo`] that outputs the FIFO state instead of the front element as the egress payload,
+    /// A variation of [`I::transparent_fifo`] that outputs the FIFO state instead of the front element as the egress payload,
     /// and takes an additional egress resolver signal representing how many elements will be popped.
     ///
-    /// - Payload: The same behavior as [`I::naked_fifo`], but the FIFO state `FifoS<P, N>` is outputted instead.
-    /// - Resolver: The same behavior as [`I::naked_fifo`], but additionally takes a `U<{ clog2(N + 1) }>` that
+    /// - Payload: The same behavior as [`I::transparent_fifo`], but the FIFO state `FifoS<P, N>` is outputted instead.
+    /// - Resolver: The same behavior as [`I::transparent_fifo`], but additionally takes a `U<{ clog2(N + 1) }>` that
     ///     represents how many elements to pop.
     ///
     /// | Interface | Ingress                   | Egress                            |
@@ -99,7 +99,7 @@ where
     /// |  **Fwd**  | `HOption<P>`              | `HOption<FifoS<P, N>>`            |
     /// |  **Bwd**  | `Ready<(R, FifoS<P, N>)>` | `Ready<(R, U<{ clog2(N + 1) }>)>` |
     #[allow(clippy::type_complexity)]
-    pub fn multi_headed_naked_fifo(self) -> I<VrH<FifoS<P, N>, (R, U<{ clog2(N + 1) }>)>, { Dep::Helpful }>
+    pub fn multi_headed_transparent_fifo(self) -> I<VrH<FifoS<P, N>, (R, U<{ clog2(N + 1) }>)>, { Dep::Helpful }>
     where
         [(); clog2(N) + 1]:,
         [(); clog2(N + 1) + 1]:,

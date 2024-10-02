@@ -76,7 +76,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// |  **Fwd**  | `HOption<P>` | `HOption<P>` |
     /// |  **Bwd**  | `Ready<R>`   | `Ready<R>`   |
     pub fn reg_fwd(self, pipe: bool) -> I<VrH<P, R>, { Dep::Helpful }> {
-        self.map_resolver_inner::<(R, HOption<P>)>(|(r, _)| r).naked_reg_fwd(pipe)
+        self.map_resolver_inner::<(R, HOption<P>)>(|(r, _)| r).transparent_reg_fwd(pipe)
     }
 
     /// A variant of [`I::reg_fwd`] that takes the initial value of the state.
@@ -89,7 +89,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// |  **Fwd**  | `HOption<P>` | `HOption<P>` |
     /// |  **Bwd**  | `Ready<R>`   | `Ready<R>`   |
     pub fn reg_fwd_with_init(self, pipe: bool, init: P) -> I<VrH<P, R>, { Dep::Helpful }> {
-        self.map_resolver_inner::<(R, HOption<P>)>(|(r, _)| r).naked_reg_fwd_with_opt_init(pipe, Some(init))
+        self.map_resolver_inner::<(R, HOption<P>)>(|(r, _)| r).transparent_reg_fwd_with_opt_init(pipe, Some(init))
     }
 }
 
@@ -175,28 +175,28 @@ impl<const D: Dep, P: Copy, R: Copy, H: Hazard<P = P, R = (R, HOption<P>)>> I<An
     /// | :-------: | ------------------------ | ------------ |
     /// |  **Fwd**  | `HOption<P>`             | `HOption<P>` |
     /// |  **Bwd**  | `Ready<(R, HOption<P>)>` | `Ready<R>`   |
-    pub fn naked_reg_fwd<EH: Hazard<P = P, R = R>>(self, pipe: bool) -> I<AndH<EH>, { Dep::Helpful }> {
-        self.naked_reg_fwd_with_opt_init(pipe, None)
+    pub fn transparent_reg_fwd<EH: Hazard<P = P, R = R>>(self, pipe: bool) -> I<AndH<EH>, { Dep::Helpful }> {
+        self.transparent_reg_fwd_with_opt_init(pipe, None)
     }
 
-    /// A variant of [`I::naked_reg_fwd`] that takes the initial value of the state.
+    /// A variant of [`I::transparent_reg_fwd`] that takes the initial value of the state.
     ///
-    /// - Payload: The same behavior as [`I::naked_reg_fwd`].
-    /// - Resolver: The same behavior as [`I::naked_reg_fwd`].
+    /// - Payload: The same behavior as [`I::transparent_reg_fwd`].
+    /// - Resolver: The same behavior as [`I::transparent_reg_fwd`].
     ///
     /// | Interface | Ingress                  | Egress       |
     /// | :-------: | ------------------------ | ------------ |
     /// |  **Fwd**  | `HOption<P>`             | `HOption<P>` |
     /// |  **Bwd**  | `Ready<(R, HOption<P>)>` | `Ready<R>`   |
-    pub fn naked_reg_fwd_with_init<EH: Hazard<P = P, R = R>>(
+    pub fn transparent_reg_fwd_with_init<EH: Hazard<P = P, R = R>>(
         self,
         pipe: bool,
         init: P,
     ) -> I<AndH<EH>, { Dep::Helpful }> {
-        self.naked_reg_fwd_with_opt_init(pipe, Some(init))
+        self.transparent_reg_fwd_with_opt_init(pipe, Some(init))
     }
 
-    fn naked_reg_fwd_with_opt_init<EH: Hazard<P = P, R = R>>(
+    fn transparent_reg_fwd_with_opt_init<EH: Hazard<P = P, R = R>>(
         self,
         pipe: bool,
         init: HOption<P>,

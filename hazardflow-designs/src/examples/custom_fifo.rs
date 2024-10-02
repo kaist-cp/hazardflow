@@ -40,13 +40,13 @@ where [(); clog2(N)]:
 
 /// Masked Merge Combinator
 #[synthesize]
-pub fn m(ingress: [Vr<u32>; 5]) -> Vr<u32> {
+pub fn custom_fifo(ingress: [Vr<u32>; 5]) -> Vr<u32> {
     ingress
         .masked_merge()
         .map_resolver::<((), FifoS<(u32, U<{ clog2(5) }>), 5>)>(|er| {
             let (_, fifo_s) = er.inner;
             fifo_s.inner.fold(Array::from([false; 5]), |acc, (_p, idx)| acc.set(idx, true))
         })
-        .naked_fifo()
+        .transparent_fifo()
         .map(|(ip, _idx)| ip)
 }

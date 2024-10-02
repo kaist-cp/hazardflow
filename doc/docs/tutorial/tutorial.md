@@ -1,6 +1,6 @@
 # Tutorial
 
-We will introduce some basic concepts in the HazardFlow HDL programming model and use HazardFlow HDL to describe an [FIR (finite impulse response) filter](https://en.wikipedia.org/wiki/Finite_impulse_response) and a masked merge combinator.
+We will introduce some basic concepts in the HazardFlow HDL programming model and use HazardFlow HDL to describe an [FIR (finite impulse response) filter](https://en.wikipedia.org/wiki/Finite_impulse_response) and a custom FIFO which does not allow duplicated entries.
 
 HazardFlow HDL's implementation is based on the concept of [hazard interface](../lang/interface.md).
 Here, we will provide a brief overview of the interface and combinator to help you understand how to use them for implementing hardware modules.

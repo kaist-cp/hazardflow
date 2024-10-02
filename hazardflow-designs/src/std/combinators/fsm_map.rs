@@ -16,7 +16,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<ValidH<P, R>, D> {
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `R`          | `R`           |
     pub fn fsm_map<EP: Copy, S: Copy>(self, init_state: S, f: impl Fn(P, S) -> (EP, S)) -> I<ValidH<EP, R>, D> {
-        self.map_resolver::<(R, S)>(|(r, _)| r).naked_fsm_map(init_state, f)
+        self.map_resolver::<(R, S)>(|(r, _)| r).transparent_fsm_map(init_state, f)
     }
 
     /// A [`filter_map`] with an internal state.
@@ -36,7 +36,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<ValidH<P, R>, D> {
         init: S,
         f: impl Fn(P, S) -> (HOption<EP>, S),
     ) -> I<ValidH<EP, R>, D> {
-        self.map_resolver::<(R, S)>(|(r, _)| r).naked_fsm_filter_map(init, f)
+        self.map_resolver::<(R, S)>(|(r, _)| r).transparent_fsm_filter_map(init, f)
     }
 }
 
@@ -50,14 +50,14 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<ValidH<P, (R, S)>, D> {
     /// | :-------: | ------------ | ------------- |
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `(R, S)`     | `R`           |
-    pub fn naked_fsm_map<EP: Copy>(self, init_state: S, f: impl Fn(P, S) -> (EP, S)) -> I<ValidH<EP, R>, D> {
-        self.naked_fsm_filter_map(init_state, |p, s| {
+    pub fn transparent_fsm_map<EP: Copy>(self, init_state: S, f: impl Fn(P, S) -> (EP, S)) -> I<ValidH<EP, R>, D> {
+        self.transparent_fsm_filter_map(init_state, |p, s| {
             let (ep, s_next) = f(p, s);
             (Some(ep), s_next)
         })
     }
 
-    /// A variation of [`naked_fsm_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
+    /// A variation of [`transparent_fsm_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
     ///
     /// - Payload: Mapped by `f`.
     /// - Resolver: Preserved. The internal state `S` is additionally outputted.
@@ -66,12 +66,12 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<ValidH<P, (R, S)>, D> {
     /// | :-------: | ------------ | ------------- |
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `(R, S)`     | `R`           |
-    pub fn naked_fsm_map_with_r<EP: Copy>(
+    pub fn transparent_fsm_map_with_r<EP: Copy>(
         self,
         init_state: S,
         f: impl Fn(P, R, S) -> (EP, S),
     ) -> I<ValidH<EP, R>, { Dep::Demanding }> {
-        self.naked_fsm_filter_map_with_r(init_state, |p, r, s| {
+        self.transparent_fsm_filter_map_with_r(init_state, |p, r, s| {
             let (ep, s_next) = f(p, r, s);
             (Some(ep), s_next)
         })
@@ -87,7 +87,11 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<ValidH<P, (R, S)>, D> {
     /// | :-------: | ------------ | ------------- |
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `(R, S)`     | `R`           |
-    pub fn naked_fsm_filter_map<EP: Copy>(self, init: S, f: impl Fn(P, S) -> (HOption<EP>, S)) -> I<ValidH<EP, R>, D> {
+    pub fn transparent_fsm_filter_map<EP: Copy>(
+        self,
+        init: S,
+        f: impl Fn(P, S) -> (HOption<EP>, S),
+    ) -> I<ValidH<EP, R>, D> {
         unsafe {
             self.fsm(init, |ip, er, s| {
                 let (ep, s_next) = match ip {
@@ -99,7 +103,7 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<ValidH<P, (R, S)>, D> {
         }
     }
 
-    /// A variation of [`naked_fsm_filter_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
+    /// A variation of [`transparent_fsm_filter_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
     ///
     /// - Payload: Filter-mapped by `f`.
     /// - Resolver: Preserved. The internal state `S` is additionally outputted.
@@ -108,7 +112,7 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<ValidH<P, (R, S)>, D> {
     /// | :-------: | ------------ | ------------- |
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `(R, S)`     | `R`           |
-    pub fn naked_fsm_filter_map_with_r<EP: Copy>(
+    pub fn transparent_fsm_filter_map_with_r<EP: Copy>(
         self,
         init: S,
         f: impl Fn(P, R, S) -> (HOption<EP>, S),
@@ -139,7 +143,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<R>`   | `Ready<R>`    |
     pub fn fsm_map<EP: Copy, S: Copy>(self, init_state: S, f: impl Fn(P, S) -> (EP, S)) -> I<VrH<EP, R>, D> {
-        self.map_resolver_inner::<(R, S)>(|(r, _)| r).naked_fsm_map(init_state, f)
+        self.map_resolver_inner::<(R, S)>(|(r, _)| r).transparent_fsm_map(init_state, f)
     }
 
     /// A [`filter_map`] with an internal state.
@@ -155,7 +159,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// |  **Fwd**  | `HOption<P>` | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<R>`   | `Ready<R>`    |
     pub fn fsm_filter_map<EP: Copy, S: Copy>(self, init: S, f: impl Fn(P, S) -> (HOption<EP>, S)) -> I<VrH<EP, R>, D> {
-        self.map_resolver_inner::<(R, S)>(|(r, _)| r).naked_fsm_filter_map(init, f)
+        self.map_resolver_inner::<(R, S)>(|(r, _)| r).transparent_fsm_filter_map(init, f)
     }
 }
 
@@ -169,14 +173,14 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, S)>, D> {
     /// | :-------: | --------------- | ------------- |
     /// |  **Fwd**  | `HOption<P>`    | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<(R, S)>` | `Ready<R>`    |
-    pub fn naked_fsm_map<EP: Copy>(self, init_state: S, f: impl Fn(P, S) -> (EP, S)) -> I<VrH<EP, R>, D> {
-        self.naked_fsm_filter_map(init_state, |p, s| {
+    pub fn transparent_fsm_map<EP: Copy>(self, init_state: S, f: impl Fn(P, S) -> (EP, S)) -> I<VrH<EP, R>, D> {
+        self.transparent_fsm_filter_map(init_state, |p, s| {
             let (ep, s_next) = f(p, s);
             (Some(ep), s_next)
         })
     }
 
-    /// A variation of [`naked_fsm_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
+    /// A variation of [`transparent_fsm_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
     ///
     /// - Payload: Mapped by `f`. The payload is dropped if `er.ready` is false, even if `f` returns `Some`.
     ///     ([why?](super#notes-on-dropping-combinators))
@@ -186,12 +190,12 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, S)>, D> {
     /// | :-------: | --------------- | ------------- |
     /// |  **Fwd**  | `HOption<P>`    | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<(R, S)>` | `Ready<R>`    |
-    pub fn naked_fsm_map_drop_with_r<EP: Copy>(
+    pub fn transparent_fsm_map_drop_with_r<EP: Copy>(
         self,
         init: S,
         f: impl Fn(P, Ready<R>, S) -> (EP, S),
     ) -> I<VrH<EP, R>, { Dep::Demanding }> {
-        self.naked_fsm_filter_map_drop_with_r(init, |p, r, s| {
+        self.transparent_fsm_filter_map_drop_with_r(init, |p, r, s| {
             let (ep, s_next) = f(p, r, s);
             (Some(ep), s_next)
         })
@@ -207,7 +211,11 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, S)>, D> {
     /// | :-------: | --------------- | ------------- |
     /// |  **Fwd**  | `HOption<P>`    | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<(R, S)>` | `Ready<R>`    |
-    pub fn naked_fsm_filter_map<EP: Copy>(self, init: S, f: impl Fn(P, S) -> (HOption<EP>, S)) -> I<VrH<EP, R>, D> {
+    pub fn transparent_fsm_filter_map<EP: Copy>(
+        self,
+        init: S,
+        f: impl Fn(P, S) -> (HOption<EP>, S),
+    ) -> I<VrH<EP, R>, D> {
         unsafe {
             self.fsm::<S, D, VrH<EP, R>>(init, |ip, er, s| {
                 let (ep, s_next) = match ip {
@@ -220,7 +228,7 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, S)>, D> {
         }
     }
 
-    /// A variation of [`naked_fsm_filter_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
+    /// A variation of [`transparent_fsm_filter_map`](fsm_map) that allows `f` to additionally consider the egress resolver.
     ///
     /// - Payload: Filter-mapped by `f`. The payload is dropped if `er.ready` is false, even if `f` returns `Some`.
     ///     ([why?](super#notes-on-dropping-combinators))
@@ -230,7 +238,7 @@ impl<P: Copy, R: Copy, S: Copy, const D: Dep> I<VrH<P, (R, S)>, D> {
     /// | :-------: | --------------- | ------------- |
     /// |  **Fwd**  | `HOption<P>`    | `HOption<EP>` |
     /// |  **Bwd**  | `Ready<(R, S)>` | `Ready<R>`    |
-    pub fn naked_fsm_filter_map_drop_with_r<EP: Copy>(
+    pub fn transparent_fsm_filter_map_drop_with_r<EP: Copy>(
         self,
         init: S,
         f: impl Fn(P, Ready<R>, S) -> (HOption<EP>, S),
