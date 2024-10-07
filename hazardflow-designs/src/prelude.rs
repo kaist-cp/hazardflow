@@ -3,4 +3,4 @@
 pub use hazardflow_macro::*;
 
 pub use crate::std::value::*;
-pub use crate::{display, hassert, hpanic};
+pub use crate::{compiler_magic, display, hassert, hpanic};

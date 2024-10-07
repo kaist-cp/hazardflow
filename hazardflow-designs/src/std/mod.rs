@@ -71,3 +71,14 @@ pub use utils::*;
 pub use valid::*;
 pub use valid_ready::*;
 pub use value::*;
+
+/// Indicates that the function is implemented as a compiler magic.
+#[macro_export]
+macro_rules! compiler_magic {
+    () => {
+        todo!()
+    };
+    ($msg:expr) => {
+        todo!($msg)
+    };
+}

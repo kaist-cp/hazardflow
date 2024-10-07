@@ -67,7 +67,7 @@ pub struct Ready<R> {
     pub inner: R,
 }
 
-impl<R> Ready<R> {
+impl<R: Copy> Ready<R> {
     /// Generates a new `Ready` with the given `ready` bit and inner resolver.
     pub fn new(ready: bool, inner: R) -> Self {
         Self { ready, inner }
@@ -75,10 +75,10 @@ impl<R> Ready<R> {
 
     /// Creates a new invalid signal.
     // TODO: We should add `inner` as parameter to set the inner hazard value when creating invalid signal.
-    // This is needed because the inner hazard value should be allowed as don't-care value only when explicit `unsafe` reasoning by user is given.
+    //       This is needed because the inner hazard value should be allowed as don't-care value only when explicit `unsafe` reasoning by user is given.
     #[allow(unreachable_code)]
     pub fn invalid() -> Self {
-        Self { ready: false, inner: todo!("inner should be dont-care value") }
+        Self { ready: false, inner: unsafe { x::<R>() } }
     }
 
     /// Creates a new valid signal.
