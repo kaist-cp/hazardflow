@@ -1,6 +1,6 @@
 # FIFO without duplication
 
-In this tutorial, we will implement a custom FIFO which can be used to provide balanced transfers for multiple input streams, thereby offering better latency.
+In this tutorial, we will implement a custom FIFO which can be used to provide balanced transfers for multiple input streams, thereby offering balanced latency for each input stream.
 
 ## Specification
 
