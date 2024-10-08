@@ -86,7 +86,7 @@ impl<P: Copy, R: Copy, const D: Dep, const N: usize> JoinExt for [I<ValidH<P, R>
     fn join(self) -> I<ValidH<Array<P, N>, Array<R, N>>, D> {
         unsafe {
             self.fsm((), |ip, er, ()| {
-                let ep = if ip.all(|p| p.is_some()) { Some(ip.map(|p| p.unwrap())) } else { None };
+                let ep = if ip.all(|p| p.is_some()) { Some(ip.map(|p| p.unwrap_or(x()))) } else { None };
                 (ep, er, ())
             })
         }
