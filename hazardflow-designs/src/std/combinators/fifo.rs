@@ -120,7 +120,7 @@ where
                     let ep = Some(s);
                     let ir = Ready::new(!full, (er.inner.0, s));
 
-                    let inner_next = if enq { inner.set(waddr.resize::<{ clog2(N) }>(), ip.unwrap()) } else { inner };
+                    let inner_next = if enq { inner.set(waddr, ip.unwrap()) } else { inner };
                     let len_next = (len + U::from(enq).resize() - if deq { pop.resize() } else { 0.into_u() }).resize();
                     let raddr_next =
                         if deq { wrapping_add::<{ clog2(N) }>(raddr, pop.resize(), N.into_u()) } else { raddr };

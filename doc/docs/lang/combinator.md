@@ -779,8 +779,8 @@ impl<P: Copy> Vr<P> {
             let ep = if s.len == 0.into_u() { None } else { Some(s.inner[s.raddr]) };
             let ir = Ready::new(!full, ());
 
-            let inner_next = if enq { inner.set(waddr.resize::<{ clog2(N) }>(), ip.unwrap()) } else { inner };
-            let len_next = (len + U::from(enq).resize() - if deq { 1.into_u() } else { 0.into_u() }).resize();
+            let inner_next = if enq { inner.set(waddr, ip.unwrap()) } else { inner };
+            let len_next = (len + U::from(enq).resize() - U::from(deq).resize()).resize();
             let raddr_next = if deq { wrapping_inc::<{ clog2(N) }>(raddr, N.into_u()) } else { raddr };
             let waddr_next = if enq { wrapping_inc::<{ clog2(N) }>(waddr, N.into_u()) } else { waddr };
 
@@ -832,8 +832,8 @@ The example cycle-level behavior of `fifo` is as follows:
 }
 -->
 
-- The ingress ready signal is true as long as the queue is not full.
-- Pipeline is disabled for the FIFO queue.
+- The ingress ready signal is `true` as long as the queue is not full.
+- It does not give maximum throughput because both ingress transfer and egress transfer cannot happen simultaneously when the FIFO is full.
 - Cycle 0, 1, 2, 3, 6: Ingress transfer happens.
 - Cycle 1, 5, 6, 7: Egress transfer happens.
 
