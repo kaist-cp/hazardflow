@@ -23,14 +23,14 @@ pub struct PeColData {
     pub d: U<OUTPUT_BITS>,
 }
 
-/// Which register should be propagated (and which should be accumulated)?
+/// Which register to use to preload the value
 #[derive(Debug, Default, Clone, Copy)]
 pub enum Propagate {
-    /// Reg2 should be propagated and use Reg1 for computation
+    /// use Reg1 for preload and Reg2 for computation
     #[default]
-    Reg2,
-    /// Reg1 should be propagated and use Reg2 for computation
     Reg1,
+    /// use Reg2 for preload and Reg1 for computation
+    Reg2,
 }
 
 /// Is Dataflow Output-Stationary(OS) or Weight-Stationary(WS)?
@@ -96,18 +96,17 @@ pub struct PeColControl {
 #[derive(Debug, Default, Clone, Copy)]
 pub struct PeS {
     /// Register 1
-    pub c1: U<32>,
+    pub reg1: U<32>,
     /// Register 2
-    pub c2: U<32>,
-    /// Which register should be propagated (and which should be accumulated)?
+    pub reg2: U<32>,
     /// Same as `last_s` in the Chisel implementation.
     pub propagate: Propagate,
 }
 
 impl PeS {
     /// Creates a new PE state.
-    pub fn new(c1: U<32>, c2: U<32>, propagate: Propagate) -> Self {
-        Self { c1, c2, propagate }
+    pub fn new(reg1: U<32>, reg2: U<32>, propagate: Propagate) -> Self {
+        Self { reg1, reg2, propagate }
     }
 }
 
