@@ -3,3 +3,6 @@ title = "HazardFlow HDL"
 language = "en"
 multilingual = false
 src = "docs"
+
+[output.html]
+mathjax-support = true

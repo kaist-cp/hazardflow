@@ -1,13 +1,21 @@
 # Signal
 
 Signal is a collection of types that can be transferred through wires in HazardFlow HDL. We divide these types into two categories: **scalar** and **compound**.
-The HazardFlow HDL reuse some data types from the Rust programming language. Normally we can consider a data type implements `Copy` in Rust as a signal type in the HazardFlow HDL. 
+The HazardFlow HDL reuse some data types from the Rust programming language.
+Normally we can consider a data type implements [`Copy` trait in Rust](https://doc.rust-lang.org/std/marker/trait.Copy.html) as a signal type in the HazardFlow HDL.
 
-For more information of the Rust data types, you can reference to [The Rust Programming Language Book](https://doc.rust-lang.org/beta/book/ch03-02-data-types.html).
+> The `Copy` trait in Rust and the signal type in HazardFlow are not in a perfect 1:1 relationship.
+While the signal type in HazardFlow must implement Rust's `Copy` trait, there are some types like function pointers (e.g., `fn() -> i32`) that implement the `Copy` trait but are not treated as signal types in HazardFlow.
+
+For more information of the Rust data types, please refer to [The Rust Programming Language Book](https://doc.rust-lang.org/beta/book/ch03-02-data-types.html).
 
 ## Scalar Types
 
 A scalar type represents a single value.
+
+### Boolean
+
+We interpret the Boolean type the same as the `bool` type in the Rust programming language. In HazardFlow HDL, we also interpret the Boolean value as `0` or `1` and can be sent through the wires when the value is `True` or `False`. 
 
 ### Unsigned Integer
 
@@ -20,10 +28,6 @@ In the HazardFlow HDL, we support arbitrary bit-width unsigned integers. We defi
   * We can convert `U<N>` into `u32`, `u8`, and also `bool`.
 * Ordering
   * We provide ordering functions for developers to easily compare two unsigned integers.
-
-### Boolean
-
-We interpret the Boolean type the same as the `bool` type in the Rust programming language. In HazardFlow HDL, we also interpret the Boolean value as `0` or `1` and can be sent through the wires when the value is `True` or `False`. 
 
 ## Compound Types
 
@@ -39,7 +43,7 @@ Similar to the `Option` type in Rust, the `HOption` type in HazardFlow HDL is al
 
 ```rust,noplayground
 #[derive(Debug, Clone, Copy, HEq)]
-pub enum HOption<T: Copy> {
+enum HOption<T: Copy> {
     /// No value.
     None,
     /// Some value of type `T`.
@@ -79,7 +83,7 @@ The `Array` type is primitive in the HazardFlow HDL. We can define an `N` size s
 In HazardFlow HDL, we represent unsigned integer as an `Array` of `bool` with bit-width `N`. When `bool` is `true`, we interpret it as a bit with value `1`, `false` as `0`.
 
 ```rust,noplayground
-pub type U<const N: usize> = Array<bool, N>;
+type U<const N: usize> = Array<bool, N>;
 ```
 
 <!--TODO: We might need this for doc.rs-->

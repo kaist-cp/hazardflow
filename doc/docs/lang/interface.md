@@ -56,7 +56,7 @@ In HazardFlow HDL, we abstracted any arbitraty communication protocol into `Haza
 It describes the necessary information for communication: payload, resolver, and ready function.
 
 ```rust,noplayground
-pub trait Hazard {
+trait Hazard {
     type P: Copy;
     type R: Copy;
 
@@ -145,11 +145,6 @@ type VrH<P: Copy, R: Copy> = AndH<ValidH<P, R>>;
 
 For reusability, we added additional resolver signals that simply flow from the receiver to the sender.
 
-<!-- * The payload type of the Valid-Ready Interface is `HOption<P>`.
-* The resolver type of the Valid-Ready Interface is `Ready<()>`.
-* When the payload is valid, which means the payload is `Some(P)`, and the ready signal in the resolver is `true`, then transfer happens.
-* Specially, we define the Valid-Ready Interface as `pub type Vr<P, const D: Dep = { Dep::Helpful }> = I<VrH<P>, D>` -->
-
 ## Interface
 
 An interface is an abstraction that represents the IO of a hardware module.
@@ -159,7 +154,7 @@ Typically, a single interface is composed of zero, one, or multiple hazard inter
 ### Specification
 
 ```rust,noplayground
-pub trait Interface {
+trait Interface {
     type Fwd: Copy;
     type Bwd: Copy;
 
@@ -188,7 +183,7 @@ For an arbitraty hazard specification `H`, we define the hazard interface `I<H, 
 <!-- If a `struct` implements the interface trait and also contains a hazard, we consider it as a **hazard interface**. In the HazardFlow HDL, we define it as `I<H, D>`, where `H` is the hazard, and `D` is the dependency type of hazard protocol. For more information of the dependency, please refer to the [dependency section](../advanced/dependency.md). -->
 
 ```rust,noplayground
-pub struct I<H: Hazard, D: Dep>;
+struct I<H: Hazard, D: Dep>;
 
 impl<H: Hazard, const D: Dep> Interface for I<H, D> {
     type Fwd = HOption<H::P>,

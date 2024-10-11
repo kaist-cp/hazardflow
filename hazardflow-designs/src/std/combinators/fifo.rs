@@ -29,6 +29,24 @@ where
     }
 }
 
+impl<P: Copy, const N: usize> FifoS<P, N>
+where
+    [(); clog2(N)]:,
+    [(); clog2(N + 1)]:,
+    [(); clog2(N) + 1]:,
+{
+    /// Returns inner elements with valid bit.
+    pub fn inner_with_valid(self) -> Array<HOption<P>, N> {
+        range::<N>().map(|i| {
+            if i.resize() >= self.len {
+                None
+            } else {
+                Some(self.inner[wrapping_add::<{ clog2(N) }>(self.raddr, i, N.into_u())])
+            }
+        })
+    }
+}
+
 impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     /// FIFO queue with `N` entries.
     ///

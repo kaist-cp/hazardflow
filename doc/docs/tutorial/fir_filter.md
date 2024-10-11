@@ -11,9 +11,9 @@ The FIR filter of order *N* performs the following operation:
 It receives input signals from the stream *x* and outputs the weighted sum of the most recent *N+1* input signals to the stream *y*.
 It can be expressed with the following formula:
 
-<center><img src="../formulas/fir/formula.svg" width="75%" style="vertical-align:middle"></center>
+\\[ y[n] = b_0 x[n] + b_1 x[n-1] + ... + b_N x[n-N] = \sum^{N}_{i=0} b_i x[n-i] \\]
 
-where <img src="../formulas/fir/x.svg" style="vertical-align:middle"> and <img src="../formulas/fir/y.svg" style="vertical-align:middle"> represent the input and output signals, <img src="../formulas/fir/n.svg" style="vertical-align:middle"> represents the filter order, and <img src="../formulas/fir/b.svg" style="vertical-align:middle"> represents the *i*-th filter coefficient.
+where \\( x[n] \\) and \\( y[n] \\) represent the input and output signals, \\( N \\) represents the filter order, and \\( b_i \\) represents the *i*-th filter coefficient.
 
 For example, the IO signals of a FIR filter of order 2 with coefficients [4, 2, 3] are as follows:
 
@@ -58,9 +58,11 @@ Based on the above submodules, we can implement the FIR filter in a concise and 
 
 ```rust,noplayground
 fn fir_filter(input: Valid<u32>) -> Valid<u32> {
+    let weight = Array::<u32, 3>::from([4, 2, 3]);
+
     input
         .window::<3>()
-        .map(|ip| ip.zip(Array::from([4, 2, 3])).map(|(e, wt)| e * wt))
+        .map(|ip| ip.zip(weight).map(|(e, wt)| e * wt))
         .sum()
 }
 ```
@@ -112,7 +114,7 @@ The anonymous function is where we specify the fsm logic from the `(ingress payl
 The `map` combinator is used to represent the `weight` submodule.
 
 ```rust,noplayground
-map(|ip| ip.zip(Array::from([4, 2, 3])).map(|(e, wt)| e * wt))
+map(|ip| ip.zip(weight).map(|(e, wt)| e * wt))
 ```
 
 It takes an `Valid<Array<u32, N>>` and returns an egress hazard interface `Valid<Array<u32, N>>`.

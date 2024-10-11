@@ -32,5 +32,7 @@ impl<const N: usize> Valid<Array<u32, N>> {
 /// FIR filter implementation
 #[synthesize]
 pub fn fir_filter(input: Valid<u32>) -> Valid<u32> {
-    input.window::<3>().map(|ip| ip.zip(Array::from([4, 2, 3])).map(|(e, wt)| e * wt)).sum()
+    let weight = Array::<u32, 3>::from([4, 2, 3]);
+
+    input.window::<3>().map(|ip| ip.zip(weight).map(|(e, wt)| e * wt)).sum()
 }

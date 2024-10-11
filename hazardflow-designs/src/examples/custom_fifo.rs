@@ -46,13 +46,12 @@ where [(); clog2(N)]:
 pub fn custom_fifo(ingress: [Vr<u32>; N]) -> Vr<u32> {
     ingress
         .masked_merge()
-        .map_resolver::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|er| {
-            let (_, fifo_s) = er.inner;
-            range::<M>().fold(Array::from([false; N]), |acc, i| {
-                if i.resize() >= fifo_s.len {
-                    acc
+        .map_resolver_inner::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|(_, fifo_s)| {
+            fifo_s.inner_with_valid().fold(false.repeat::<N>(), |acc, i| {
+                if let Some((_, idx)) = i {
+                    acc.set(idx, true)
                 } else {
-                    acc.set(fifo_s.inner[wrapping_add(fifo_s.raddr, i, M.into_u())].1, true)
+                    acc
                 }
             })
         })

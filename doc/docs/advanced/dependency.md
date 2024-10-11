@@ -16,7 +16,7 @@ It is defined as variants of an enum `Dep`:
 ```rust,noplayground
 /// Dependency type of a hazard interface.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ConstParamTy)]
-pub enum Dep {
+enum Dep {
     /// The payload (`Fwd`) does not depend on the resolver (`Bwd`).
     Helpful = 0,
 
@@ -33,7 +33,7 @@ We annotate the dependency type to the hazard interface.
 ```rust,noplayground
 /// Hazard interface.
 #[derive(Debug)]
-pub struct I<H: Hazard, const D: Dep>;
+struct I<H: Hazard, const D: Dep>;
 ```
 
 The benefit of using dependency type is that it is useful to guarantee the transfer happens or not in the interface.

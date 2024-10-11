@@ -109,13 +109,12 @@ Based on the above submodules, we can implement the custom FIFO in a concise and
 fn custom_fifo(ingress: [Vr<u32>; N]) -> Vr<u32> {
     ingress
         .masked_merge()
-        .map_resolver::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|er| {
-            let (_, fifo_s) = er.inner;
-            range::<M>().fold(Array::from([false; N]), |acc, i| {
-                if i.resize() >= fifo_s.len {
-                    acc
+        .map_resolver_inner::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|(_, fifo_s)| {
+            fifo_s.inner_with_valid().fold(false.repeat::<N>(), |acc, i| {
+                if let Some((_, idx)) = i {
+                    acc.set(idx, true)
                 } else {
-                    acc.set(fifo_s.inner[wrapping_add(fifo_s.raddr, i, M.into_u())].1, true)
+                    acc
                 }
             })
         })
@@ -125,12 +124,13 @@ fn custom_fifo(ingress: [Vr<u32>; N]) -> Vr<u32> {
 ```
 
 - We used `u32` for the payload type, `N` for the number of ingress interfaces and `M` for the FIFO size.
-- `fifo_s.inner` represents the inner elements of the FIFO.
-- We `fold` the inner elements of the FIFO in the `map_resolver` combinator:
-  - The initializer is a boolean array with all elements as `false` of size `N` 
-  - The index of the initializer array indicates the index of the ingress interfaces.
-  - We iterate through all the elements within the FIFO and set the accumulator's value at the index in each FIFO element to `true`.
-  - The final result indicates which ingress interfaces are present in the current FIFO.
+- `fifo_s.inner_with_valid()` represents the inner elements of the FIFO.
+  + It has type `Array<HOption<u32>, M>`, `HOption` represents the validity of the element.
+- We `fold` the inner elements of the FIFO in the `map_resolver_inner` combinator:
+  + The initializer is a boolean array with all elements as `false` of size `N`
+  + The index of the initializer array indicates the index of the ingress interfaces.
+  + We iterate through all the elements within the FIFO and set the accumulator's value at the index in each FIFO element to `true`.
+  + The final result indicates which ingress interfaces are present in the current FIFO.
 - We send back this resolver to the `masked_merge` combinator to make decision for choosing the next ingress interface.
 - We filter out the unnecessary index information in the last `map` combinator.
 - The implementation of the `masked_merge()` combinator will be explained in the [Implementing Combinators](../advanced/combinator.md) section.

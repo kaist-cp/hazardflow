@@ -6,6 +6,39 @@ The combinator specifies the combinational logic of calculating the egress inter
 
 Note that in this section, you will see the dependency type `D` in the combinators' signature, for more information about the dependency, please refer to the [dependency section](../advanced/dependency.md).
 
+## Combine Blackbox Module to Interface
+
+The `comb` method within the interface trait is used to combine the blackbox module to the given interface and return the egress interface.
+
+```rust,noplayground
+trait Interface {
+    ..
+
+    fn comb<E: Interface>(self, m: impl FnOnce(Self) -> E) -> E {
+        m(self)
+    }
+}
+```
+
+It is useful when we want to combine multiple modules together.
+For example, we can combine multiple stage modules with `comb` in the CPU core.
+
+```rust,noplayground
+fn core(
+    imem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
+    dmem: impl FnOnce(Vr<MemReq>) -> Vr<MemRespWithAddr>,
+) {
+    fetch::<START_ADDR>(imem)
+        .comb(decode)
+        .comb(exe)
+        .comb(move |ingress| mem(ingress, dmem))
+        .comb(wb)
+}
+```
+
+- `imem` and `dmem` are modules for instruction memory and data memory, respectively.
+- We chain the 5 sub-modules `fetch`, `decode`, `exe`, `mem`, and `wb` by using the `comb` method.
+
 ## Generic FSM Combinator
 
 The essence of the interface combinator is the generic `fsm` combinator.
@@ -22,7 +55,7 @@ We provide the `fsm` combinator that transforms the ingress interface to egress 
 With this combinator, you can represent an arbitrary FSM.
 
 ```rust,noplayground
-pub trait Interface: Sized {
+trait Interface {
     type Fwd: Copy;
     type Bwd: Copy;
 
@@ -275,7 +308,7 @@ These combinators can either duplicate a single ingress interface into multiple 
 
 We demonstrate the two most representative combinators: `lfork` and `branch`.
 
-#### lfork
+#### `lfork`
 
 This combinator delivers the ingress payload to all the egress interfaces' egress payload when all the egress interfaces are ready to receive the ingress payload, and also combines all the egress interfaces' resolvers to the ingress resolver.
 We demonstrate `lfork` with the ingress interface `Vr<P, D>`, whose resolver is `()`. 
@@ -362,7 +395,7 @@ The example cycle-level behavior of `lfork` is as follows:
 
 - Cycle 1, 4, 5: transfer happens at ingress, first egress, and second egress sides.
 
-#### branch
+#### `branch`
 
 This combinator splits a single ingress interface into multiple egress interfaces and only selects one of the egress interfaces to transfer the payload, also combines all the egress interfaces' resolvers into the ingress resolver.
 We demonstrate `branch` with the ingress interface `Vr<P, BoundedU<N>>`.
@@ -468,7 +501,7 @@ The egress interface could contain all the ingress interfaces' payload and resol
 
 We demonstrate the two most representative combinators: `join` and `merge`.
 
-#### join
+#### `join`
 
 This combinator merges the ingress interfaces' payload and resolver.
 We demonstrate this combinator with the ingress interfaces `(Vr<P1>, Vr<P2>)`.
@@ -555,7 +588,7 @@ The example cycle-level behavior of `join` is as follows:
 
 - Cycle 1, 4, 5: transfer happens.
 
-#### merge
+#### `merge`
 
 This combinator will select one from the ingress interfaces to deliver the ingress payload to the egress payload and also leave the inner of the egress resolver untouched to the ingress interfaces.
 We will demonstrate the `cmerge` combinator with 2 ingress interfaces `[Vr<u32>, Vr<u32>]`.
@@ -654,7 +687,7 @@ Similar to other combinators, register style combinators have other variants too
 
 #### `reg_fwd`
 
-We can use `reg_fwd` to reduce the clock cycle times.
+We can use `reg_fwd` to make a pipeline, and reduce the critical path.
 
 Let's assume we have a circuit with ingress interface `Vr<P>`:
 
@@ -662,14 +695,14 @@ Let's assume we have a circuit with ingress interface `Vr<P>`:
   <img src="../figure/map_no_reg.drawio.svg" />
 </p>
 
-Transforming from ingress payload from `P` to `EP2` needs to happen within one clock cycle, the total clock cycle times is the `Sum(lat(f1) + lat(f2))`.
-If we add a `reg_fwd` combinator between those two `map` combinators.
+Transforming from ingress payload from `P` to `EP2` needs to happen within a cycle, the critical path becomes `cpath(f1) + cpath(f2)`.
+To resolve this, we add a `reg_fwd` combinator between those two `map` combinators.
 
 <p align="center">
   <img src="../figure/map_with_reg.drawio.svg" />
 </p>
 
-The total clock times is reduced to `Max(lat(f1), lat(f2))`.
+Then the critical path is reduced to `max(cpath(f1), cpath(f2))`.
 
 <p align="center">
   <img src="../figure/combinator-reg-fwd.svg" width=80% />
@@ -677,16 +710,12 @@ The total clock times is reduced to `Max(lat(f1), lat(f2))`.
 
 ```rust,noplayground
 impl<P: Copy> Vr<P> {
-    fn reg_fwd(self, pipe: bool) -> Vr<P> {
+    fn reg_fwd(self) -> Vr<P> {
         self.fsm::<Vr<P>, HOption<P>>(None, |ip, er, s| {
             let ep = s;
             let et = ep.is_some_and(|p| er.ready);
 
-            let ir = if pipe {
-                Ready::new(s.is_none() || et, (er.inner, s))
-            } else {
-                Ready::new(s.is_none(), (er.inner, s))
-            };
+            let ir = Ready::new(s.is_none() || et, (er.inner, s));
             let it = ip.is_some_and(|p| ir.ready);
 
             let s_next = if it {
@@ -703,7 +732,6 @@ impl<P: Copy> Vr<P> {
 }
 ```
 
-This combinator could be a pipeline when the `pipe` parameter is `true`.
 * The current state is the valid egress payload.
 * The ingress interface is ready to receive a valid payload whenever the current register is empty or the egress transfer happens.
 * If the ingress transfer happens, then the register stores the new valid payload as the next state.
@@ -711,7 +739,7 @@ This combinator could be a pipeline when the `pipe` parameter is `true`.
 * If neither ingress transfer nor egress transfer happens, then the next state stays the same as the current state.
 * The only difference between `pipe` is `true` or `false` is the ingress transfer happens only when the current register is empty, delaying one cycle compared to the pipeline.
 
-Let's assume the ingress interface type is `Vr<u32>` and we turn on the `pipe`.
+Let's assume the ingress interface type is `Vr<u32>`.
 
 The example cycle-level behavior of `reg_fwd` is as follows:
 
@@ -756,7 +784,7 @@ The example cycle-level behavior of `reg_fwd` is as follows:
 }
 -->
 
-#### fifo
+#### `fifo`
 
 This combinator is a pipelined FIFO queue, it can accept a new element every cycle if the queue is not full.
 
@@ -843,7 +871,7 @@ These combinators have only either ingress interface or egress interface.
 
 We demonstrate the two most representative combinators: `source` and `sink`.
 
-#### source
+#### `source`
 
 This combinator immediately returns the data to the payload when the data is coming from resolver.
 The `source` combinator only has the egress interface.
@@ -899,7 +927,7 @@ When `P` is `u32`, the example cycle-level behavior of `source` is as follows:
 - Cycle 0, 1, 2, 4, 5: Egress transfer happens.
 - Cycle 3: Egress transfer does not happen because egress ready signal is `false`.
 
-#### sink
+#### `sink`
 
 This combinator maintains a state and calculates the ingress resolver with `f`, which takes the current state and ingress payload as inputs.
 The `sink` combinator only has the ingress interface.
@@ -1109,11 +1137,11 @@ It outputs 3 consecutive numbers starting from each input number.
 
 ```rust,noplayground
 fn consecutive_3(input: Vr<u32>) -> Vr<u32> {
-    input.fsm_egress(0, true, |p, add| {
-        let ep = p + add;
-        let add_next = add + 1;
-        let is_last = add == 2;
-        (ep, add_next, is_last)
+    input.fsm_egress(0, true, |p, count| {
+        let ep = p + count;
+        let count_next = count + 1;
+        let is_last = count == 2;
+        (ep, count_next, is_last)
     })
 }
 ```
@@ -1180,6 +1208,8 @@ The example cycle-level behavior of `fsm_egress` is as follows:
 * At T3, the FSM state is reset and a new FSM is started.
 * From T3 to T5, the FSM is running with the saved payload `Some(1)`, and it outputs `1`, `2`, `3`.
 
+<!--
 ### Conversion
 
 TODO: Should we just link to the rustdoc? @jihoon
+-->

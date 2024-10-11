@@ -308,16 +308,22 @@ impl PortDecls {
         match ty.kind() {
             TyKind::Bool => Some(Self::unsigned_bits(1)),
             TyKind::Int(int_ty) => {
-                let width: usize = int_ty.bit_width().expect("isize is not supported").try_into().unwrap();
+                let width: usize = int_ty
+                    .bit_width()
+                    .expect("`isize` cannot be used as a signal type. Specify the bitwidth explicitly, such as `i32` or `i64`.")
+                    .try_into()
+                    .unwrap();
+
                 Some(Self::signed_bits(width))
             }
             TyKind::Uint(uint_ty) => {
-                let width: usize = uint_ty
+                let width = uint_ty
                     .bit_width()
-                    // NOTE: This fails when type is `usize`, and falls back to 32 bits
                     .unwrap_or(32)
+                    // .expect("`usize` cannot be used as a signal type. Specify the bitwidth explicitly, such as `u32` or `u64`.")
                     .try_into()
                     .unwrap();
+
                 Some(Self::unsigned_bits(width))
             }
             TyKind::Adt(def, substs) => AdtLayout::new(tcx, def, substs).port_decls().into(),
