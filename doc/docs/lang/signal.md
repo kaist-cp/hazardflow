@@ -4,7 +4,7 @@ Signal is a collection of types that can be transferred through wires in HazardF
 The HazardFlow HDL reuse some data types from the Rust programming language.
 Normally we can consider a data type implements [`Copy` trait in Rust](https://doc.rust-lang.org/std/marker/trait.Copy.html) as a signal type in the HazardFlow HDL.
 
-> The `Copy` trait in Rust and the signal type in HazardFlow are not in a perfect 1:1 relationship.
+> NOTE: The `Copy` trait in Rust and the signal type in HazardFlow are not in a perfect 1:1 relationship.
 While the signal type in HazardFlow must implement Rust's `Copy` trait, there are some types like function pointers (e.g., `fn() -> i32`) that implement the `Copy` trait but are not treated as signal types in HazardFlow.
 
 For more information of the Rust data types, please refer to [The Rust Programming Language Book](https://doc.rust-lang.org/beta/book/ch03-02-data-types.html).
