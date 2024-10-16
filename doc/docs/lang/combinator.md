@@ -413,13 +413,13 @@ impl<P: Copy, const N: usize> Vr<(P, BoundedU<N>)> {
         self.fsm::<[Vr<P>; N], ()>(|ip, ers, _| {
             let Some((ip, sel)) = ip else {
                 // Ingress ready signal is true when valid signal is false.
-                return (None.repeat::<N>(), Ready::new(true, er.map(|r| r.inner)), s);
+                return (None.repeat::<N>(), Ready::new(true, ers.map(|r| r.inner)), ());
             };
 
             let ep = None.repeat::<N>().set(sel.value(), Some(ip));
             let ir = Ready::new(ers[sel.value()].ready, ers.map(|r| r.inner));
 
-            (ep, ir, s)
+            (ep, ir, ())
         })
     }
 }
