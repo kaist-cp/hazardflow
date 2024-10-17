@@ -6,49 +6,6 @@ import time
 
 from constants import *
 
-"""
-XXX
-Currently, this script is just a prototype for debugging modules.
-
-## WorkFlow
-1. Prerequisite:
-    - Before running this script, users have to:
-        + Write own chisel wrapper and place them in `chisel_wrappers` directory. (Necessary)
-            - Use BlackBox module. You may refer below links:
-                + <https://www.chisel-lang.org/docs/explanations/blackboxes>
-                + <https://github.com/ucb-bar/gemmini/blob/ee290-sp24-lab3/src/main/resources/vsrc/MeshBlackBox.v>
-                + <https://github.com/ucb-bar/gemmini/blob/ee290-sp24-lab3/src/main/scala/gemmini/Mesh.scala>
-            - I added `PE.scala` for example.
-            - These wrapper files will overwrite the original Chisel code.
-        + Write own verilog wrapper and place them in `verilog_wrappers` directory. (Necessary)
-        + Write `BUILD_CONFIGS` argument in `hazardflow/scripts/gemmini/constants.py` file
-            - `module_names`: HazardFlow module that users want to test
-            - `chisel_wrapper`: Explained in detail above
-            - `verilog_wrapper`: Explained in detail above
-
-2. How to Debug
-    2.1. Build and run the Docker container
-        - In the hazardflow root directory,
-            + Build the container
-                - `docker build . -t hazardflow_gemmini -f Dockerfile.gemmini`
-            + Run the container
-                - `docker run -itd --rm --name hazardflow_gemmini hazardflow_gemmini`
-        - Below stuffs should be done in the Docker container
-    2.2. Run the script: `python3 main.py`
-        - This script will:
-            + replace Makefile and scripts for building verilator simulation binary.
-            + compile the hazardflow module into verilog.
-            + copy compiled verilog files to `chipyard/generators/gemmini/src/main/resources/vsrc`.
-            + build verilator simulation binary
-    2.1. Run the built verilator simulation binary
-        - In `chipyard/generators/gemmini`, run `./scripts/run_verilator.sh {testcase}`
-        - If you want to obtian waveform, run `./scripts/run_verilaotr.sh {testcase} --debug`
-            + In my case, this is 2X slower.
-            + You may find `waveform.vcd` file after running it.
-        - For more information, refer <https://github.com/ucb-bar/gemmini?tab=readme-ov-file#run-simulators>
-            + You can also see how to write own test C code.
-"""
-
 
 def setup_rust():
     subprocess.run(
@@ -195,12 +152,6 @@ def get_args():
         dest="cmd", required=True, help="Choose a command"
     )
 
-    compile_parser = subparsers.add_parser("compile")
-    compile_parser.add_argument(
-        "-c", "--config", required=True, help="Module to compile"
-    )
-    compile_parser.set_defaults(action=lambda: "compile")
-
     build_parser = subparsers.add_parser("build")
     build_parser.add_argument(
         "-c", "--config", required=True, help="Module to build with"
@@ -232,6 +183,13 @@ def run_simulation(tb: str, debug: bool):
                 ],
                 stdout=outfile,
             )
+        subprocess.run(
+            [
+                "cp",
+                GEMMINI_PATH + "/waveforms/waveform_pruned.vcd",
+                GEMMINI_SCRIPT_PATH + "/" + tb + ".vcd",
+            ]
+        )
     else:
         subprocess.run(
             ["bash", GEMMINI_PATH + "/scripts/run-verilator.sh", tb], cwd=GEMMINI_PATH
@@ -249,24 +207,17 @@ def check_hazardflow_module(module: str):
 
 if __name__ == "__main__":
     """
-    1. Compile HazardFlow module
-        - python3 main.py compile -c pe
-    2. Unit Test
-        - TODO
-    3. Integration Test
-        1. Build Integration test verilator binary
-            - python3 main.py --debug build -c pe
-            - python3 main.py build -c pe
-        2. Run Integration test
-            - python3 main.py run -b matmul
-            - python3 main.py run --debug -b matmul
+    Integration Test
+    1. Build Integration test verilator binary
+        - python3 main.py build -c pe
+        - python3 main.py --debug build -c pe
+    2. Run Integration test
+        - python3 main.py run -b matmul
+        - python3 main.py --debug run -b matmul,
     """
     args = get_args()
-
-    if args.cmd == "compile":
+    if args.cmd == "build":
         compile_hazardflow_modules(args.config)
-
-    elif args.cmd == "build":
         # Check if we compiled the hazardflow module
         for module in BUILD_CONFIGS[args.config]["module_names"]:
             check_hazardflow_module(module)
