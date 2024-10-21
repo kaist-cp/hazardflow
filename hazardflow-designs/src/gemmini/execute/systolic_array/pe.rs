@@ -1,51 +1,62 @@
 //! Processing element.
-//!
-//! FIXME:
-//! Currently, this implementation is assuming the base configuration(i.e., inputType = SInt(8.W), accType = SInt(32.W), spatialArrayOutputType = SInt(20.W))
 
 #![allow(unused)] // Added for assignment.
 
 use super::*;
 
-/// PE Row Data
+/// PE row data signals.
 #[derive(Debug, Clone, Copy)]
 pub struct PeRowData {
-    /// a
+    /// A.
     pub a: U<INPUT_BITS>,
 }
 
-/// PE Column Data
+/// PE column data signals.
 #[derive(Debug, Clone, Copy)]
 pub struct PeColData {
-    /// b
+    /// B.
     pub b: U<OUTPUT_BITS>,
-    /// d
+
+    /// D.
     pub d: U<OUTPUT_BITS>,
 }
 
-/// Which register to use to preload the value
-#[derive(Debug, Default, Clone, Copy)]
+/// PE column control signals.
+///
+/// NOTE: The column data and control signals should be separated to handle the `flush` operation.
+///       <https://github.com/ucb-bar/gemmini/blob/be2e9f26181658895ebc7ca7f7d6be6210f5cdef/src/main/scala/gemmini/ExecuteController.scala#L189-L207>
+#[derive(Debug, Clone, Copy)]
+pub struct PeColControl {
+    /// ID.
+    pub id: U<ID_BITS>,
+
+    /// Is this last row?
+    pub last: bool,
+
+    /// PE control signals.
+    pub control: PeControl,
+}
+
+/// Represents which register to use to preload the value.
+#[derive(Debug, Default, Clone, Copy, HEq)]
 pub enum Propagate {
-    /// use Reg1 for preload and Reg2 for computation
+    /// Use `Reg1` for preloading and `Reg2` for computation.
     #[default]
     Reg1,
-    /// use Reg2 for preload and Reg1 for computation
+
+    /// Use `Reg2` for preloading and `Reg1` for computation.
     Reg2,
 }
 
-/// Is Dataflow Output-Stationary(OS) or Weight-Stationary(WS)?
-#[derive(Debug, Clone, Copy)]
+/// Represents the dataflow.
+#[derive(Debug, Default, Clone, Copy, HEq)]
 pub enum Dataflow {
-    /// Output Stationary
+    /// Output Stationary.
+    #[default]
     OS,
-    /// Weight Stationary
-    WS,
-}
 
-impl Default for Dataflow {
-    fn default() -> Self {
-        Self::OS
-    }
+    /// Weight Stationary.
+    WS,
 }
 
 impl From<U<1>> for Dataflow {
@@ -63,43 +74,29 @@ impl From<bool> for Dataflow {
     }
 }
 
-/// PE Control
+/// PE control data.
 #[derive(Debug, Clone, Copy)]
 pub struct PeControl {
-    /// DataFlow
+    /// Dataflow.
     pub dataflow: Dataflow,
 
-    /// Propagate
+    /// Propagate.
     pub propagate: Propagate,
 
-    /// Shift
+    /// Shift.
     pub shift: U<5>,
-}
-
-/// PE column control.
-///
-/// NOTE: column data and control should be separated because of the `flush` operation.
-/// <https://github.com/ucb-bar/gemmini/blob/be2e9f26181658895ebc7ca7f7d6be6210f5cdef/src/main/scala/gemmini/ExecuteController.scala#L189-L207>
-#[derive(Debug, Clone, Copy)]
-pub struct PeColControl {
-    /// id
-    pub id: U<ID_BITS>,
-    /// is this last row?
-    pub last: bool,
-    /// pe control
-    pub control: PeControl,
-    /// bad_dataflow
-    pub bad_dataflow: bool,
 }
 
 /// PE state.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct PeS {
-    /// Register 1
+    /// Register 1.
     pub reg1: U<32>,
-    /// Register 2
+
+    /// Register 2.
     pub reg2: U<32>,
-    /// Same as `last_s` in the Chisel implementation.
+
+    /// Propagate.
     pub propagate: Propagate,
 }
 
@@ -112,14 +109,7 @@ impl PeS {
 
 /// MAC unit (computes `a * b + c`).
 fn mac(a: U<8>, b: U<8>, c: U<32>) -> U<OUTPUT_BITS> {
-    todo!("Assignment 4")
-}
-
-/// Returns whether there was a change in the propagate option.
-///
-/// NOTE: This is equivalent to `prev != curr`, but hazardflow compiler does not support it (ICE).
-fn propagate_flipped(prev: Propagate, curr: Propagate) -> bool {
-    matches!(prev, Propagate::Reg1) ^ matches!(curr, Propagate::Reg1)
+    todo!("assignment 4")
 }
 
 /// Same as `(val >> shamt).clippedToWidthOf(20)`.
@@ -134,11 +124,12 @@ pub fn pe(
     _in_left: Valid<PeRowData>,
     (_in_top_data, _in_top_control): (Valid<PeColData>, Valid<PeColControl>),
 ) -> (Valid<PeRowData>, (Valid<PeColData>, Valid<PeColControl>)) {
-    todo!("Assignment 4")
+    todo!("assignment 4")
 }
 
 /// Chisel PE Wrapper.
-/// This module allows students to proceed with future assignments even if they have not completed Assignment4.
+///
+/// This module allows students to proceed with future assignments even if they have not completed assignment 4.
 #[magic(ffi::PE256Wrapper())]
 pub fn pe_256_chisel(
     _in_left: Valid<PeRowData>,

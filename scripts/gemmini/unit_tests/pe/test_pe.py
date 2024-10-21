@@ -66,7 +66,6 @@ def rounding_shift(value, shift):
         "payload_Some_0_control_dataflow_discriminant",
         "payload_Some_0_control_propagate_discriminant",
         "payload_Some_0_control_shift",
-        "payload_Some_0_bad_dataflow",
     ],
     valid_signal="payload_discriminant",
 )
@@ -190,7 +189,6 @@ async def ws_simple(dut):
         payload_Some_0_control_dataflow_discriminant=WS,
         payload_Some_0_control_propagate_discriminant=REG2,
         payload_Some_0_control_shift=rnd_shift,
-        payload_Some_0_bad_dataflow=False,
     )
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
     await tb.pe_col_data_req.send(
@@ -212,7 +210,6 @@ async def ws_simple(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Input data and check output data
     for i in range(16):
@@ -229,7 +226,6 @@ async def ws_simple(dut):
                 payload_Some_0_control_dataflow_discriminant=WS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -245,7 +241,6 @@ async def ws_simple(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
@@ -290,7 +285,6 @@ async def ws_random(dut):
         payload_Some_0_control_dataflow_discriminant=WS,
         payload_Some_0_control_propagate_discriminant=REG2,
         payload_Some_0_control_shift=rnd_shift,
-        payload_Some_0_bad_dataflow=False,
     )
 
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
@@ -313,7 +307,6 @@ async def ws_random(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Input data and check output data
     for i in range(16):
@@ -330,7 +323,6 @@ async def ws_random(dut):
                 payload_Some_0_control_dataflow_discriminant=WS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -346,7 +338,6 @@ async def ws_random(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
@@ -398,7 +389,6 @@ async def os_simple(dut):
                 payload_Some_0_control_dataflow_discriminant=OS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -414,7 +404,6 @@ async def os_simple(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Check output data
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
@@ -428,7 +417,6 @@ async def os_simple(dut):
             payload_Some_0_control_dataflow_discriminant=OS,
             payload_Some_0_control_propagate_discriminant=REG2,
             payload_Some_0_control_shift=rnd_shift,
-            payload_Some_0_bad_dataflow=False,
         )
     )
 
@@ -444,7 +432,6 @@ async def os_simple(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
@@ -496,7 +483,6 @@ async def os_random_shift(dut):
                 payload_Some_0_control_dataflow_discriminant=OS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -512,7 +498,6 @@ async def os_random_shift(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Check output data
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
@@ -526,7 +511,6 @@ async def os_random_shift(dut):
             payload_Some_0_control_dataflow_discriminant=OS,
             payload_Some_0_control_propagate_discriminant=REG2,
             payload_Some_0_control_shift=rnd_shift,
-            payload_Some_0_bad_dataflow=False,
         )
     )
 
@@ -542,7 +526,6 @@ async def os_random_shift(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
@@ -594,7 +577,6 @@ async def os_random_inp_and_shift(dut):
                 payload_Some_0_control_dataflow_discriminant=OS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -610,7 +592,6 @@ async def os_random_inp_and_shift(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Check output data
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
@@ -624,7 +605,6 @@ async def os_random_inp_and_shift(dut):
             payload_Some_0_control_dataflow_discriminant=OS,
             payload_Some_0_control_propagate_discriminant=REG2,
             payload_Some_0_control_shift=rnd_shift,
-            payload_Some_0_bad_dataflow=False,
         )
     )
 
@@ -640,7 +620,6 @@ async def os_random_inp_and_shift(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
@@ -692,7 +671,6 @@ async def os_random_inp(dut):
                 payload_Some_0_control_dataflow_discriminant=OS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -708,7 +686,6 @@ async def os_random_inp(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Check output data
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
@@ -722,7 +699,6 @@ async def os_random_inp(dut):
             payload_Some_0_control_dataflow_discriminant=OS,
             payload_Some_0_control_propagate_discriminant=REG2,
             payload_Some_0_control_shift=rnd_shift,
-            payload_Some_0_bad_dataflow=False,
         )
     )
 
@@ -738,7 +714,6 @@ async def os_random_inp(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
@@ -790,7 +765,6 @@ async def os_random_inp_and_shift(dut):
                 payload_Some_0_control_dataflow_discriminant=OS,
                 payload_Some_0_control_propagate_discriminant=REG1,
                 payload_Some_0_control_shift=rnd_shift,
-                payload_Some_0_bad_dataflow=False,
             )
         )
 
@@ -806,7 +780,6 @@ async def os_random_inp_and_shift(dut):
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
         assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG1
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-        assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
 
     # Check output data
     await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
@@ -820,7 +793,6 @@ async def os_random_inp_and_shift(dut):
             payload_Some_0_control_dataflow_discriminant=OS,
             payload_Some_0_control_propagate_discriminant=REG2,
             payload_Some_0_control_shift=rnd_shift,
-            payload_Some_0_bad_dataflow=False,
         )
     )
 
@@ -836,4 +808,3 @@ async def os_random_inp_and_shift(dut):
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
     assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
-    assert col_ctrl_resp.payload_Some_0_bad_dataflow == False
