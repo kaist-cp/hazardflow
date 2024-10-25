@@ -31,7 +31,6 @@ module PEBlackBoxAdapter (
     wire in_input_1_1_payload_Some_0_control_propagate_discriminant = io_in_control_propagate;
     wire [5-1:0] in_input_1_1_payload_Some_0_control_shift = io_in_control_shift;
     wire [3-1:0] in_input_1_1_payload_Some_0_id = io_in_id;
-    wire in_input_1_1_payload_Some_0_bad_dataflow = 1'b0;
     wire in_input_1_1_payload_Some_0_last = io_in_last;
 
     wire out_output_0_payload_discriminant;
@@ -44,9 +43,7 @@ module PEBlackBoxAdapter (
     wire out_output_1_1_payload_Some_0_control_propagate_discriminant;
     wire [5-1:0] out_output_1_1_payload_Some_0_control_shift;
     wire [3-1:0] out_output_1_1_payload_Some_0_id;
-    wire out_output_1_1_payload_Some_0_bad_dataflow;
     wire out_output_1_1_payload_Some_0_last;
-
 
     pe_top pe
     (
@@ -70,7 +67,6 @@ module PEBlackBoxAdapter (
         .in_input_1_1_payload_Some_0_control_dataflow_discriminant(in_input_1_1_payload_Some_0_control_dataflow_discriminant),
         .in_input_1_1_payload_Some_0_control_propagate_discriminant(in_input_1_1_payload_Some_0_control_propagate_discriminant),
         .in_input_1_1_payload_Some_0_control_shift(in_input_1_1_payload_Some_0_control_shift),
-        .in_input_1_1_payload_Some_0_bad_dataflow(in_input_1_1_payload_Some_0_bad_dataflow),
 
         ////////// Output //////////
         // PE Row Data
@@ -88,8 +84,7 @@ module PEBlackBoxAdapter (
         .out_output_1_1_payload_Some_0_last(out_output_1_1_payload_Some_0_last),
         .out_output_1_1_payload_Some_0_control_dataflow_discriminant(out_output_1_1_payload_Some_0_control_dataflow_discriminant),
         .out_output_1_1_payload_Some_0_control_propagate_discriminant(out_output_1_1_payload_Some_0_control_propagate_discriminant),
-        .out_output_1_1_payload_Some_0_control_shift(out_output_1_1_payload_Some_0_control_shift),
-        .out_output_1_1_payload_Some_0_bad_dataflow(out_output_1_1_payload_Some_0_bad_dataflow)
+        .out_output_1_1_payload_Some_0_control_shift(out_output_1_1_payload_Some_0_control_shift)
     );
 
     assign io_out_a = out_output_0_payload_Some_0_a;
@@ -102,6 +97,6 @@ module PEBlackBoxAdapter (
     assign io_out_id = out_output_1_1_payload_Some_0_id;
     assign io_out_last = out_output_1_1_payload_Some_0_last;
     assign io_out_valid = out_output_0_payload_discriminant && out_output_1_0_payload_discriminant;
-    assign io_bad_dataflow = out_output_1_1_payload_Some_0_bad_dataflow;
+    assign io_bad_dataflow = 1'b0;
 
 endmodule
