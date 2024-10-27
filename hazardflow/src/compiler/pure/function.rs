@@ -738,7 +738,7 @@ impl<'tcx> FunctionBuilder<'tcx> {
     ) -> ((ExprId, ExprId), Vec<SystemTask>) {
         let path_cond = &ret.path_cond;
         let (cond, displays_in_path) = self.build_path_cond(path_cond, tcx, thir_cache, fsm_cache, args);
-        let cond = cond.expect("explicit return with no path conditions");
+        let cond = cond.unwrap_or(Expr::unsigned_bits(1, 1, self.span).alloc_with_fsm_cache(fsm_cache));
 
         let (value, displays_in_value) = self.build_expr(tcx, ret.value, thir_cache, fsm_cache, args);
         ((cond, value), [displays_in_path, displays_in_value].concat())
