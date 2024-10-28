@@ -37,20 +37,35 @@ Each of `FetEP` and `DecR` is defined as a struct with the following fields:
 
 Each combinator do the following things:
 
+### Computes the next PC (M0-M2)
+
+<p align="center">
+  <img src="../../figure/cpu-implementation-fetch-sub1.svg" width=100% />
+</p>
+
 **M0** ([`source_drop`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.source_drop)):
 
-- Forwards the current IMEM response and the redirection PC from the resolver to the payload.
+- Receives the IMEM response and redirection PC as resolver from the later modules:
+  + The IMEM response comes from **M2**. It contains the current PC and inst bytecode.
+  + The redirection PC comes from the [execute stage](exe.md) and the [memory stage](mem.md).
+- Forwards the IMEM response and redirection PC to the payload to compute the next PC.
 
 **M1** ([`filter_map`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.filter_map-1)):
 
-- Calculates the next PC based on the incoming payload.
-  + If the redirection PC exists, go to it.
-  + Otherwise, go to the next sequential address (PC + 4).
+- Computes the next PC based on the incoming payload:
+  + If a redirection PC is provided, jump to it.
+  + Otherwise, proceed to the next sequential address (current PC + 4).
 
 **M2** ([`reg_fwd_with_init`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.reg_fwd_with_init)):
 
 - Creates a pipelined stage before accessing IMEM by storing the next PC in a register.
 - When the circuit is reset, it is initialized with the designated start address (`START_ADDR`).
+
+### Accesses IMEM (M3)
+
+<p align="center">
+  <img src="../../figure/cpu-implementation-fetch-sub2.svg" width=100% />
+</p>
 
 **M3** ([`map`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.map-1) + [`comb`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/interface/trait.Interface.html#method.comb) + [`map`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.map-1)):
 
@@ -60,10 +75,17 @@ Each combinator do the following things:
   + We used [`attach_resolver`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/valid_ready/fn.attach_resolver.html) module combinator to attach additional resolver to the IMEM.
 - Deconstructs the IMEM response with `map` combinator.
 
+### Discards on misprediction (M4-M5)
+
+<p align="center">
+  <img src="../../figure/cpu-implementation-fetch-sub3.svg" width=100% />
+</p>
+
 **M4** ([`map_resolver_drop_with_p`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.map_resolver_drop_with_p)):
 
 - Attaches the IMEM response to the resolver signal for the next PC calculation.
 - Turns on the ready signal when control hazard occurs to extract the payload from **M2**.
+  + This allows discarding invalid PC stored in the **M2**.
 
 **M5** ([`filter_map_drop_with_r_inner`](https://kaist-cp.github.io/hazardflow/docs/hazardflow_designs/std/hazard/struct.I.html#method.filter_map_drop_with_r_inner)):
 

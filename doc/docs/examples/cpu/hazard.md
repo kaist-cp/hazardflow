@@ -12,18 +12,20 @@ It should be resolved by *stalling* the stage which trying to access later:
 ### Solution: Stall
 
 ```armasm
-I1:  sub  x4, x3, x2  # read from x2 requires several cycle in the decode stage
-I2:  add  x4, x3, x2  # need to wait in the fetch stage
+I1:  lw   x2, 0(x1)   # write to x2
+I2:  sub  x4, x3, x2  # read from x2 requires several cycle in the decode stage
+I3:  add  x4, x3, x2  # need to wait in the fetch stage
 ```
 
 <p align="center">
   <img src="../../figure/cpu-hazard-structural.svg" width=90% />
 </p>
 
-In the example above, suppose that `I1` has to wait several cycles in the decode stage to read the value of `x2` (you can find the example [here](#from-the-load-instruction)).
+In the example above, the `I2` must wait several cycles in the decode stage to read the correct value of `x2` from `I1`
+(details on how `I1` and `I2` communicate will be explained later in [here](#from-the-load-instruction); for now, you can omit `I1` in this example).
 
-As a result, structural hazard occurs at cycle T+1 because `I2` is ready to move to the decode stage while `I1` still needs to occupy the decode stage.
-To resolve this hazard, the decode stage asks `I2` to stall at cycle T+1.
+As a result, structural hazard occurs at cycle T+2 because `I3` is ready to move to the decode stage while `I2` still needs to occupy the decode stage.
+To resolve this hazard, the decode stage asks `I3` to stall at cycle T+2.
 It is usually done by turning off the ready bit in the [valid-ready protocol](../../lang/interface.md#motivation-handshake).
 
 ## Data Hazards
@@ -130,10 +132,12 @@ I2:  bgez  x2, 8000003c  # read from x2
   <img src="../../figure/cpu-hazard-data-csr.svg" width=90% />
 </p>
 
-In our baseline CPU, the CSR is located in the memory stage.
+In our baseline CPU, the [CSR](https://en.wikipedia.org/wiki/Control/Status_Register) is located in the memory stage.
 
 - At T+2, `I2` need to be stalled at the decode stage becuase `I1` did not reach the CSR.
 - At T+3, `I1` gets the value of `x2` from the CSR, now can bypass the value to the `I2`.
+
+For more details on CSR instructions, please refer to the Chapter 2.8 of [RISC-V Specifications](https://riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf).
 
 <!--
 - The branch instruction `I3` needs to read the value of registers `t0` and `t1` in the decode stage.
