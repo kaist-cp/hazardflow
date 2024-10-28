@@ -12,7 +12,6 @@ module PE256Wrapper (
     input wire in_input_1_1_payload_Some_0_control_dataflow_discriminant,
     input wire in_input_1_1_payload_Some_0_control_propagate_discriminant,
     input wire [5-1:0] in_input_1_1_payload_Some_0_control_shift,
-    input wire in_input_1_1_payload_Some_0_bad_dataflow,
     output wire out_output_0_payload_discriminant,
     output wire [8-1:0] out_output_0_payload_Some_0_a,
     output wire out_output_1_0_payload_discriminant,
@@ -23,8 +22,7 @@ module PE256Wrapper (
     output wire out_output_1_1_payload_Some_0_last,
     output wire out_output_1_1_payload_Some_0_control_dataflow_discriminant,
     output wire out_output_1_1_payload_Some_0_control_propagate_discriminant,
-    output wire [5-1:0] out_output_1_1_payload_Some_0_control_shift,
-    output wire out_output_1_1_payload_Some_0_bad_dataflow
+    output wire [5-1:0] out_output_1_1_payload_Some_0_control_shift
 );
     wire io_in_valid = in_input_0_payload_discriminant || in_input_1_0_payload_discriminant;
     wire io_out_valid;
@@ -49,8 +47,7 @@ module PE256Wrapper (
         .io_out_control_shift(out_output_1_1_payload_Some_0_control_shift),
         .io_out_id(out_output_1_1_payload_Some_0_id),
         .io_out_last(out_output_1_1_payload_Some_0_last),
-        .io_out_valid(io_out_valid),
-        .io_bad_dataflow(out_output_1_1_payload_Some_0_bad_dataflow)
+        .io_out_valid(io_out_valid)
     );
 
     assign out_output_0_payload_discriminant = io_out_valid;

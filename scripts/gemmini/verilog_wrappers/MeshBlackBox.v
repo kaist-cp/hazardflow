@@ -285,7 +285,6 @@ module MeshBlackBoxAdapter (
     wire [16-1:0] in_input_1_1_payload_Some_0_control_dataflow_discriminant;
     wire [16-1:0] in_input_1_1_payload_Some_0_control_propagate_discriminant;
     wire [80-1:0] in_input_1_1_payload_Some_0_control_shift;
-    wire [16-1:0] in_input_1_1_payload_Some_0_bad_dataflow = 16'h00;
     
     wire [16-1:0] out_output_0_payload_discriminant;
     wire [128-1:0] out_output_0_payload_Some_0_a;
@@ -298,7 +297,6 @@ module MeshBlackBoxAdapter (
     wire [16-1:0] out_output_1_1_payload_Some_0_control_dataflow_discriminant;
     wire [16-1:0] out_output_1_1_payload_Some_0_control_propagate_discriminant;
     wire [80-1:0] out_output_1_1_payload_Some_0_control_shift;
-    wire [16-1:0] out_output_1_1_payload_Some_0_bad_dataflow;
 
     mesh_4_4_top mesh_4_4
     (
@@ -315,7 +313,6 @@ module MeshBlackBoxAdapter (
         .in_input_1_1_payload_Some_0_control_dataflow_discriminant(in_input_1_1_payload_Some_0_control_dataflow_discriminant),
         .in_input_1_1_payload_Some_0_control_propagate_discriminant(in_input_1_1_payload_Some_0_control_propagate_discriminant),
         .in_input_1_1_payload_Some_0_control_shift(in_input_1_1_payload_Some_0_control_shift),
-        .in_input_1_1_payload_Some_0_bad_dataflow(in_input_1_1_payload_Some_0_bad_dataflow),
         .out_output_0_payload_discriminant(out_output_0_payload_discriminant),
         .out_output_0_payload_Some_0_a(out_output_0_payload_Some_0_a),
         .out_output_1_0_payload_discriminant(out_output_1_0_payload_discriminant),
@@ -326,8 +323,7 @@ module MeshBlackBoxAdapter (
         .out_output_1_1_payload_Some_0_last(out_output_1_1_payload_Some_0_last),
         .out_output_1_1_payload_Some_0_control_dataflow_discriminant(out_output_1_1_payload_Some_0_control_dataflow_discriminant),
         .out_output_1_1_payload_Some_0_control_propagate_discriminant(out_output_1_1_payload_Some_0_control_propagate_discriminant),
-        .out_output_1_1_payload_Some_0_control_shift(out_output_1_1_payload_Some_0_control_shift),
-        .out_output_1_1_payload_Some_0_bad_dataflow(out_output_1_1_payload_Some_0_bad_dataflow)
+        .out_output_1_1_payload_Some_0_control_shift(out_output_1_1_payload_Some_0_control_shift)
     );
 
     // assign io_in_a

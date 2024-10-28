@@ -50,9 +50,6 @@ class TB(object):
             self.dut.in_input_1_1_payload_Some_0_control_propagate_discriminant
         )
         self.in_col_ctrl_shift = self.dut.in_input_1_1_payload_Some_0_control_shift
-        self.in_col_ctrl_bad_dataflow = (
-            self.dut.in_input_1_1_payload_Some_0_bad_dataflow
-        )
 
         self.out_row_data_valids = self.dut.out_output_0_payload_discriminant
         self.out_row_data_a = self.dut.out_output_0_payload_Some_0_a
@@ -71,9 +68,6 @@ class TB(object):
             self.dut.out_output_1_1_payload_Some_0_control_propagate_discriminant
         )
         self.out_col_ctrl_shift = self.dut.out_output_1_1_payload_Some_0_control_shift
-        self.out_col_ctrl_bad_dataflow = (
-            self.dut.out_output_1_1_payload_Some_0_bad_dataflow
-        )
 
     async def reset(self):
         self.dut.rst.setimmediatevalue(0)
@@ -138,10 +132,8 @@ async def ws_simple(dut):
     col_ctrl_last = [False] * 16
     col_ctrl_dataflow = [WS] * 16
     col_ctrl_shift = [0] * 16
-    col_ctrl_bad_dataflow = [False] * 16
 
     tb.in_col_ctrl_valids.value = concatenate_data(col_ctrl_valids, 1)
-    tb.in_col_ctrl_bad_dataflow.value = concatenate_data(col_ctrl_bad_dataflow, 1)
     tb.in_col_ctrl_dataflow.value = concatenate_data(col_ctrl_dataflow, 1)
     tb.in_col_ctrl_id.value = concatenate_data(col_ctrl_id, 3)
     tb.in_col_ctrl_last.value = concatenate_data(col_ctrl_last, 1)
@@ -280,10 +272,8 @@ async def ws_random(dut):
     col_ctrl_last = [False] * 16
     col_ctrl_dataflow = [WS] * 16
     col_ctrl_shift = [0] * 16
-    col_ctrl_bad_dataflow = [False] * 16
 
     tb.in_col_ctrl_valids.value = concatenate_data(col_ctrl_valids, 1)
-    tb.in_col_ctrl_bad_dataflow.value = concatenate_data(col_ctrl_bad_dataflow, 1)
     tb.in_col_ctrl_dataflow.value = concatenate_data(col_ctrl_dataflow, 1)
     tb.in_col_ctrl_id.value = concatenate_data(col_ctrl_id, 3)
     tb.in_col_ctrl_last.value = concatenate_data(col_ctrl_last, 1)
@@ -421,10 +411,8 @@ async def os_simple(dut):
     col_ctrl_last = [False] * 16
     col_ctrl_dataflow = [OS] * 16
     col_ctrl_shift = [0] * 16
-    col_ctrl_bad_dataflow = [False] * 16
 
     tb.in_col_ctrl_valids.value = concatenate_data(col_ctrl_valids, 1)
-    tb.in_col_ctrl_bad_dataflow.value = concatenate_data(col_ctrl_bad_dataflow, 1)
     tb.in_col_ctrl_dataflow.value = concatenate_data(col_ctrl_dataflow, 1)
     tb.in_col_ctrl_id.value = concatenate_data(col_ctrl_id, 3)
     tb.in_col_ctrl_last.value = concatenate_data(col_ctrl_last, 1)
@@ -532,10 +520,8 @@ async def os_random(dut):
     col_ctrl_last = [False] * 16
     col_ctrl_dataflow = [OS] * 16
     col_ctrl_shift = [0] * 16
-    col_ctrl_bad_dataflow = [False] * 16
 
     tb.in_col_ctrl_valids.value = concatenate_data(col_ctrl_valids, 1)
-    tb.in_col_ctrl_bad_dataflow.value = concatenate_data(col_ctrl_bad_dataflow, 1)
     tb.in_col_ctrl_dataflow.value = concatenate_data(col_ctrl_dataflow, 1)
     tb.in_col_ctrl_id.value = concatenate_data(col_ctrl_id, 3)
     tb.in_col_ctrl_last.value = concatenate_data(col_ctrl_last, 1)

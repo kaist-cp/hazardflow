@@ -1,4 +1,5 @@
 //! Mesh.
+
 #![allow(unused)] // Added for assignment.
 
 use super::tile::*;
@@ -13,18 +14,18 @@ pub type MeshColData = [TileColData; MESH_COLS];
 /// Mesh.
 pub fn mesh<const LATENCY: usize>(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData)
 where [(); 1 + LATENCY]: {
-    todo!("Assignment 5")
+    todo!("assignment 5")
 }
 
 /// Debug
 #[synthesize]
 pub fn mesh_4_4(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData) {
-    // Only the Column data are used as output
     mesh::<1>(in_left, in_top)
 }
 
 /// Chisel Mesh Wrapper.
-/// This module allows students to proceed with future assignments even if they have not completed Assignment5.
+///
+/// This module allows students to proceed with future assignments even if they have not completed assignment 5.
 #[magic(ffi::MeshWrapper())]
 pub fn mesh_chisel(_in_left: MeshRowData, _in_top: MeshColData) -> (MeshRowData, MeshColData) {
     todo!("MeshWrapper.v")
