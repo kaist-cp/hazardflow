@@ -2,6 +2,8 @@
 
 use hazardflow_macro::magic;
 
+use crate::prelude::*;
+
 mod array;
 mod bounded;
 mod integer;
@@ -19,5 +21,5 @@ pub use option::*;
 /// TODO: Write safety condition
 #[magic(x)]
 pub unsafe fn x<T: Copy>() -> T {
-    panic!("compiler magic")
+    compiler_magic!()
 }

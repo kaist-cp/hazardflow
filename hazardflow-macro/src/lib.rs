@@ -81,12 +81,12 @@ pub fn heq(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             impl #impl_generics ::core::cmp::PartialEq for #name #ty_generics #where_clause {
                 #[magic(adt::enum_eq)]
                 fn eq(&self, other: &Self) -> bool {
-                    ::core::todo!("compiler magic")
+                    crate::prelude::compiler_magic!()
                 }
                 #[allow(clippy::partialeq_ne_impl)]
                 #[magic(adt::enum_ne)]
                 fn ne(&self, other: &Self) -> bool {
-                    ::core::todo!("compiler magic")
+                    crate::prelude::compiler_magic!()
                 }
             }
             impl #impl_generics ::core::cmp::Eq for #name #ty_generics #where_clause {

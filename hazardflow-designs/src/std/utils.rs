@@ -2,6 +2,8 @@
 
 use hazardflow_macro::magic;
 
+use crate::prelude::*;
+
 /// Returns ceiling log2.
 pub const fn clog2(value: usize) -> usize {
     if value == 0 {
@@ -34,7 +36,7 @@ pub const fn max(lhs: usize, rhs: usize) -> usize {
 /// Display function
 #[magic(system::display)]
 pub fn display<V: Copy>(_fstring: &str, _args: V) {
-    panic!("compiler magic")
+    compiler_magic!()
 }
 
 /// Display macro
@@ -53,7 +55,7 @@ macro_rules! display {
 /// Assertion function
 #[magic(system::assert)]
 pub fn assert<V: Copy>(_cond: bool, _fstring: &str, _args: V) {
-    panic!("compiler magic")
+    compiler_magic!()
 }
 
 /// Assert macro

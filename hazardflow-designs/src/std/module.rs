@@ -6,6 +6,7 @@
 use hazardflow_macro::magic;
 
 use super::*;
+use crate::prelude::*;
 
 /// Splits a module into two modules.
 // TODO: Can we make return type `FnOnce(I1) -> O1`?
@@ -13,7 +14,7 @@ use super::*;
 pub fn module_split<I1: Interface, I2: Interface, O1: Interface, O2: Interface>(
     _m: impl FnOnce(I1, I2) -> (O1, O2),
 ) -> (fn(I1) -> O1, fn(I2) -> O2) {
-    panic!("compiler magic")
+    compiler_magic!()
 }
 
 /// Splits a module into three modules.
@@ -35,7 +36,7 @@ pub fn module_split3<I1: Interface, I2: Interface, I3: Interface, O1: Interface,
 #[magic(module::from_fn)]
 pub fn from_fn<I: Interface, O: Interface, J: Interface, T, const N: usize>(f: T) -> [fn(I, J) -> (O, J); N]
 where T: FnOnce(I, J) -> (O, J) {
-    panic!("compiler magic")
+    compiler_magic!()
 }
 
 /// Generates a 1D systolic array from an array of modules.
@@ -52,7 +53,7 @@ pub fn seq<I: Interface, O: Interface, J: Interface, const N: usize>(
     ms: [fn(I, J) -> (O, J); N],
 ) -> impl FnOnce([I; N], J) -> ([O; N], J) {
     // This should be primitive?
-    |is, j| panic!("compiler magic")
+    |is, j| compiler_magic!()
 }
 
 /// Applies `f` to the given interfaces.

@@ -3,6 +3,7 @@
 use hazardflow_macro::magic;
 
 use super::*;
+use crate::prelude::*;
 
 /// Interface trait.
 #[must_use]
@@ -61,7 +62,7 @@ pub trait Interface: Sized {
         _init_state: S,
         _f: impl Fn(Self::Fwd, E::Bwd, S) -> (E::Fwd, Self::Bwd, S),
     ) -> E {
-        panic!("compiler magic")
+        compiler_magic!()
     }
 
     /// Combines the module to the given interface and returns the egress interface.
