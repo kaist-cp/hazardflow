@@ -75,10 +75,15 @@ pub use value::*;
 /// Indicates that the function is implemented as a compiler magic.
 #[macro_export]
 macro_rules! compiler_magic {
-    () => {
-        todo!()
+    ($($msg:expr)?) => {
+        todo!($($msg)?)
     };
-    ($msg:expr) => {
-        todo!($msg)
+}
+
+/// Indicates that the function is implemented as a FFI.
+#[macro_export]
+macro_rules! ffi {
+    ($($msg:expr)?) => {
+        todo!($($msg)?)
     };
 }

@@ -126,14 +126,3 @@ pub fn pe(
 ) -> (Valid<PeRowData>, (Valid<PeColData>, Valid<PeColControl>)) {
     todo!("assignment 4")
 }
-
-/// Chisel PE Wrapper.
-///
-/// This module allows students to proceed with future assignments even if they have not completed assignment 4.
-#[magic(ffi::PE256Wrapper())]
-pub fn pe_256_chisel(
-    _in_left: Valid<PeRowData>,
-    (_in_top_data, _in_top_control): (Valid<PeColData>, Valid<PeColControl>),
-) -> (Valid<PeRowData>, (Valid<PeColData>, Valid<PeColControl>)) {
-    todo!("PE256Wrapper.v")
-}

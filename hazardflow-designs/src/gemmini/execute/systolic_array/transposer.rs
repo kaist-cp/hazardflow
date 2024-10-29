@@ -50,11 +50,3 @@ where
 pub fn transposer_default(in_row: Valid<Array<U<INPUT_BITS>, 16>>) -> Valid<Array<U<INPUT_BITS>, 16>> {
     transposer::<16>(in_row)
 }
-
-/// Chisel Transposer Wrapper.
-///
-/// This module allows students to proceed with future assignments even if they have not completed assignment 5.
-#[magic(ffi::TransposerWrapper())]
-pub fn transposer_chisel(_in_row: Valid<Array<U<INPUT_BITS>, 16>>) -> Valid<Array<U<INPUT_BITS>, 16>> {
-    todo!("TransposerWrapper.v")
-}

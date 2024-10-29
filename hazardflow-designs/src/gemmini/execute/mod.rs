@@ -1292,16 +1292,6 @@ fn acc_read_req<const EX_QUEUE_LENGTH: usize>(
     array_map!(reqs, filter_req)
 }
 
-/// TODO: Documentation
-#[magic(ffi::MeshWithDelaysWrapper())]
-#[allow(clippy::type_complexity)]
-pub fn mesh_with_delays_chisel<const LATENCY: usize>(
-    _input: (Vr<A>, Vr<B>, Vr<D>, I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>),
-) -> Valid<MeshResp>
-where [(); 1 + LATENCY]: {
-    todo!("MeshWithDelaysWrapper.v")
-}
-
 #[allow(unused)]
 fn mesh_with_delays_wrapper<const LATENCY: usize>(
     a: Vr<A>,
@@ -1312,7 +1302,7 @@ fn mesh_with_delays_wrapper<const LATENCY: usize>(
 where
     [(); 1 + LATENCY]:,
 {
-    (a, b, d, req).comb(mesh_with_delays_chisel::<LATENCY>)
+    mesh_with_delays_ffi::<LATENCY>(a, b, d, req)
 }
 
 /// Execute the mesh computation.
