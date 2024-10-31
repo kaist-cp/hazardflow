@@ -8,6 +8,8 @@ use super::*;
 #[derive(Debug, Clone, Copy)]
 pub struct PeRowData {
     /// A.
+    ///
+    /// Represents the activation value.
     pub a: U<INPUT_BITS>,
 }
 
@@ -15,79 +17,75 @@ pub struct PeRowData {
 #[derive(Debug, Clone, Copy)]
 pub struct PeColData {
     /// B.
+    ///
+    /// Represents the weight value (in OS dataflow) or the above PE's MAC result (in WS dataflow).
     pub b: U<OUTPUT_BITS>,
 
     /// D.
+    ///
+    /// Represents the preloading bias value (in OS dataflow) or the preloading weight value (in WS dataflow).
     pub d: U<OUTPUT_BITS>,
 }
 
 /// PE column control signals.
-///
-/// NOTE: The column data and control signals should be separated to handle the `flush` operation.
-///       <https://github.com/ucb-bar/gemmini/blob/be2e9f26181658895ebc7ca7f7d6be6210f5cdef/src/main/scala/gemmini/ExecuteController.scala#L189-L207>
 #[derive(Debug, Clone, Copy)]
 pub struct PeColControl {
-    /// ID.
+    /// Identifier for the matrix multiplication operation (not used in the PE logic).
     pub id: U<ID_BITS>,
 
-    /// Is this last row?
+    /// Indicates whether the current row is the last row (not used in the PE logic).
     pub last: bool,
 
     /// PE control signals.
     pub control: PeControl,
 }
 
-/// Represents which register to use to preload the value.
-#[derive(Debug, Default, Clone, Copy, HEq)]
-pub enum Propagate {
-    /// Use `Reg1` for preloading and `Reg2` for computation.
-    #[default]
-    Reg1,
+/// PE control signals.
+#[derive(Debug, Clone, Copy)]
+pub struct PeControl {
+    /// Represents the dataflow.
+    pub dataflow: Dataflow,
 
-    /// Use `Reg2` for preloading and `Reg1` for computation.
-    Reg2,
+    /// Indicates which register to use for preloading the value.
+    pub propagate: Propagate,
+
+    /// The number of bits by which the accumulated result of matrix multiplication is right-shifted when leaving the
+    /// systolic array, used to scale down the result.
+    pub shift: U<5>,
 }
 
 /// Represents the dataflow.
 #[derive(Debug, Default, Clone, Copy, HEq)]
 pub enum Dataflow {
-    /// Output Stationary.
+    /// Output stationary.
     #[default]
     OS,
 
-    /// Weight Stationary.
+    /// Weight stationary.
     WS,
 }
 
-impl From<U<1>> for Dataflow {
-    fn from(value: U<1>) -> Self {
-        Dataflow::from(value[0])
-    }
+/// Indicates which register to use for preloading the value.
+#[derive(Debug, Default, Clone, Copy, HEq)]
+pub enum Propagate {
+    /// Use register 1 for preloading (and register 2 for the MAC unit input).
+    #[default]
+    Reg1,
+
+    /// Use register 2 for preloading (and register 1 for the MAC unit input).
+    Reg2,
 }
 
-impl From<bool> for Dataflow {
-    fn from(value: bool) -> Self {
-        match value {
-            false => Self::OS,
-            true => Self::WS,
-        }
-    }
-}
-
-/// PE control data.
-#[derive(Debug, Clone, Copy)]
-pub struct PeControl {
-    /// Dataflow.
-    pub dataflow: Dataflow,
-
-    /// Propagate.
-    pub propagate: Propagate,
-
-    /// Shift.
-    pub shift: U<5>,
-}
-
-/// PE state.
+/// PE state registers.
+///
+/// Each register stores values based on the dataflow and propagate signal:
+///
+/// - WS dataflow, preload: weight value for the next operation.
+/// - WS dataflow, compute: weight value for the current operation.
+/// - OS dataflow, preload: bias value for the next operation.
+/// - OS dataflow, compute: partial sum value for the current operation.
+///
+/// NOTE: In OS dataflow, it outputs the matmul result when a change in the propagate value is detected.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct PeS {
     /// Register 1.
@@ -96,7 +94,9 @@ pub struct PeS {
     /// Register 2.
     pub reg2: U<32>,
 
-    /// Propagate.
+    /// The propagate value comes from the previous input.
+    ///
+    /// NOTE: In the PE logic, it is only used to check whether the current propagate value differs from the previous one.
     pub propagate: Propagate,
 }
 
@@ -105,20 +105,58 @@ impl PeS {
     pub fn new(reg1: U<32>, reg2: U<32>, propagate: Propagate) -> Self {
         Self { reg1, reg2, propagate }
     }
+
+    /// Creates a new PE state for OS dataflow.
+    ///
+    /// # Arguments
+    ///
+    /// - `preload`: Bias value for the next operation.
+    /// - `partial_sum`: MAC result of the current operation.
+    /// - `propagate`: Propagate value.
+    pub fn new_os(preload: U<32>, partial_sum: U<32>, propagate: Propagate) -> Self {
+        match propagate {
+            Propagate::Reg1 => PeS::new(preload, partial_sum, propagate),
+            Propagate::Reg2 => PeS::new(partial_sum, preload, propagate),
+        }
+    }
+
+    /// Creates a new PE state for WS dataflow.
+    ///
+    /// # Arguments
+    ///
+    /// - `preload`: Weight value for the next operation.
+    /// - `weight`: Weight value for the current operation.
+    /// - `propagate`: Propagate value.
+    pub fn new_ws(preload: U<32>, weight: U<32>, propagate: Propagate) -> Self {
+        match propagate {
+            Propagate::Reg1 => PeS::new(preload, weight, propagate),
+            Propagate::Reg2 => PeS::new(weight, preload, propagate),
+        }
+    }
 }
 
 /// MAC unit (computes `a * b + c`).
+///
+/// It preserves the signedness of operands.
 fn mac(a: U<8>, b: U<8>, c: U<32>) -> U<OUTPUT_BITS> {
-    todo!("assignment 4")
+    let a = u32::from(a.sext::<32>()) as i32;
+    let b = u32::from(b.sext::<32>()) as i32;
+    let c = u32::from(c) as i32;
+
+    (a * b + c).into_u()
 }
 
-/// Same as `(val >> shamt).clippedToWidthOf(20)`.
+/// Performs right-shift (`val >> shamt`) and then clips to `OUTPUT_BITS`.
+///
+/// It preserves the signedness of `val`.
 fn shift_and_clip(val: U<32>, shamt: U<5>) -> U<OUTPUT_BITS> {
     let shifted = rounding_shift(val, shamt);
-    super::arithmetic::clip_with_saturation::<32, 20>(shifted)
+    super::arithmetic::clip_with_saturation::<32, OUTPUT_BITS>(shifted)
 }
 
 /// PE.
+///
+/// NOTE: It is assumed that all valid signals for the input interfaces have the same value.
 #[synthesize]
 pub fn pe(
     _in_left: Valid<PeRowData>,

@@ -6,13 +6,13 @@ use crate::prelude::*;
 
 mod array;
 mod bounded;
-mod integer;
 mod option;
+mod uint;
 
 pub use array::*;
 pub use bounded::*;
-pub use integer::*;
 pub use option::*;
+pub use uint::*;
 
 /// Don't care value.
 ///

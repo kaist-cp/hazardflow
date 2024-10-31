@@ -139,7 +139,7 @@ impl<const ACC_SCALE_BITS: usize> ConfigExRs1<ACC_SCALE_BITS> {
             transpose_a: rs1s.clip_const::<CONFIG_EX_RS1_TRANSPOSE_A_WIDTH>(transpose_a_offset)[0],
             set_only_strides: rs1s.clip_const::<CONFIG_EX_RS1_SET_ONLY_STRIDES_WIDTH>(set_only_strides_offset)[0],
             activation: rs1s.clip_const::<CONFIG_EX_RS1_ACTIVATION_WIDTH>(activation_offset),
-            dataflow: Dataflow::from(rs1s.clip_const::<CONFIG_EX_RS1_DATAFLOW_WIDTH>(dataflow_offset)),
+            dataflow: if rs1s[dataflow_offset] { Dataflow::WS } else { Dataflow::OS },
             cmd_type: ConfigCmd::from(rs1s.clip_const::<CONFIG_EX_RS1_CMD_TYPE_WIDTH>(0)),
         }
     }

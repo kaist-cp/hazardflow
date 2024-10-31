@@ -8,7 +8,7 @@ use hazardflow_macro::magic;
 use super::Array;
 use crate::prelude::*;
 
-/// An integer with bitwidth `N`.
+/// An unsigned integer with bitwidth `N`.
 ///
 /// The lower bits of the integer are represented by the lower index of the array, and vice versa. In other words, the
 /// least significant bit of the integer is the 0th element of the array, and the most significant bit is the
