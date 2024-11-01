@@ -7,11 +7,13 @@ use crate::prelude::*;
 mod array;
 mod bounded;
 mod option;
+mod sint;
 mod uint;
 
 pub use array::*;
 pub use bounded::*;
 pub use option::*;
+pub use sint::*;
 pub use uint::*;
 
 /// Don't care value.

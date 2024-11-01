@@ -10,7 +10,7 @@ pub struct PeRowData {
     /// A.
     ///
     /// Represents the activation value.
-    pub a: U<INPUT_BITS>,
+    pub a: S<INPUT_BITS>,
 }
 
 /// PE column data signals.
@@ -19,12 +19,12 @@ pub struct PeColData {
     /// B.
     ///
     /// Represents the weight value (in OS dataflow) or the above PE's MAC result (in WS dataflow).
-    pub b: U<OUTPUT_BITS>,
+    pub b: S<OUTPUT_BITS>,
 
     /// D.
     ///
     /// Represents the preloading bias value (in OS dataflow) or the preloading weight value (in WS dataflow).
-    pub d: U<OUTPUT_BITS>,
+    pub d: S<OUTPUT_BITS>,
 }
 
 /// PE column control signals.
@@ -89,10 +89,10 @@ pub enum Propagate {
 #[derive(Debug, Default, Clone, Copy)]
 pub struct PeS {
     /// Register 1.
-    pub reg1: U<32>,
+    pub reg1: S<32>,
 
     /// Register 2.
-    pub reg2: U<32>,
+    pub reg2: S<32>,
 
     /// The propagate value comes from the previous input.
     ///
@@ -102,7 +102,7 @@ pub struct PeS {
 
 impl PeS {
     /// Creates a new PE state.
-    pub fn new(reg1: U<32>, reg2: U<32>, propagate: Propagate) -> Self {
+    pub fn new(reg1: S<32>, reg2: S<32>, propagate: Propagate) -> Self {
         Self { reg1, reg2, propagate }
     }
 
@@ -113,7 +113,7 @@ impl PeS {
     /// - `preload`: Bias value for the next operation.
     /// - `partial_sum`: MAC result of the current operation.
     /// - `propagate`: Propagate value.
-    pub fn new_os(preload: U<32>, partial_sum: U<32>, propagate: Propagate) -> Self {
+    pub fn new_os(preload: S<32>, partial_sum: S<32>, propagate: Propagate) -> Self {
         match propagate {
             Propagate::Reg1 => PeS::new(preload, partial_sum, propagate),
             Propagate::Reg2 => PeS::new(partial_sum, preload, propagate),
@@ -127,7 +127,7 @@ impl PeS {
     /// - `preload`: Weight value for the next operation.
     /// - `weight`: Weight value for the current operation.
     /// - `propagate`: Propagate value.
-    pub fn new_ws(preload: U<32>, weight: U<32>, propagate: Propagate) -> Self {
+    pub fn new_ws(preload: S<32>, weight: S<32>, propagate: Propagate) -> Self {
         match propagate {
             Propagate::Reg1 => PeS::new(preload, weight, propagate),
             Propagate::Reg2 => PeS::new(weight, preload, propagate),
@@ -138,18 +138,14 @@ impl PeS {
 /// MAC unit (computes `a * b + c`).
 ///
 /// It preserves the signedness of operands.
-fn mac(a: U<8>, b: U<8>, c: U<32>) -> U<OUTPUT_BITS> {
-    let a = u32::from(a.sext::<32>()) as i32;
-    let b = u32::from(b.sext::<32>()) as i32;
-    let c = u32::from(c) as i32;
-
-    (a * b + c).into_u()
+fn mac(a: S<8>, b: S<8>, c: S<32>) -> S<OUTPUT_BITS> {
+    super::arithmetic::mac(a, b, c)
 }
 
 /// Performs right-shift (`val >> shamt`) and then clips to `OUTPUT_BITS`.
 ///
 /// It preserves the signedness of `val`.
-fn shift_and_clip(val: U<32>, shamt: U<5>) -> U<OUTPUT_BITS> {
+fn shift_and_clip(val: S<32>, shamt: U<5>) -> S<OUTPUT_BITS> {
     let shifted = rounding_shift(val, shamt);
     super::arithmetic::clip_with_saturation::<32, OUTPUT_BITS>(shifted)
 }

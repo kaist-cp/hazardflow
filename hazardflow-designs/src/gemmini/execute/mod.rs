@@ -739,8 +739,8 @@ fn compute_write_signal(resp: (MeshRespExtended, (Dataflow, U<3>, U<16>))) -> Wr
 #[allow(clippy::identity_op)]
 fn clip_with_saturation(val: U<20>) -> U<8> {
     let val_msb = val[20 - 1];
-    let sat_max = U::<8>::signed_max();
-    let sat_min = U::<8>::signed_min();
+    let sat_max = U::from(S::<8>::signed_max());
+    let sat_min = U::from(S::<8>::signed_min());
 
     // TODO: Better way for signed comparison? Modify compiler for signed comparison.
     if !val_msb && val > sat_max.resize() {
@@ -796,7 +796,7 @@ fn acc_write_req(resp: (MeshRespExtended, (Dataflow, U<3>, U<16>)), bank_i: U<1>
     let write_signals = compute_write_signal(resp);
     let resp = resp.0;
 
-    let wdata = resp.mesh_resp.data.map(|v| v.sext::<32>());
+    let wdata = resp.mesh_resp.data.map(|v| U::from(S::from(v).sext::<32>()));
     let wmask = write_signals.w_mask.map(|v| v.repeat::<4>()).concat();
 
     if write_signals.start_array_outputting

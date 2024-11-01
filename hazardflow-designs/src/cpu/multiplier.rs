@@ -156,8 +156,8 @@ pub fn muldiv<P: Copy, R: Copy>(
                     let mpcand = s.divisor;
 
                     let prod = {
-                        let mpcand = mpcand.sext::<34>();
-                        let accum = accum.sext::<34>();
+                        let mpcand = U::from(S::from(mpcand).sext::<34>());
+                        let accum = U::from(S::from(accum).sext::<34>());
 
                         if !mplier[0] {
                             accum

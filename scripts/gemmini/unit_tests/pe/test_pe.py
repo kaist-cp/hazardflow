@@ -33,7 +33,7 @@ def rounding_shift(value, shift):
     PeDataRowMonitor,
 ) = define_stream(
     "PeDataRow",
-    signals=["payload_discriminant", "payload_Some_0_a"],
+    signals=["payload_discriminant", "payload_Some_0_a_0"],
     valid_signal="payload_discriminant",
 )
 
@@ -46,7 +46,7 @@ def rounding_shift(value, shift):
     PeDataColMonitor,
 ) = define_stream(
     "PeDataCol",
-    signals=["payload_discriminant", "payload_Some_0_b", "payload_Some_0_d"],
+    signals=["payload_discriminant", "payload_Some_0_b_0", "payload_Some_0_d_0"],
     valid_signal="payload_discriminant",
 )
 
@@ -190,11 +190,11 @@ async def ws_simple(dut):
         payload_Some_0_control_propagate_discriminant=REG2,
         payload_Some_0_control_shift=rnd_shift,
     )
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
         PeDataColTransaction(
-            payload_Some_0_b=0,
-            payload_Some_0_d=weight,
+            payload_Some_0_b_0=0,
+            payload_Some_0_d_0=weight,
         )
     )
     await tb.pe_col_ctrl_req.send(req)
@@ -203,9 +203,9 @@ async def ws_simple(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == 0
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
     assert col_ctrl_resp.payload_Some_0_id == rnd_id
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
@@ -214,10 +214,10 @@ async def ws_simple(dut):
     # Input data and check output data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
-            PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+            PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
         )
         await tb.pe_col_ctrl_req.send(
             PeControlColTransaction(
@@ -233,9 +233,9 @@ async def ws_simple(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == output_data[i]
-        assert col_data_resp.payload_Some_0_d == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == output_data[i]
+        assert col_data_resp.payload_Some_0_d_0 == 0
         assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
         assert col_ctrl_resp.payload_Some_0_last == (i == rnd_last_idx)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
@@ -287,11 +287,11 @@ async def ws_random(dut):
         payload_Some_0_control_shift=rnd_shift,
     )
 
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
         PeDataColTransaction(
-            payload_Some_0_b=0,
-            payload_Some_0_d=weight,
+            payload_Some_0_b_0=0,
+            payload_Some_0_d_0=weight,
         )
     )
     await tb.pe_col_ctrl_req.send(req)
@@ -300,9 +300,9 @@ async def ws_random(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == 0
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
     assert col_ctrl_resp.payload_Some_0_id == rnd_id
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
     assert col_ctrl_resp.payload_Some_0_control_propagate_discriminant == REG2
@@ -311,10 +311,10 @@ async def ws_random(dut):
     # Input data and check output data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
-            PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+            PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
         )
         await tb.pe_col_ctrl_req.send(
             PeControlColTransaction(
@@ -330,9 +330,9 @@ async def ws_random(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == output_data[i]
-        assert col_data_resp.payload_Some_0_d == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == output_data[i]
+        assert col_data_resp.payload_Some_0_d_0 == 0
         assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
         assert col_ctrl_resp.payload_Some_0_last == (i == rnd_last_idx)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == WS
@@ -374,12 +374,12 @@ async def os_simple(dut):
     # Input data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
             PeDataColTransaction(
-                payload_Some_0_b=weight[i],
-                payload_Some_0_d=0,
+                payload_Some_0_b_0=weight[i],
+                payload_Some_0_d_0=0,
             )
         )
         await tb.pe_col_ctrl_req.send(
@@ -396,9 +396,9 @@ async def os_simple(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == weight[i]
-        assert col_data_resp.payload_Some_0_d.signed_integer == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == weight[i]
+        assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
         assert col_ctrl_resp.payload_Some_0_id == rnd_id
         assert col_ctrl_resp.payload_Some_0_last == (i == 15)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -406,9 +406,9 @@ async def os_simple(dut):
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
 
     # Check output data
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
-        PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+        PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
     )
     await tb.pe_col_ctrl_req.send(
         PeControlColTransaction(
@@ -424,9 +424,9 @@ async def os_simple(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == output_data
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == output_data
     assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
     assert col_ctrl_resp.payload_Some_0_last == False
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -468,12 +468,12 @@ async def os_random_shift(dut):
     # Input data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
             PeDataColTransaction(
-                payload_Some_0_b=weight[i],
-                payload_Some_0_d=0,
+                payload_Some_0_b_0=weight[i],
+                payload_Some_0_d_0=0,
             )
         )
         await tb.pe_col_ctrl_req.send(
@@ -490,9 +490,9 @@ async def os_random_shift(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == weight[i]
-        assert col_data_resp.payload_Some_0_d.signed_integer == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == weight[i]
+        assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
         assert col_ctrl_resp.payload_Some_0_id == rnd_id
         assert col_ctrl_resp.payload_Some_0_last == (i == 15)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -500,9 +500,9 @@ async def os_random_shift(dut):
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
 
     # Check output data
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
-        PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+        PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
     )
     await tb.pe_col_ctrl_req.send(
         PeControlColTransaction(
@@ -518,9 +518,9 @@ async def os_random_shift(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == output_data
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == output_data
     assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
     assert col_ctrl_resp.payload_Some_0_last == False
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -562,12 +562,12 @@ async def os_random_inp_and_shift(dut):
     # Input data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
             PeDataColTransaction(
-                payload_Some_0_b=weight[i],
-                payload_Some_0_d=0,
+                payload_Some_0_b_0=weight[i],
+                payload_Some_0_d_0=0,
             )
         )
         await tb.pe_col_ctrl_req.send(
@@ -584,9 +584,9 @@ async def os_random_inp_and_shift(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == weight[i]
-        assert col_data_resp.payload_Some_0_d.signed_integer == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == weight[i]
+        assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
         assert col_ctrl_resp.payload_Some_0_id == rnd_id
         assert col_ctrl_resp.payload_Some_0_last == (i == 15)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -594,9 +594,9 @@ async def os_random_inp_and_shift(dut):
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
 
     # Check output data
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
-        PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+        PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
     )
     await tb.pe_col_ctrl_req.send(
         PeControlColTransaction(
@@ -612,9 +612,9 @@ async def os_random_inp_and_shift(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == output_data
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == output_data
     assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
     assert col_ctrl_resp.payload_Some_0_last == False
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -656,12 +656,12 @@ async def os_random_inp(dut):
     # Input data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
             PeDataColTransaction(
-                payload_Some_0_b=weight[i],
-                payload_Some_0_d=0,
+                payload_Some_0_b_0=weight[i],
+                payload_Some_0_d_0=0,
             )
         )
         await tb.pe_col_ctrl_req.send(
@@ -678,9 +678,9 @@ async def os_random_inp(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == weight[i]
-        assert col_data_resp.payload_Some_0_d.signed_integer == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == weight[i]
+        assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
         assert col_ctrl_resp.payload_Some_0_id == rnd_id
         assert col_ctrl_resp.payload_Some_0_last == (i == 15)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -688,9 +688,9 @@ async def os_random_inp(dut):
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
 
     # Check output data
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
-        PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+        PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
     )
     await tb.pe_col_ctrl_req.send(
         PeControlColTransaction(
@@ -706,9 +706,9 @@ async def os_random_inp(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == output_data
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == output_data
     assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
     assert col_ctrl_resp.payload_Some_0_last == False
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -750,12 +750,12 @@ async def os_random_inp_and_shift(dut):
     # Input data
     for i in range(16):
         await tb.pe_row_data_req.send(
-            PeDataRowTransaction(payload_Some_0_a=activation[i])
+            PeDataRowTransaction(payload_Some_0_a_0=activation[i])
         )
         await tb.pe_col_data_req.send(
             PeDataColTransaction(
-                payload_Some_0_b=weight[i],
-                payload_Some_0_d=0,
+                payload_Some_0_b_0=weight[i],
+                payload_Some_0_d_0=0,
             )
         )
         await tb.pe_col_ctrl_req.send(
@@ -772,9 +772,9 @@ async def os_random_inp_and_shift(dut):
         col_data_resp = await tb.pe_col_data_resp.recv()
         col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-        assert row_data_resp.payload_Some_0_a.signed_integer == activation[i]
-        assert col_data_resp.payload_Some_0_b.signed_integer == weight[i]
-        assert col_data_resp.payload_Some_0_d.signed_integer == 0
+        assert row_data_resp.payload_Some_0_a_0.signed_integer == activation[i]
+        assert col_data_resp.payload_Some_0_b_0.signed_integer == weight[i]
+        assert col_data_resp.payload_Some_0_d_0.signed_integer == 0
         assert col_ctrl_resp.payload_Some_0_id == rnd_id
         assert col_ctrl_resp.payload_Some_0_last == (i == 15)
         assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS
@@ -782,9 +782,9 @@ async def os_random_inp_and_shift(dut):
         assert col_ctrl_resp.payload_Some_0_control_shift == rnd_shift
 
     # Check output data
-    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a=0))
+    await tb.pe_row_data_req.send(PeDataRowTransaction(payload_Some_0_a_0=0))
     await tb.pe_col_data_req.send(
-        PeDataColTransaction(payload_Some_0_b=0, payload_Some_0_d=0)
+        PeDataColTransaction(payload_Some_0_b_0=0, payload_Some_0_d_0=0)
     )
     await tb.pe_col_ctrl_req.send(
         PeControlColTransaction(
@@ -800,9 +800,9 @@ async def os_random_inp_and_shift(dut):
     col_data_resp = await tb.pe_col_data_resp.recv()
     col_ctrl_resp = await tb.pe_col_ctrl_resp.recv()
 
-    assert row_data_resp.payload_Some_0_a == 0
-    assert col_data_resp.payload_Some_0_b == 0
-    assert col_data_resp.payload_Some_0_d.signed_integer == output_data
+    assert row_data_resp.payload_Some_0_a_0 == 0
+    assert col_data_resp.payload_Some_0_b_0 == 0
+    assert col_data_resp.payload_Some_0_d_0.signed_integer == output_data
     assert col_ctrl_resp.payload_Some_0_id == (rnd_id + 1) % 7
     assert col_ctrl_resp.payload_Some_0_last == False
     assert col_ctrl_resp.payload_Some_0_control_dataflow_discriminant == OS

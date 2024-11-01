@@ -1,4 +1,4 @@
-//! Integer.
+//! Unsigned integer.
 
 use core::cmp::Ordering;
 use core::ops::*;
@@ -135,45 +135,12 @@ where [(); N + 1]:
     pub fn trunk_add(self, rhs: Self) -> Self {
         (self + rhs).resize()
     }
-
-    /// Sign extends `U<N>` to `U<M>`.
-    pub fn sext<const M: usize>(self) -> U<M>
-    where
-        [(); (M - N) * 1]:,
-        [(); M * N]:,
-        [(); N + (M - N)]:,
-    {
-        if M >= N {
-            let msb_arr: Array<bool, { M - N }> = self.clip_const::<1>(N - 1).repeat::<{ M - N }>().concat().resize();
-            self.append(msb_arr).resize::<M>()
-        } else {
-            panic!("M should be larger than N")
-        }
-    }
 }
 
 impl<const N: usize> U<N> {
     /// Returns the maximum value of an `N` bit unsigned value. (i.e., 2^`N` - 1)
     pub fn unsigned_max() -> U<N> {
         true.repeat::<N>()
-    }
-
-    /// Returns the maximum value of an `N` bit signed value. (i.e., 2^(`N` - 1) - 1)
-    pub fn signed_max() -> U<N>
-    where
-        [(); N - 1]:,
-        [(); (N - 1) + 1]:,
-    {
-        Self::unsigned_max().clip_const::<{ N - 1 }>(0).append(U::<1>::from(0)).resize::<N>()
-    }
-
-    /// Returns the minimum value of an `N` bit unsigned value. (i.e., -2^(`N` - 1))
-    pub fn signed_min() -> U<N>
-    where
-        [(); N - 1]:,
-        [(); (N - 1) + 1]:,
-    {
-        U::<{ N - 1 }>::from(0).append(U::<1>::from(1)).resize::<N>()
     }
 }
 
