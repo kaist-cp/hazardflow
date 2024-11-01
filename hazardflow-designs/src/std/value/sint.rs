@@ -12,13 +12,11 @@ impl<const N: usize> S<N> {
     /// It panics when `M < N`.
     #[allow(clippy::identity_op)]
     pub fn sext<const M: usize>(self) -> S<M>
-    where
-        [(); (M - N) * 1]:,
-        [(); N + (M - N)]:,
-    {
+    where [(); N + M]: {
         if M >= N {
-            let msb_arr: Array<bool, { M - N }> = self.0.clip_const::<1>(N - 1).repeat::<{ M - N }>().concat().resize();
-            S(self.0.append(msb_arr).resize::<M>())
+            let msb = self.0[N - 1];
+            let inner = self.0.append(msb.repeat::<M>());
+            S::from(inner.resize::<M>())
         } else {
             panic!("M should be larger than N")
         }
