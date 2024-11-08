@@ -2,12 +2,12 @@ import pathlib
 import os
 
 # Paths
-CHIPYARD_PATH = os.path.dirname(os.environ["CONDA_PREFIX"])
-GEMMINI_PATH = CHIPYARD_PATH + "/generators/gemmini"
-VERILATOR_MAKEFILE_PATH = CHIPYARD_PATH + "/sims/verilator"
-GEMMINI_SRC_PATH = GEMMINI_PATH + "/src/main"
-GEMMINI_VSRC_PATH = GEMMINI_SRC_PATH + "/resources/vsrc"
-GEMMINI_CHISEL_PATH = GEMMINI_SRC_PATH + "/scala/gemmini"
+CHIPYARD_PATH = pathlib.Path(os.environ["CONDA_PREFIX"]).absolute().parent
+GEMMINI_PATH = CHIPYARD_PATH / "generators" / "gemmini"
+VERILATOR_MAKEFILE_PATH = CHIPYARD_PATH / "sims" / "verilator"
+GEMMINI_SRC_PATH = GEMMINI_PATH / "src" / "main"
+GEMMINI_VSRC_PATH = GEMMINI_SRC_PATH / "resources" / "vsrc"
+GEMMINI_CHISEL_PATH = GEMMINI_SRC_PATH / "scala" / "gemmini"
 
 HAZARDFLOW_PATH = pathlib.Path(__file__).absolute().parent.parent.parent
 GEMMINI_SCRIPT_PATH = HAZARDFLOW_PATH / "scripts" / "gemmini"

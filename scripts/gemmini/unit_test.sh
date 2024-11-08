@@ -6,7 +6,7 @@ set -e
 # Silently run the command to check if the conda env is base
 if [[ $CONDA_DEFAULT_ENV == "base" ]]; then
     echo "Please activate a conda environment before running this script."
-    echo "Run \`source ~/chipyard/env.sh\` to activate the chipyard conda environment."
+    echo "Run \`source /tmp/chipyard/env.sh\` to activate the chipyard conda environment."
     exit 1
 fi
 

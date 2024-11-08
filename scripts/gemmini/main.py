@@ -82,11 +82,11 @@ def copy_verilator_configuration_files():
     # Copy `build-verilator.sh`
     shutil.copy(
         VERILATOR_CONFIG_FILES_PATH / "build-verilator.sh",
-        GEMMINI_PATH + "/scripts/build-verilator.sh",
+        GEMMINI_PATH / "scripts" / "build-verilator.sh",
     )
     # Copy Makefile
     shutil.copy(
-        VERILATOR_CONFIG_FILES_PATH / "Makefile", VERILATOR_MAKEFILE_PATH + "/Makefile"
+        VERILATOR_CONFIG_FILES_PATH / "Makefile", VERILATOR_MAKEFILE_PATH / "Makefile"
     )
 
 
@@ -94,7 +94,7 @@ def compile_testbenches_with_fast_option():
     subprocess.run(
         "CFLAGS=-DFAST ./build.sh",
         shell=True,
-        cwd=CHIPYARD_PATH + "/generators/gemmini/software/gemmini-rocc-tests",
+        cwd=CHIPYARD_PATH / "generators" / "gemmini" / "software" / "gemmini-rocc-tests",
     )
 
 
@@ -123,15 +123,15 @@ def setup_gemmini(config: str):
 
 
 def build_verilator_simulation_binary(debug: bool):
-    subprocess.run(["bash", GEMMINI_PATH + "/scripts/setup-paths.sh"], cwd=GEMMINI_PATH)
+    subprocess.run(["bash", GEMMINI_PATH / "scripts" / "setup-paths.sh"], cwd=GEMMINI_PATH)
     if debug:
         subprocess.run(
-            ["bash", GEMMINI_PATH + "/scripts/build-verilator.sh", "--debug"],
+            ["bash", GEMMINI_PATH / "scripts" / "build-verilator.sh", "--debug"],
             cwd=GEMMINI_PATH,
         )
     else:
         subprocess.run(
-            ["bash", GEMMINI_PATH + "/scripts/build-verilator.sh"],
+            ["bash", GEMMINI_PATH / "scripts" / "build-verilator.sh"],
             cwd=GEMMINI_PATH,
         )
 
@@ -170,14 +170,14 @@ def run_simulation(tb: str, debug: bool):
     compile_testbenches_with_fast_option()
     if debug:
         subprocess.run(
-            ["bash", GEMMINI_PATH + "/scripts/run-verilator.sh", tb, "--debug"],
+            ["bash", GEMMINI_PATH / "scripts" / "run-verilator.sh", tb, "--debug"],
             cwd=GEMMINI_PATH,
         )
-        with open(GEMMINI_PATH + "/waveforms/waveform_pruned.vcd", "w") as outfile:
+        with open(GEMMINI_PATH / "waveforms" / "waveform_pruned.vcd", "w") as outfile:
             subprocess.run(
                 [
                     "vcd-prune",
-                    GEMMINI_PATH + "/waveforms/waveform.vcd",
+                    GEMMINI_PATH / "waveforms" / "waveform.vcd",
                     "-m",
                     "gemmini",
                 ],
@@ -186,13 +186,13 @@ def run_simulation(tb: str, debug: bool):
         subprocess.run(
             [
                 "cp",
-                GEMMINI_PATH + "/waveforms/waveform_pruned.vcd",
-                GEMMINI_SCRIPT_PATH + "/" + tb + ".vcd",
+                GEMMINI_PATH / "waveforms" / "waveform_pruned.vcd",
+                GEMMINI_SCRIPT_PATH / f"{tb}.vcd",
             ]
         )
     else:
         subprocess.run(
-            ["bash", GEMMINI_PATH + "/scripts/run-verilator.sh", tb], cwd=GEMMINI_PATH
+            ["bash", GEMMINI_PATH / "scripts" / "run-verilator.sh", tb], cwd=GEMMINI_PATH
         )
 
 
