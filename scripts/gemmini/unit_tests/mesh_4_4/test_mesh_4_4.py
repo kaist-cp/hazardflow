@@ -34,11 +34,11 @@ class TB(object):
         cocotb.start_soon(Clock(dut.clk, 4, units="ns").start())
 
         self.in_row_data_valids = self.dut.in_input_0_payload_discriminant
-        self.in_row_data_a = self.dut.in_input_0_payload_Some_0_a
+        self.in_row_data_a = self.dut.in_input_0_payload_Some_0_a_0
 
         self.in_col_data_valids = self.dut.in_input_1_0_payload_discriminant
-        self.in_col_data_b = self.dut.in_input_1_0_payload_Some_0_b
-        self.in_col_data_d = self.dut.in_input_1_0_payload_Some_0_d
+        self.in_col_data_b = self.dut.in_input_1_0_payload_Some_0_b_0
+        self.in_col_data_d = self.dut.in_input_1_0_payload_Some_0_d_0
 
         self.in_col_ctrl_valids = self.dut.in_input_1_1_payload_discriminant
         self.in_col_ctrl_id = self.dut.in_input_1_1_payload_Some_0_id
@@ -52,11 +52,11 @@ class TB(object):
         self.in_col_ctrl_shift = self.dut.in_input_1_1_payload_Some_0_control_shift
 
         self.out_row_data_valids = self.dut.out_output_0_payload_discriminant
-        self.out_row_data_a = self.dut.out_output_0_payload_Some_0_a
+        self.out_row_data_a = self.dut.out_output_0_payload_Some_0_a_0
 
         self.out_col_data_valids = self.dut.out_output_1_0_payload_discriminant
-        self.out_col_data_b = self.dut.out_output_1_0_payload_Some_0_b
-        self.out_col_data_d = self.dut.out_output_1_0_payload_Some_0_d
+        self.out_col_data_b = self.dut.out_output_1_0_payload_Some_0_b_0
+        self.out_col_data_d = self.dut.out_output_1_0_payload_Some_0_d_0
 
         self.out_col_ctrl_valids = self.dut.out_output_1_1_payload_discriminant
         self.out_col_ctrl_id = self.dut.out_output_1_1_payload_Some_0_id

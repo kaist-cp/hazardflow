@@ -22,11 +22,11 @@ module TileBlackBoxAdapter (
 );
 
     wire in_input_0_payload_discriminant;
-    wire [8-1:0] in_input_0_payload_Some_0_a;
+    wire [8-1:0] in_input_0_payload_Some_0_a_0;
 
     wire in_input_1_0_payload_discriminant;
-    wire [20-1:0] in_input_1_0_payload_Some_0_b;
-    wire [20-1:0] in_input_1_0_payload_Some_0_d;
+    wire [20-1:0] in_input_1_0_payload_Some_0_b_0;
+    wire [20-1:0] in_input_1_0_payload_Some_0_d_0;
 
     wire [3-1:0] in_input_1_1_payload_Some_0_id;
     wire in_input_1_1_payload_Some_0_last;
@@ -36,11 +36,11 @@ module TileBlackBoxAdapter (
     wire in_input_1_1_payload_Some_0_bad_dataflow;
 
     wire out_output_0_payload_discriminant;
-    wire [8-1:0] out_output_0_payload_Some_0_a;
+    wire [8-1:0] out_output_0_payload_Some_0_a_0;
 
     wire out_output_1_0_payload_discriminant;
-    wire [20-1:0] out_output_1_0_payload_Some_0_b;
-    wire [20-1:0] out_output_1_0_payload_Some_0_d;
+    wire [20-1:0] out_output_1_0_payload_Some_0_b_0;
+    wire [20-1:0] out_output_1_0_payload_Some_0_d_0;
 
     wire out_output_1_0_payload_discriminant;
     wire [3-1:0] out_output_1_1_payload_Some_0_id;
@@ -57,11 +57,11 @@ module TileBlackBoxAdapter (
         .rst(1'b0),
 
         .in_input_0_payload_discriminant(in_input_0_payload_discriminant),
-        .in_input_0_payload_Some_0_a(in_input_0_payload_Some_0_a),
+        .in_input_0_payload_Some_0_a_0(in_input_0_payload_Some_0_a_0),
 
         .in_input_1_0_payload_discriminant(in_input_1_0_payload_discriminant),
-        .in_input_1_0_payload_Some_0_b(in_input_1_0_payload_Some_0_b),
-        .in_input_1_0_payload_Some_0_d(in_input_1_0_payload_Some_0_d),
+        .in_input_1_0_payload_Some_0_b_0(in_input_1_0_payload_Some_0_b_0),
+        .in_input_1_0_payload_Some_0_d_0(in_input_1_0_payload_Some_0_d_0),
         
         .in_input_1_1_payload_discriminant(1'b1),
         .in_input_1_1_payload_Some_0_id(in_input_1_1_payload_Some_0_id),
@@ -72,11 +72,11 @@ module TileBlackBoxAdapter (
         .in_input_1_1_payload_Some_0_bad_dataflow(in_input_1_1_payload_Some_0_bad_dataflow),
 
         .out_output_0_payload_discriminant(out_output_0_payload_discriminant),
-        .out_output_0_payload_Some_0_a(out_output_0_payload_Some_0_a),
+        .out_output_0_payload_Some_0_a_0(out_output_0_payload_Some_0_a_0),
         
         .out_output_1_0_payload_discriminant(out_output_1_0_payload_discriminant),
-        .out_output_1_0_payload_Some_0_b(out_output_1_0_payload_Some_0_b),
-        .out_output_1_0_payload_Some_0_d(out_output_1_0_payload_Some_0_d),
+        .out_output_1_0_payload_Some_0_b_0(out_output_1_0_payload_Some_0_b_0),
+        .out_output_1_0_payload_Some_0_d_0(out_output_1_0_payload_Some_0_d_0),
         
         .out_output_1_1_payload_discriminant(out_output_1_1_payload_discriminant),
         .out_output_1_1_payload_Some_0_id(out_output_1_1_payload_Some_0_id),
@@ -88,11 +88,11 @@ module TileBlackBoxAdapter (
     );
 
     assign in_input_0_payload_discriminant = io_in_valid_0;
-    assign in_input_0_payload_Some_0_a = io_in_a_0;
+    assign in_input_0_payload_Some_0_a_0 = io_in_a_0;
 
     assign in_input_1_0_payload_discriminant = io_in_valid_0;
-    assign in_input_1_0_payload_Some_0_b = io_in_b_0;
-    assign in_input_1_0_payload_Some_0_d = io_in_d_0;
+    assign in_input_1_0_payload_Some_0_b_0 = io_in_b_0;
+    assign in_input_1_0_payload_Some_0_d_0 = io_in_d_0;
 
     assign in_input_1_1_payload_Some_0_id = io_in_id_0;
     assign in_input_1_1_payload_Some_0_last = io_in_last_0;
@@ -101,11 +101,11 @@ module TileBlackBoxAdapter (
     assign in_input_1_1_payload_Some_0_control_shift = io_in_control_0_shift;
     assign in_input_1_1_payload_Some_0_bad_dataflow = 1'b0;
 
-    assign io_out_a_0 = out_output_0_payload_Some_0_a;
+    assign io_out_a_0 = out_output_0_payload_Some_0_a_0;
 
     assign io_out_valid_0 = out_output_0_payload_discriminant && out_output_1_0_payload_discriminant;
-    assign io_out_b_0 = out_output_1_0_payload_Some_0_b;
-    assign io_out_c_0 = out_output_1_0_payload_Some_0_d;
+    assign io_out_b_0 = out_output_1_0_payload_Some_0_b_0;
+    assign io_out_c_0 = out_output_1_0_payload_Some_0_d_0;
 
     assign io_out_id_0 = out_output_1_1_payload_Some_0_id;
     assign io_out_last_0 = out_output_1_1_payload_Some_0_last;

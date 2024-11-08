@@ -275,10 +275,10 @@ module MeshBlackBoxAdapter (
 );
 
     wire [16-1:0] in_input_0_payload_discriminant;
-    wire [128-1:0] in_input_0_payload_Some_0_a;
+    wire [128-1:0] in_input_0_payload_Some_0_a_0;
     wire [16-1:0] in_input_1_0_payload_discriminant;
-    wire [320-1:0] in_input_1_0_payload_Some_0_b;
-    wire [320-1:0] in_input_1_0_payload_Some_0_d;
+    wire [320-1:0] in_input_1_0_payload_Some_0_b_0;
+    wire [320-1:0] in_input_1_0_payload_Some_0_d_0;
     wire [16-1:0] in_input_1_1_payload_discriminant = 16'hFFFF;
     wire [48-1:0] in_input_1_1_payload_Some_0_id;
     wire [16-1:0] in_input_1_1_payload_Some_0_last;
@@ -287,10 +287,10 @@ module MeshBlackBoxAdapter (
     wire [80-1:0] in_input_1_1_payload_Some_0_control_shift;
     
     wire [16-1:0] out_output_0_payload_discriminant;
-    wire [128-1:0] out_output_0_payload_Some_0_a;
+    wire [128-1:0] out_output_0_payload_Some_0_a_0;
     wire [16-1:0] out_output_1_0_payload_discriminant;
-    wire [320-1:0] out_output_1_0_payload_Some_0_b;
-    wire [320-1:0] out_output_1_0_payload_Some_0_d;
+    wire [320-1:0] out_output_1_0_payload_Some_0_b_0;
+    wire [320-1:0] out_output_1_0_payload_Some_0_d_0;
     wire [16-1:0] out_output_1_1_payload_discriminant;
     wire [48-1:0] out_output_1_1_payload_Some_0_id;
     wire [16-1:0] out_output_1_1_payload_Some_0_last;
@@ -303,10 +303,10 @@ module MeshBlackBoxAdapter (
         .clk(clock),
         .rst(1'b0),
         .in_input_0_payload_discriminant(in_input_0_payload_discriminant),
-        .in_input_0_payload_Some_0_a(in_input_0_payload_Some_0_a),
+        .in_input_0_payload_Some_0_a_0(in_input_0_payload_Some_0_a_0),
         .in_input_1_0_payload_discriminant(in_input_1_0_payload_discriminant),
-        .in_input_1_0_payload_Some_0_b(in_input_1_0_payload_Some_0_b),
-        .in_input_1_0_payload_Some_0_d(in_input_1_0_payload_Some_0_d),
+        .in_input_1_0_payload_Some_0_b_0(in_input_1_0_payload_Some_0_b_0),
+        .in_input_1_0_payload_Some_0_d_0(in_input_1_0_payload_Some_0_d_0),
         .in_input_1_1_payload_discriminant(in_input_1_1_payload_discriminant),
         .in_input_1_1_payload_Some_0_id(in_input_1_1_payload_Some_0_id),
         .in_input_1_1_payload_Some_0_last(in_input_1_1_payload_Some_0_last),
@@ -314,10 +314,10 @@ module MeshBlackBoxAdapter (
         .in_input_1_1_payload_Some_0_control_propagate_discriminant(in_input_1_1_payload_Some_0_control_propagate_discriminant),
         .in_input_1_1_payload_Some_0_control_shift(in_input_1_1_payload_Some_0_control_shift),
         .out_output_0_payload_discriminant(out_output_0_payload_discriminant),
-        .out_output_0_payload_Some_0_a(out_output_0_payload_Some_0_a),
+        .out_output_0_payload_Some_0_a_0(out_output_0_payload_Some_0_a_0),
         .out_output_1_0_payload_discriminant(out_output_1_0_payload_discriminant),
-        .out_output_1_0_payload_Some_0_b(out_output_1_0_payload_Some_0_b),
-        .out_output_1_0_payload_Some_0_d(out_output_1_0_payload_Some_0_d),
+        .out_output_1_0_payload_Some_0_b_0(out_output_1_0_payload_Some_0_b_0),
+        .out_output_1_0_payload_Some_0_d_0(out_output_1_0_payload_Some_0_d_0),
         .out_output_1_1_payload_discriminant(out_output_1_1_payload_discriminant),
         .out_output_1_1_payload_Some_0_id(out_output_1_1_payload_Some_0_id),
         .out_output_1_1_payload_Some_0_last(out_output_1_1_payload_Some_0_last),
@@ -327,59 +327,59 @@ module MeshBlackBoxAdapter (
     );
 
     // assign io_in_a
-    assign in_input_0_payload_Some_0_a[0*8 +: 8] = io_in_a_0_0;
-    assign in_input_0_payload_Some_0_a[1*8 +: 8] = io_in_a_1_0;
-    assign in_input_0_payload_Some_0_a[2*8 +: 8] = io_in_a_2_0;
-    assign in_input_0_payload_Some_0_a[3*8 +: 8] = io_in_a_3_0;
-    assign in_input_0_payload_Some_0_a[4*8 +: 8] = io_in_a_4_0;
-    assign in_input_0_payload_Some_0_a[5*8 +: 8] = io_in_a_5_0;
-    assign in_input_0_payload_Some_0_a[6*8 +: 8] = io_in_a_6_0;
-    assign in_input_0_payload_Some_0_a[7*8 +: 8] = io_in_a_7_0;
-    assign in_input_0_payload_Some_0_a[8*8 +: 8] = io_in_a_8_0;
-    assign in_input_0_payload_Some_0_a[9*8 +: 8] = io_in_a_9_0;
-    assign in_input_0_payload_Some_0_a[10*8 +: 8] = io_in_a_10_0;
-    assign in_input_0_payload_Some_0_a[11*8 +: 8] = io_in_a_11_0;
-    assign in_input_0_payload_Some_0_a[12*8 +: 8] = io_in_a_12_0;
-    assign in_input_0_payload_Some_0_a[13*8 +: 8] = io_in_a_13_0;
-    assign in_input_0_payload_Some_0_a[14*8 +: 8] = io_in_a_14_0;
-    assign in_input_0_payload_Some_0_a[15*8 +: 8] = io_in_a_15_0;
+    assign in_input_0_payload_Some_0_a_0[0*8 +: 8] = io_in_a_0_0;
+    assign in_input_0_payload_Some_0_a_0[1*8 +: 8] = io_in_a_1_0;
+    assign in_input_0_payload_Some_0_a_0[2*8 +: 8] = io_in_a_2_0;
+    assign in_input_0_payload_Some_0_a_0[3*8 +: 8] = io_in_a_3_0;
+    assign in_input_0_payload_Some_0_a_0[4*8 +: 8] = io_in_a_4_0;
+    assign in_input_0_payload_Some_0_a_0[5*8 +: 8] = io_in_a_5_0;
+    assign in_input_0_payload_Some_0_a_0[6*8 +: 8] = io_in_a_6_0;
+    assign in_input_0_payload_Some_0_a_0[7*8 +: 8] = io_in_a_7_0;
+    assign in_input_0_payload_Some_0_a_0[8*8 +: 8] = io_in_a_8_0;
+    assign in_input_0_payload_Some_0_a_0[9*8 +: 8] = io_in_a_9_0;
+    assign in_input_0_payload_Some_0_a_0[10*8 +: 8] = io_in_a_10_0;
+    assign in_input_0_payload_Some_0_a_0[11*8 +: 8] = io_in_a_11_0;
+    assign in_input_0_payload_Some_0_a_0[12*8 +: 8] = io_in_a_12_0;
+    assign in_input_0_payload_Some_0_a_0[13*8 +: 8] = io_in_a_13_0;
+    assign in_input_0_payload_Some_0_a_0[14*8 +: 8] = io_in_a_14_0;
+    assign in_input_0_payload_Some_0_a_0[15*8 +: 8] = io_in_a_15_0;
 
 
     // assign io_in_b
-    assign in_input_1_0_payload_Some_0_b[0*20 +: 20] = { {12{io_in_b_0_0[7]}}, io_in_b_0_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[1*20 +: 20] = { {12{io_in_b_1_0[7]}}, io_in_b_1_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[2*20 +: 20] = { {12{io_in_b_2_0[7]}}, io_in_b_2_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[3*20 +: 20] = { {12{io_in_b_3_0[7]}}, io_in_b_3_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[4*20 +: 20] = { {12{io_in_b_4_0[7]}}, io_in_b_4_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[5*20 +: 20] = { {12{io_in_b_5_0[7]}}, io_in_b_5_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[6*20 +: 20] = { {12{io_in_b_6_0[7]}}, io_in_b_6_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[7*20 +: 20] = { {12{io_in_b_7_0[7]}}, io_in_b_7_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[8*20 +: 20] = { {12{io_in_b_8_0[7]}}, io_in_b_8_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[9*20 +: 20] = { {12{io_in_b_9_0[7]}}, io_in_b_9_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[10*20 +: 20] = { {12{io_in_b_10_0[7]}}, io_in_b_10_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[11*20 +: 20] = { {12{io_in_b_11_0[7]}}, io_in_b_11_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[12*20 +: 20] = { {12{io_in_b_12_0[7]}}, io_in_b_12_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[13*20 +: 20] = { {12{io_in_b_13_0[7]}}, io_in_b_13_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[14*20 +: 20] = { {12{io_in_b_14_0[7]}}, io_in_b_14_0[7:0] };
-    assign in_input_1_0_payload_Some_0_b[15*20 +: 20] = { {12{io_in_b_15_0[7]}}, io_in_b_15_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[0*20 +: 20] = { {12{io_in_b_0_0[7]}}, io_in_b_0_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[1*20 +: 20] = { {12{io_in_b_1_0[7]}}, io_in_b_1_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[2*20 +: 20] = { {12{io_in_b_2_0[7]}}, io_in_b_2_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[3*20 +: 20] = { {12{io_in_b_3_0[7]}}, io_in_b_3_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[4*20 +: 20] = { {12{io_in_b_4_0[7]}}, io_in_b_4_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[5*20 +: 20] = { {12{io_in_b_5_0[7]}}, io_in_b_5_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[6*20 +: 20] = { {12{io_in_b_6_0[7]}}, io_in_b_6_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[7*20 +: 20] = { {12{io_in_b_7_0[7]}}, io_in_b_7_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[8*20 +: 20] = { {12{io_in_b_8_0[7]}}, io_in_b_8_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[9*20 +: 20] = { {12{io_in_b_9_0[7]}}, io_in_b_9_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[10*20 +: 20] = { {12{io_in_b_10_0[7]}}, io_in_b_10_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[11*20 +: 20] = { {12{io_in_b_11_0[7]}}, io_in_b_11_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[12*20 +: 20] = { {12{io_in_b_12_0[7]}}, io_in_b_12_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[13*20 +: 20] = { {12{io_in_b_13_0[7]}}, io_in_b_13_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[14*20 +: 20] = { {12{io_in_b_14_0[7]}}, io_in_b_14_0[7:0] };
+    assign in_input_1_0_payload_Some_0_b_0[15*20 +: 20] = { {12{io_in_b_15_0[7]}}, io_in_b_15_0[7:0] };
 
     // assign io_in_d
-    assign in_input_1_0_payload_Some_0_d[0*20 +: 20] = { {12{io_in_d_0_0[7]}}, io_in_d_0_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[1*20 +: 20] = { {12{io_in_d_1_0[7]}}, io_in_d_1_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[2*20 +: 20] = { {12{io_in_d_2_0[7]}}, io_in_d_2_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[3*20 +: 20] = { {12{io_in_d_3_0[7]}}, io_in_d_3_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[4*20 +: 20] = { {12{io_in_d_4_0[7]}}, io_in_d_4_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[5*20 +: 20] = { {12{io_in_d_5_0[7]}}, io_in_d_5_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[6*20 +: 20] = { {12{io_in_d_6_0[7]}}, io_in_d_6_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[7*20 +: 20] = { {12{io_in_d_7_0[7]}}, io_in_d_7_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[8*20 +: 20] = { {12{io_in_d_8_0[7]}}, io_in_d_8_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[9*20 +: 20] = { {12{io_in_d_9_0[7]}}, io_in_d_9_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[10*20 +: 20] = { {12{io_in_d_10_0[7]}}, io_in_d_10_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[11*20 +: 20] = { {12{io_in_d_11_0[7]}}, io_in_d_11_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[12*20 +: 20] = { {12{io_in_d_12_0[7]}}, io_in_d_12_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[13*20 +: 20] = { {12{io_in_d_13_0[7]}}, io_in_d_13_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[14*20 +: 20] = { {12{io_in_d_14_0[7]}}, io_in_d_14_0[7:0] };
-    assign in_input_1_0_payload_Some_0_d[15*20 +: 20] = { {12{io_in_d_15_0[7]}}, io_in_d_15_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[0*20 +: 20] = { {12{io_in_d_0_0[7]}}, io_in_d_0_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[1*20 +: 20] = { {12{io_in_d_1_0[7]}}, io_in_d_1_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[2*20 +: 20] = { {12{io_in_d_2_0[7]}}, io_in_d_2_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[3*20 +: 20] = { {12{io_in_d_3_0[7]}}, io_in_d_3_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[4*20 +: 20] = { {12{io_in_d_4_0[7]}}, io_in_d_4_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[5*20 +: 20] = { {12{io_in_d_5_0[7]}}, io_in_d_5_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[6*20 +: 20] = { {12{io_in_d_6_0[7]}}, io_in_d_6_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[7*20 +: 20] = { {12{io_in_d_7_0[7]}}, io_in_d_7_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[8*20 +: 20] = { {12{io_in_d_8_0[7]}}, io_in_d_8_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[9*20 +: 20] = { {12{io_in_d_9_0[7]}}, io_in_d_9_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[10*20 +: 20] = { {12{io_in_d_10_0[7]}}, io_in_d_10_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[11*20 +: 20] = { {12{io_in_d_11_0[7]}}, io_in_d_11_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[12*20 +: 20] = { {12{io_in_d_12_0[7]}}, io_in_d_12_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[13*20 +: 20] = { {12{io_in_d_13_0[7]}}, io_in_d_13_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[14*20 +: 20] = { {12{io_in_d_14_0[7]}}, io_in_d_14_0[7:0] };
+    assign in_input_1_0_payload_Some_0_d_0[15*20 +: 20] = { {12{io_in_d_15_0[7]}}, io_in_d_15_0[7:0] };
 
     // assign io_in_control_dataflow
     assign in_input_1_1_payload_Some_0_control_dataflow_discriminant[0] = io_in_control_0_0_dataflow;
@@ -507,40 +507,40 @@ module MeshBlackBoxAdapter (
     assign in_input_1_0_payload_discriminant[15] = io_in_valid_15_0;
 
     // assign io_out_b
-    assign io_out_b_0_0 = out_output_1_0_payload_Some_0_b[0*20 +: 20];
-    assign io_out_b_1_0 = out_output_1_0_payload_Some_0_b[1*20 +: 20];
-    assign io_out_b_2_0 = out_output_1_0_payload_Some_0_b[2*20 +: 20];
-    assign io_out_b_3_0 = out_output_1_0_payload_Some_0_b[3*20 +: 20];
-    assign io_out_b_4_0 = out_output_1_0_payload_Some_0_b[4*20 +: 20];
-    assign io_out_b_5_0 = out_output_1_0_payload_Some_0_b[5*20 +: 20];
-    assign io_out_b_6_0 = out_output_1_0_payload_Some_0_b[6*20 +: 20];
-    assign io_out_b_7_0 = out_output_1_0_payload_Some_0_b[7*20 +: 20];
-    assign io_out_b_8_0 = out_output_1_0_payload_Some_0_b[8*20 +: 20];
-    assign io_out_b_9_0 = out_output_1_0_payload_Some_0_b[9*20 +: 20];
-    assign io_out_b_10_0 = out_output_1_0_payload_Some_0_b[10*20 +: 20];
-    assign io_out_b_11_0 = out_output_1_0_payload_Some_0_b[11*20 +: 20];
-    assign io_out_b_12_0 = out_output_1_0_payload_Some_0_b[12*20 +: 20];
-    assign io_out_b_13_0 = out_output_1_0_payload_Some_0_b[13*20 +: 20];
-    assign io_out_b_14_0 = out_output_1_0_payload_Some_0_b[14*20 +: 20];
-    assign io_out_b_15_0 = out_output_1_0_payload_Some_0_b[15*20 +: 20];
+    assign io_out_b_0_0 = out_output_1_0_payload_Some_0_b_0[0*20 +: 20];
+    assign io_out_b_1_0 = out_output_1_0_payload_Some_0_b_0[1*20 +: 20];
+    assign io_out_b_2_0 = out_output_1_0_payload_Some_0_b_0[2*20 +: 20];
+    assign io_out_b_3_0 = out_output_1_0_payload_Some_0_b_0[3*20 +: 20];
+    assign io_out_b_4_0 = out_output_1_0_payload_Some_0_b_0[4*20 +: 20];
+    assign io_out_b_5_0 = out_output_1_0_payload_Some_0_b_0[5*20 +: 20];
+    assign io_out_b_6_0 = out_output_1_0_payload_Some_0_b_0[6*20 +: 20];
+    assign io_out_b_7_0 = out_output_1_0_payload_Some_0_b_0[7*20 +: 20];
+    assign io_out_b_8_0 = out_output_1_0_payload_Some_0_b_0[8*20 +: 20];
+    assign io_out_b_9_0 = out_output_1_0_payload_Some_0_b_0[9*20 +: 20];
+    assign io_out_b_10_0 = out_output_1_0_payload_Some_0_b_0[10*20 +: 20];
+    assign io_out_b_11_0 = out_output_1_0_payload_Some_0_b_0[11*20 +: 20];
+    assign io_out_b_12_0 = out_output_1_0_payload_Some_0_b_0[12*20 +: 20];
+    assign io_out_b_13_0 = out_output_1_0_payload_Some_0_b_0[13*20 +: 20];
+    assign io_out_b_14_0 = out_output_1_0_payload_Some_0_b_0[14*20 +: 20];
+    assign io_out_b_15_0 = out_output_1_0_payload_Some_0_b_0[15*20 +: 20];
 
     // assign io_out_c
-    assign io_out_c_0_0 = out_output_1_0_payload_Some_0_d[0*20 +: 20];
-    assign io_out_c_1_0 = out_output_1_0_payload_Some_0_d[1*20 +: 20];
-    assign io_out_c_2_0 = out_output_1_0_payload_Some_0_d[2*20 +: 20];
-    assign io_out_c_3_0 = out_output_1_0_payload_Some_0_d[3*20 +: 20];
-    assign io_out_c_4_0 = out_output_1_0_payload_Some_0_d[4*20 +: 20];
-    assign io_out_c_5_0 = out_output_1_0_payload_Some_0_d[5*20 +: 20];
-    assign io_out_c_6_0 = out_output_1_0_payload_Some_0_d[6*20 +: 20];
-    assign io_out_c_7_0 = out_output_1_0_payload_Some_0_d[7*20 +: 20];
-    assign io_out_c_8_0 = out_output_1_0_payload_Some_0_d[8*20 +: 20];
-    assign io_out_c_9_0 = out_output_1_0_payload_Some_0_d[9*20 +: 20];
-    assign io_out_c_10_0 = out_output_1_0_payload_Some_0_d[10*20 +: 20];
-    assign io_out_c_11_0 = out_output_1_0_payload_Some_0_d[11*20 +: 20];
-    assign io_out_c_12_0 = out_output_1_0_payload_Some_0_d[12*20 +: 20];
-    assign io_out_c_13_0 = out_output_1_0_payload_Some_0_d[13*20 +: 20];
-    assign io_out_c_14_0 = out_output_1_0_payload_Some_0_d[14*20 +: 20];
-    assign io_out_c_15_0 = out_output_1_0_payload_Some_0_d[15*20 +: 20];
+    assign io_out_c_0_0 = out_output_1_0_payload_Some_0_d_0[0*20 +: 20];
+    assign io_out_c_1_0 = out_output_1_0_payload_Some_0_d_0[1*20 +: 20];
+    assign io_out_c_2_0 = out_output_1_0_payload_Some_0_d_0[2*20 +: 20];
+    assign io_out_c_3_0 = out_output_1_0_payload_Some_0_d_0[3*20 +: 20];
+    assign io_out_c_4_0 = out_output_1_0_payload_Some_0_d_0[4*20 +: 20];
+    assign io_out_c_5_0 = out_output_1_0_payload_Some_0_d_0[5*20 +: 20];
+    assign io_out_c_6_0 = out_output_1_0_payload_Some_0_d_0[6*20 +: 20];
+    assign io_out_c_7_0 = out_output_1_0_payload_Some_0_d_0[7*20 +: 20];
+    assign io_out_c_8_0 = out_output_1_0_payload_Some_0_d_0[8*20 +: 20];
+    assign io_out_c_9_0 = out_output_1_0_payload_Some_0_d_0[9*20 +: 20];
+    assign io_out_c_10_0 = out_output_1_0_payload_Some_0_d_0[10*20 +: 20];
+    assign io_out_c_11_0 = out_output_1_0_payload_Some_0_d_0[11*20 +: 20];
+    assign io_out_c_12_0 = out_output_1_0_payload_Some_0_d_0[12*20 +: 20];
+    assign io_out_c_13_0 = out_output_1_0_payload_Some_0_d_0[13*20 +: 20];
+    assign io_out_c_14_0 = out_output_1_0_payload_Some_0_d_0[14*20 +: 20];
+    assign io_out_c_15_0 = out_output_1_0_payload_Some_0_d_0[15*20 +: 20];
 
     // // assign io_out_valid
     assign io_out_valid_0_0 = out_output_1_0_payload_discriminant[0] & out_output_0_payload_discriminant[0];

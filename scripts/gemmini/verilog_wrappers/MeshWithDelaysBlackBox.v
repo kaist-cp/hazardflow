@@ -172,60 +172,60 @@ module MeshWithDelaysBlackBoxAdapter(
     output [4:0]    io_tags_in_progress_5_rows,                           // DontCare
     output [4:0]    io_tags_in_progress_5_cols                            // DontCare
 );
-    wire [128-1:0] in_input_0_payload_Some_0_a;
-    wire [128-1:0] in_input_1_payload_Some_0_b;
-    wire [128-1:0] in_input_2_payload_Some_0_d;
+    wire [128-1:0] in_input_0_payload_Some_0_a_0;
+    wire [128-1:0] in_input_1_payload_Some_0_b_0;
+    wire [128-1:0] in_input_2_payload_Some_0_d_0;
 
-    assign in_input_0_payload_Some_0_a[0*8 +: 8] = io_a_bits_0_0;
-    assign in_input_0_payload_Some_0_a[1*8 +: 8] = io_a_bits_1_0;
-    assign in_input_0_payload_Some_0_a[2*8 +: 8] = io_a_bits_2_0;
-    assign in_input_0_payload_Some_0_a[3*8 +: 8] = io_a_bits_3_0;
-    assign in_input_0_payload_Some_0_a[4*8 +: 8] = io_a_bits_4_0;
-    assign in_input_0_payload_Some_0_a[5*8 +: 8] = io_a_bits_5_0;
-    assign in_input_0_payload_Some_0_a[6*8 +: 8] = io_a_bits_6_0;
-    assign in_input_0_payload_Some_0_a[7*8 +: 8] = io_a_bits_7_0;
-    assign in_input_0_payload_Some_0_a[8*8 +: 8] = io_a_bits_8_0;
-    assign in_input_0_payload_Some_0_a[9*8 +: 8] = io_a_bits_9_0;
-    assign in_input_0_payload_Some_0_a[10*8 +: 8] = io_a_bits_10_0;
-    assign in_input_0_payload_Some_0_a[11*8 +: 8] = io_a_bits_11_0;
-    assign in_input_0_payload_Some_0_a[12*8 +: 8] = io_a_bits_12_0;
-    assign in_input_0_payload_Some_0_a[13*8 +: 8] = io_a_bits_13_0;
-    assign in_input_0_payload_Some_0_a[14*8 +: 8] = io_a_bits_14_0;
-    assign in_input_0_payload_Some_0_a[15*8 +: 8] = io_a_bits_15_0;
+    assign in_input_0_payload_Some_0_a_0[0*8 +: 8] = io_a_bits_0_0;
+    assign in_input_0_payload_Some_0_a_0[1*8 +: 8] = io_a_bits_1_0;
+    assign in_input_0_payload_Some_0_a_0[2*8 +: 8] = io_a_bits_2_0;
+    assign in_input_0_payload_Some_0_a_0[3*8 +: 8] = io_a_bits_3_0;
+    assign in_input_0_payload_Some_0_a_0[4*8 +: 8] = io_a_bits_4_0;
+    assign in_input_0_payload_Some_0_a_0[5*8 +: 8] = io_a_bits_5_0;
+    assign in_input_0_payload_Some_0_a_0[6*8 +: 8] = io_a_bits_6_0;
+    assign in_input_0_payload_Some_0_a_0[7*8 +: 8] = io_a_bits_7_0;
+    assign in_input_0_payload_Some_0_a_0[8*8 +: 8] = io_a_bits_8_0;
+    assign in_input_0_payload_Some_0_a_0[9*8 +: 8] = io_a_bits_9_0;
+    assign in_input_0_payload_Some_0_a_0[10*8 +: 8] = io_a_bits_10_0;
+    assign in_input_0_payload_Some_0_a_0[11*8 +: 8] = io_a_bits_11_0;
+    assign in_input_0_payload_Some_0_a_0[12*8 +: 8] = io_a_bits_12_0;
+    assign in_input_0_payload_Some_0_a_0[13*8 +: 8] = io_a_bits_13_0;
+    assign in_input_0_payload_Some_0_a_0[14*8 +: 8] = io_a_bits_14_0;
+    assign in_input_0_payload_Some_0_a_0[15*8 +: 8] = io_a_bits_15_0;
     
-    assign in_input_1_payload_Some_0_b[0*8 +: 8] = io_b_bits_0_0;
-    assign in_input_1_payload_Some_0_b[1*8 +: 8] = io_b_bits_1_0;
-    assign in_input_1_payload_Some_0_b[2*8 +: 8] = io_b_bits_2_0;
-    assign in_input_1_payload_Some_0_b[3*8 +: 8] = io_b_bits_3_0;
-    assign in_input_1_payload_Some_0_b[4*8 +: 8] = io_b_bits_4_0;
-    assign in_input_1_payload_Some_0_b[5*8 +: 8] = io_b_bits_5_0;
-    assign in_input_1_payload_Some_0_b[6*8 +: 8] = io_b_bits_6_0;
-    assign in_input_1_payload_Some_0_b[7*8 +: 8] = io_b_bits_7_0;
-    assign in_input_1_payload_Some_0_b[8*8 +: 8] = io_b_bits_8_0;
-    assign in_input_1_payload_Some_0_b[9*8 +: 8] = io_b_bits_9_0;
-    assign in_input_1_payload_Some_0_b[10*8 +: 8] = io_b_bits_10_0;
-    assign in_input_1_payload_Some_0_b[11*8 +: 8] = io_b_bits_11_0;
-    assign in_input_1_payload_Some_0_b[12*8 +: 8] = io_b_bits_12_0;
-    assign in_input_1_payload_Some_0_b[13*8 +: 8] = io_b_bits_13_0;
-    assign in_input_1_payload_Some_0_b[14*8 +: 8] = io_b_bits_14_0;
-    assign in_input_1_payload_Some_0_b[15*8 +: 8] = io_b_bits_15_0;
+    assign in_input_1_payload_Some_0_b_0[0*8 +: 8] = io_b_bits_0_0;
+    assign in_input_1_payload_Some_0_b_0[1*8 +: 8] = io_b_bits_1_0;
+    assign in_input_1_payload_Some_0_b_0[2*8 +: 8] = io_b_bits_2_0;
+    assign in_input_1_payload_Some_0_b_0[3*8 +: 8] = io_b_bits_3_0;
+    assign in_input_1_payload_Some_0_b_0[4*8 +: 8] = io_b_bits_4_0;
+    assign in_input_1_payload_Some_0_b_0[5*8 +: 8] = io_b_bits_5_0;
+    assign in_input_1_payload_Some_0_b_0[6*8 +: 8] = io_b_bits_6_0;
+    assign in_input_1_payload_Some_0_b_0[7*8 +: 8] = io_b_bits_7_0;
+    assign in_input_1_payload_Some_0_b_0[8*8 +: 8] = io_b_bits_8_0;
+    assign in_input_1_payload_Some_0_b_0[9*8 +: 8] = io_b_bits_9_0;
+    assign in_input_1_payload_Some_0_b_0[10*8 +: 8] = io_b_bits_10_0;
+    assign in_input_1_payload_Some_0_b_0[11*8 +: 8] = io_b_bits_11_0;
+    assign in_input_1_payload_Some_0_b_0[12*8 +: 8] = io_b_bits_12_0;
+    assign in_input_1_payload_Some_0_b_0[13*8 +: 8] = io_b_bits_13_0;
+    assign in_input_1_payload_Some_0_b_0[14*8 +: 8] = io_b_bits_14_0;
+    assign in_input_1_payload_Some_0_b_0[15*8 +: 8] = io_b_bits_15_0;
     
-    assign in_input_2_payload_Some_0_d[0*8 +: 8] = io_d_bits_0_0;
-    assign in_input_2_payload_Some_0_d[1*8 +: 8] = io_d_bits_1_0;
-    assign in_input_2_payload_Some_0_d[2*8 +: 8] = io_d_bits_2_0;
-    assign in_input_2_payload_Some_0_d[3*8 +: 8] = io_d_bits_3_0;
-    assign in_input_2_payload_Some_0_d[4*8 +: 8] = io_d_bits_4_0;
-    assign in_input_2_payload_Some_0_d[5*8 +: 8] = io_d_bits_5_0;
-    assign in_input_2_payload_Some_0_d[6*8 +: 8] = io_d_bits_6_0;
-    assign in_input_2_payload_Some_0_d[7*8 +: 8] = io_d_bits_7_0;
-    assign in_input_2_payload_Some_0_d[8*8 +: 8] = io_d_bits_8_0;
-    assign in_input_2_payload_Some_0_d[9*8 +: 8] = io_d_bits_9_0;
-    assign in_input_2_payload_Some_0_d[10*8 +: 8] = io_d_bits_10_0;
-    assign in_input_2_payload_Some_0_d[11*8 +: 8] = io_d_bits_11_0;
-    assign in_input_2_payload_Some_0_d[12*8 +: 8] = io_d_bits_12_0;
-    assign in_input_2_payload_Some_0_d[13*8 +: 8] = io_d_bits_13_0;
-    assign in_input_2_payload_Some_0_d[14*8 +: 8] = io_d_bits_14_0;
-    assign in_input_2_payload_Some_0_d[15*8 +: 8] = io_d_bits_15_0;
+    assign in_input_2_payload_Some_0_d_0[0*8 +: 8] = io_d_bits_0_0;
+    assign in_input_2_payload_Some_0_d_0[1*8 +: 8] = io_d_bits_1_0;
+    assign in_input_2_payload_Some_0_d_0[2*8 +: 8] = io_d_bits_2_0;
+    assign in_input_2_payload_Some_0_d_0[3*8 +: 8] = io_d_bits_3_0;
+    assign in_input_2_payload_Some_0_d_0[4*8 +: 8] = io_d_bits_4_0;
+    assign in_input_2_payload_Some_0_d_0[5*8 +: 8] = io_d_bits_5_0;
+    assign in_input_2_payload_Some_0_d_0[6*8 +: 8] = io_d_bits_6_0;
+    assign in_input_2_payload_Some_0_d_0[7*8 +: 8] = io_d_bits_7_0;
+    assign in_input_2_payload_Some_0_d_0[8*8 +: 8] = io_d_bits_8_0;
+    assign in_input_2_payload_Some_0_d_0[9*8 +: 8] = io_d_bits_9_0;
+    assign in_input_2_payload_Some_0_d_0[10*8 +: 8] = io_d_bits_10_0;
+    assign in_input_2_payload_Some_0_d_0[11*8 +: 8] = io_d_bits_11_0;
+    assign in_input_2_payload_Some_0_d_0[12*8 +: 8] = io_d_bits_12_0;
+    assign in_input_2_payload_Some_0_d_0[13*8 +: 8] = io_d_bits_13_0;
+    assign in_input_2_payload_Some_0_d_0[14*8 +: 8] = io_d_bits_14_0;
+    assign in_input_2_payload_Some_0_d_0[15*8 +: 8] = io_d_bits_15_0;
 
     // Output wires.
     wire [320-1:0] out_output_payload_Some_0_data;
@@ -252,11 +252,11 @@ module MeshWithDelaysBlackBoxAdapter(
         .rst(reset),
 
         .in_input_0_payload_discriminant(io_a_valid),
-        .in_input_0_payload_Some_0(in_input_0_payload_Some_0_a),
+        .in_input_0_payload_Some_0(in_input_0_payload_Some_0_a_0),
         .in_input_1_payload_discriminant(io_b_valid),
-        .in_input_1_payload_Some_0(in_input_1_payload_Some_0_b),
+        .in_input_1_payload_Some_0(in_input_1_payload_Some_0_b_0),
         .in_input_2_payload_discriminant(io_d_valid),
-        .in_input_2_payload_Some_0(in_input_2_payload_Some_0_d),
+        .in_input_2_payload_Some_0(in_input_2_payload_Some_0_d_0),
         .in_input_3_payload_discriminant(io_req_valid),
         .in_input_3_payload_Some_0_tag_rob_id_discriminant(io_req_bits_tag_rob_id_valid),
         .in_input_3_payload_Some_0_tag_rob_id_Some_0(io_req_bits_tag_rob_id_bits),
