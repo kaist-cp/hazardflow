@@ -37,7 +37,7 @@ COCOTB_HDL_TIMEPRECISION = 1ps
 
 DUT      = transposer_default
 TOPLEVEL = $(DUT)_top
-MODULE   = test_$(DUT)
+MODULE   = test_transposer
 VERILOG_SOURCES += ../../../../build/transposer_default/*.v
 PLUSARGS += -fst
 

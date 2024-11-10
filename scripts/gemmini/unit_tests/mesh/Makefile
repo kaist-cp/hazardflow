@@ -37,7 +37,7 @@ COCOTB_HDL_TIMEPRECISION = 1ps
 
 DUT      = mesh_default
 TOPLEVEL = $(DUT)_top
-MODULE   = test_$(DUT)
+MODULE   = test_mesh
 VERILOG_SOURCES += ../../../../build/mesh_default/*.v
 VERILOG_SOURCES += ../../verilog_wrappers/PE256Wrapper.v
 VERILOG_SOURCES += ../../verilog_wrappers/PE_256.sv

@@ -37,7 +37,7 @@ COCOTB_HDL_TIMEPRECISION = 1ps
 
 DUT      = pe
 TOPLEVEL = $(DUT)_top
-MODULE   = test_$(DUT)
+MODULE   = test_pe
 VERILOG_SOURCES += ../../../../build/pe/*.v
 PLUSARGS += -fst
 

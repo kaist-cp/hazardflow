@@ -30,7 +30,7 @@ pub fn mesh_ffi(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, Mesh
 ///
 /// This module allows students to proceed with future assignments even if they have not completed assignment 5.
 #[magic(ffi::TransposerWrapper())]
-pub fn transposer_ffi(in_row: Valid<Array<U<INPUT_BITS>, 16>>) -> Valid<Array<U<INPUT_BITS>, 16>> {
+pub fn transposer_ffi(in_row: Valid<Array<S<INPUT_BITS>, 16>>) -> Valid<Array<S<INPUT_BITS>, 16>> {
     ffi!("TransposerWrapper.v")
 }
 

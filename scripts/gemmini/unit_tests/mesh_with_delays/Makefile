@@ -37,7 +37,7 @@ COCOTB_HDL_TIMEPRECISION = 1ps
 
 DUT      = mwd
 TOPLEVEL = $(DUT)_top
-MODULE   = test_$(DUT)
+MODULE   = test_mesh_with_delays
 VERILOG_SOURCES += ../../../../build/mwd/*.v
 VERILOG_SOURCES += ../../verilog_wrappers/TransposerWrapper.v
 VERILOG_SOURCES += ../../verilog_wrappers/MeshWrapper.v

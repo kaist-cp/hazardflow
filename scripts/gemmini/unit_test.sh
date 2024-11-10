@@ -10,6 +10,19 @@ if [[ $CONDA_DEFAULT_ENV == "base" ]]; then
     exit 1
 fi
 
+if [ "$1" == "pe" ]; then
+    TARGET_NAME="pe"
+elif [ "$1" == "mesh" ]; then
+    TARGET_NAME="mesh_default"
+elif [ "$1" == "transposer" ]; then
+    TARGET_NAME="transposer_default"
+elif [ "$1" == "mesh_with_delays" ]; then
+    TARGET_NAME="mwd"
+else
+    echo "Invalid argument. Please use \`pe\`, \`mesh\`, \`transposer\`, or \`mesh_with_delays\`."
+    exit 1
+fi
+
 # Current file absolute directory path
 CURR_DIR=$(cd `dirname $0` && pwd)
 LOG_FILE="cocotb_test.log"
@@ -17,7 +30,7 @@ LOG_FILE="cocotb_test.log"
 # 1. Compile the hazardflow module
 cd $CURR_DIR/../../
 rm -rf build/$1
-cargo r --release -- --target $1 --merge --system-task
+cargo r --release -- --target $TARGET_NAME --merge --system-task
 cd -
 
 pip3 install -r $CURR_DIR/requirements.txt

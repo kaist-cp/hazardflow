@@ -23,10 +23,10 @@ class TB(object):
         cocotb.start_soon(Clock(dut.clk, 4, units="ns").start())
 
         self.in_row_valid = self.dut.in_input_0_payload_discriminant
-        self.in_row_data = self.dut.in_input_0_payload_Some_0
+        self.in_row_data = self.dut.in_input_0_payload_Some_0_0
 
         self.out_col_valid = self.dut.out_output_payload_discriminant
-        self.out_col_data = self.dut.out_output_payload_Some_0
+        self.out_col_data = self.dut.out_output_payload_Some_0_0
 
     async def reset(self):
         self.dut.rst.setimmediatevalue(0)
