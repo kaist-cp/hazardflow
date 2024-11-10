@@ -298,7 +298,7 @@ module MeshBlackBoxAdapter (
     wire [16-1:0] out_output_1_1_payload_Some_0_control_propagate_discriminant;
     wire [80-1:0] out_output_1_1_payload_Some_0_control_shift;
 
-    mesh_4_4_top mesh_4_4
+    mesh_default_top mesh_default
     (
         .clk(clock),
         .rst(1'b0),

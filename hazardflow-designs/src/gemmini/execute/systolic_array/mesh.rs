@@ -16,8 +16,8 @@ pub fn mesh(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColD
     todo!("assignment 5")
 }
 
-/// Debug
+/// Mesh with default Gemmini configuration (16 x 16 Tiles).
 #[synthesize]
-pub fn mesh_4_4(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData) {
+pub fn mesh_default(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData) {
     mesh(in_left, in_top)
 }

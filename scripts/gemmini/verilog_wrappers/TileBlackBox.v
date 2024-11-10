@@ -51,7 +51,7 @@ module TileBlackBoxAdapter (
     wire [5-1:0] out_output_1_1_payload_Some_0_control_shift;
     wire out_output_1_1_payload_Some_0_bad_dataflow;
 
-    tile_1_1_top tile_1_1
+    tile_default_top tile_default
     (
         .clk(clock),
         .rst(1'b0),

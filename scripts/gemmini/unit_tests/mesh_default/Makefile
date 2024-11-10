@@ -35,10 +35,10 @@ WAVES ?= 0
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps
 
-DUT      = mesh_4_4
+DUT      = mesh_default
 TOPLEVEL = $(DUT)_top
 MODULE   = test_$(DUT)
-VERILOG_SOURCES += ../../../../build/mesh_4_4/*.v
+VERILOG_SOURCES += ../../../../build/mesh_default/*.v
 VERILOG_SOURCES += ../../verilog_wrappers/PE256Wrapper.v
 VERILOG_SOURCES += ../../verilog_wrappers/PE_256.sv
 VERILOG_SOURCES += ../../verilog_wrappers/MacUnit.sv

@@ -30,12 +30,12 @@ BUILD_CONFIGS = {
         "verilog_wrappers": ["PEBlackBox.v"],
     },
     "tile": {
-        "module_names": ["tile_1_1"],
+        "module_names": ["tile_default"],
         "chisel_wrappers": ["Tile.scala"],
         "verilog_wrappers": ["TileBlackBox.v", "PE256Wrapper.v", "PE_256.sv", "MacUnit.sv"],
     },
     "mesh": {
-        "module_names": ["mesh_4_4"],
+        "module_names": ["mesh_default"],
         "chisel_wrappers": ["Mesh.scala"],
         "verilog_wrappers": ["MeshBlackBox.v", "PE256Wrapper.v", "PE_256.sv", "MacUnit.sv"],
     },

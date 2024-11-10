@@ -20,8 +20,8 @@ pub fn tile(in_left: TileRowData, in_top: TileColData) -> (TileRowData, TileColD
     tile(in_left, in_top)
 }
 
-/// Tile with default Gemmini configuration.
+/// Tile with default Gemmini configuration (1 x 1 PEs).
 #[synthesize]
-pub fn tile_1_1(in_left: TileRowData, in_top: TileColData) -> (TileRowData, TileColData) {
+pub fn tile_default(in_left: TileRowData, in_top: TileColData) -> (TileRowData, TileColData) {
     tile(in_left, in_top)
 }
