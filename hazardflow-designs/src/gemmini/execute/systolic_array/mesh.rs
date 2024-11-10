@@ -12,13 +12,12 @@ pub type MeshRowData = [TileRowData; MESH_ROWS];
 pub type MeshColData = [TileColData; MESH_COLS];
 
 /// Mesh.
-pub fn mesh<const LATENCY: usize>(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData)
-where [(); 1 + LATENCY]: {
+pub fn mesh(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData) {
     todo!("assignment 5")
 }
 
 /// Debug
 #[synthesize]
 pub fn mesh_4_4(in_left: MeshRowData, in_top: MeshColData) -> (MeshRowData, MeshColData) {
-    mesh::<1>(in_left, in_top)
+    mesh(in_left, in_top)
 }

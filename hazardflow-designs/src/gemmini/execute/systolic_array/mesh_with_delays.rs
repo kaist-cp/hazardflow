@@ -200,20 +200,17 @@ fn fifos(
 /// This moudle is in charge of synchronizing inputs, managing metadata regarding where and how to store the results at SRAM,
 /// and producing informations for pe.rs (e.g, last, id, propagate, etc.)
 /// You shouldn't change function signature.
-pub fn mwd_inner<const LATENCY: usize>(
+pub fn mwd_inner(
     a: Vr<A>,
     b: Vr<B>,
     d: Vr<D>,
     req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>,
-) -> Valid<MeshResp>
-where
-    [(); 1 + LATENCY]:,
-{
+) -> Valid<MeshResp> {
     todo!("Assignment 6")
 }
 
 /// Debug
 #[synthesize]
 pub fn mwd(a: Vr<A>, b: Vr<B>, d: Vr<D>, req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>) -> Valid<MeshResp> {
-    mwd_inner::<1>(a, b, d, req)
+    mwd_inner(a, b, d, req)
 }

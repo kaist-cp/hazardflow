@@ -1293,16 +1293,13 @@ fn acc_read_req<const EX_QUEUE_LENGTH: usize>(
 }
 
 #[allow(unused)]
-fn mesh_with_delays_wrapper<const LATENCY: usize>(
+fn mesh_with_delays_wrapper(
     a: Vr<A>,
     b: Vr<B>,
     d: Vr<D>,
     req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>,
-) -> Valid<MeshResp>
-where
-    [(); 1 + LATENCY]:,
-{
-    mesh_with_delays_ffi::<LATENCY>(a, b, d, req)
+) -> Valid<MeshResp> {
+    mesh_with_delays_ffi(a, b, d, req)
 }
 
 /// Execute the mesh computation.
@@ -1573,8 +1570,8 @@ where
     let (mesh_a, mesh_b, mesh_d, mesh_req) = generate_mesh_inputs::<TR, MR>(cmd_mesh_cntl, spad_resps, acc_resps);
 
     // TODO: Do not use magic number.
-    // let mesh_resp = mwd_inner::<0>(mesh_a, mesh_b, mesh_d, mesh_req);
-    let mesh_resp = mesh_with_delays_wrapper::<0>(mesh_a, mesh_b, mesh_d, mesh_req);
+    // let mesh_resp = mwd_inner(mesh_a, mesh_b, mesh_d, mesh_req);
+    let mesh_resp = mesh_with_delays_wrapper(mesh_a, mesh_b, mesh_d, mesh_req);
 
     let (mesh_resp, mesh_resp_rob_id) = mesh_resp.lfork_uni();
 

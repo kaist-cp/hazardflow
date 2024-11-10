@@ -9,15 +9,12 @@ use super::*;
 
 /// Chisel MeshWithDelays Wrapper.
 #[magic(ffi::MeshWithDelaysWrapper())]
-pub fn mesh_with_delays_ffi<const LATENCY: usize>(
+pub fn mesh_with_delays_ffi(
     a: Vr<A>,
     b: Vr<B>,
     d: Vr<D>,
     req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>,
-) -> Valid<MeshResp>
-where
-    [(); 1 + LATENCY]:,
-{
+) -> Valid<MeshResp> {
     ffi!("MeshWithDelaysWrapper.v")
 }
 
