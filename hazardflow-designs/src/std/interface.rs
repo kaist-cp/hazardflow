@@ -103,13 +103,15 @@ impl_interface_tuple! { If1 If2 If3 If4 If5 If6 If7 If8 If9 If10 }
 impl_interface_tuple! { If1 If2 If3 If4 If5 If6 If7 If8 If9 If10 If11 }
 impl_interface_tuple! { If1 If2 If3 If4 If5 If6 If7 If8 If9 If10 If11 If12 }
 
-#[allow(missing_docs)]
+/// Applies the function `f` to the provided interfaces `is`.
+///
+/// NOTE: The function `f` must be a function pointer (type `fn`). It `f` is not a function pointer, it may cause internal
+///       compile error.
 #[macro_export]
 macro_rules! array_map {
-    ($s: ident, $f: expr) => {{
-        let ms = from_fn(|i, j| ($f(i), j));
-        let seq = seq(ms);
-        let (e, _) = seq($s, ());
-        e
+    ($is: ident, $f: expr) => {{
+        let m = seq(from_fn(move |i, x: ()| ($f(i), x)));
+        let (os, _) = m($is, ());
+        os
     }};
 }

@@ -56,13 +56,6 @@ pub fn seq<I: Interface, O: Interface, J: Interface, const N: usize>(
     |is, j| compiler_magic!()
 }
 
-/// Applies `f` to the given interfaces.
-pub fn interface_map<I: Interface, O: Interface, const N: usize>(is: [I; N], f: impl FnOnce(I) -> O) -> [O; N] {
-    let m = seq(from_fn(move |i, x: ()| (f(i), x)));
-    let (os, _) = m(is, ());
-    os
-}
-
 /// Flips a module's input and output.
 pub fn flip<I1: Interface, I2: Interface, O1: Interface, O2: Interface>(
     f: impl FnOnce(I1, I2) -> (O1, O2),
