@@ -13,7 +13,6 @@ from cocotb.binary import BinaryValue
 gemmini_unit_tb_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(gemmini_unit_tb_dir)
 
-random.seed(0)
 
 # Dataflow discriminant
 OS = 0
@@ -86,7 +85,7 @@ def concatenate_data(data: list, width):
     return data_concat
 
 
-def decopmose_data(data: BinaryValue, width):
+def decompose_data(data: BinaryValue, width):
     data_list = []
     data_len = len(data.binstr)
     num_data = data_len // width
@@ -106,6 +105,9 @@ async def ws_simple(dut):
     """
     Test Weight Stationary with ones
     """
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -119,10 +121,10 @@ async def ws_simple(dut):
     golden_output_data = np.matmul(activation, weight) + bias
 
     cocotb.log.info("== Weight Stationary testcase1 ==")
-    cocotb.log.info(f"Input data: {activation}")
-    cocotb.log.info(f"Weight data: {weight}")
-    cocotb.log.info(f"Bias data: {bias}")
-    cocotb.log.info(f"Expected Output data: {golden_output_data}")
+    cocotb.log.info(f"Input data:\n{activation}")
+    cocotb.log.info(f"Weight data:\n{weight}")
+    cocotb.log.info(f"Bias data:\n{bias}")
+    cocotb.log.info(f"Expected output data:\n{golden_output_data}")
 
     output_data = []
 
@@ -220,7 +222,7 @@ async def ws_simple(dut):
         tb.in_col_ctrl_propagate.value = concatenate_data([REG1] * 16, 1)
 
         if tb.out_col_ctrl_propagate.value.binstr == "1111111111111111":
-            data_decomposed = decopmose_data(tb.out_col_data_b.value, 20)
+            data_decomposed = decompose_data(tb.out_col_data_b.value, 20)
             output_data.append(data_decomposed)
         await RisingEdge(dut.clk)
 
@@ -229,11 +231,11 @@ async def ws_simple(dut):
 
     for i in range(24):
         if tb.out_col_ctrl_propagate.value.binstr == "1111111111111111":
-            data_decomposed = decopmose_data(tb.out_col_data_b.value, 20)
+            data_decomposed = decompose_data(tb.out_col_data_b.value, 20)
             output_data.append(data_decomposed)
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"output_data: {output_data}")
+    cocotb.log.info(f"Output data (skewed form):\n{np.array(output_data)}")
 
     # Check output
     for i in range(16):
@@ -246,6 +248,9 @@ async def ws_random(dut):
     """
     Test Weight Stationary with random inputs
     """
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -259,10 +264,10 @@ async def ws_random(dut):
     golden_output_data = np.matmul(activation, weight) + bias
 
     cocotb.log.info("== Weight Stationary testcase1 ==")
-    cocotb.log.info(f"Input data: {activation}")
-    cocotb.log.info(f"Weight data: {weight}")
-    cocotb.log.info(f"Bias data: {bias}")
-    cocotb.log.info(f"Expected Output data: {golden_output_data}")
+    cocotb.log.info(f"Input data:\n{activation}")
+    cocotb.log.info(f"Weight data:\n{weight}")
+    cocotb.log.info(f"Bias data:\n{bias}")
+    cocotb.log.info(f"Expected output data:\n{golden_output_data}")
 
     output_data = []
 
@@ -360,7 +365,7 @@ async def ws_random(dut):
         tb.in_col_ctrl_propagate.value = concatenate_data([REG1] * 16, 1)
 
         if tb.out_col_ctrl_propagate.value.binstr == "1111111111111111":
-            data_decomposed = decopmose_data(tb.out_col_data_b.value, 20)
+            data_decomposed = decompose_data(tb.out_col_data_b.value, 20)
             output_data.append(data_decomposed)
         await RisingEdge(dut.clk)
 
@@ -369,11 +374,11 @@ async def ws_random(dut):
 
     for i in range(24):
         if tb.out_col_ctrl_propagate.value.binstr == "1111111111111111":
-            data_decomposed = decopmose_data(tb.out_col_data_b.value, 20)
+            data_decomposed = decompose_data(tb.out_col_data_b.value, 20)
             output_data.append(data_decomposed)
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"output_data: {output_data}")
+    cocotb.log.info(f"Output data (skewed form):\n{np.array(output_data)}")
 
     # Check output
     for i in range(16):
@@ -386,6 +391,9 @@ async def os_simple(dut):
     """
     Test Output Stationary with ones
     """
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -398,10 +406,9 @@ async def os_simple(dut):
     golden_output_data = np.matmul(activation, weight)
 
     cocotb.log.info("== Output Stationary testcase1 ==")
-
-    cocotb.log.info(f"Input data: {activation}")
-    cocotb.log.info(f"Weight data: {weight}")
-    cocotb.log.info(f"Expected Output data: {golden_output_data}")
+    cocotb.log.info(f"Input data:\n{activation}")
+    cocotb.log.info(f"Weight data:\n{weight}")
+    cocotb.log.info(f"Expected output data:\n{golden_output_data}")
 
     output_data = []
 
@@ -443,8 +450,6 @@ async def os_simple(dut):
             col_data[j] = weight[i - j][j]
             propagate[j] = REG1 if j <= i else REG2
 
-        # tb.log.info(f"i: {i}, row_data: {row_data}, col_data: {col_data}, propagete: {propagate}")
-
         tb.in_row_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_col_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_row_data_a.value = concatenate_data(row_data, 8)
@@ -465,8 +470,6 @@ async def os_simple(dut):
             col_data[j] = weight[16 - (j - i)][j] if j > i else 0
             propagate[j] = REG1 if j > i else REG2
 
-        # tb.log.info(f"i: {i}, row_data: {row_data}, col_data: {col_data}, propagete: {propagate}")
-
         tb.in_row_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_col_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_row_data_a.value = concatenate_data(row_data, 8)
@@ -481,20 +484,24 @@ async def os_simple(dut):
     tb.in_col_ctrl_propagate.value = concatenate_data([REG2] * 16, 1)
 
     for i in range(64):
-        output_data.append(decopmose_data(tb.out_col_data_d.value, 20))
+        output_data.append(decompose_data(tb.out_col_data_d.value, 20))
         await RisingEdge(dut.clk)
     output_data = output_data[2:]
-    tb.log.info(f"output_data: {output_data}")
+    cocotb.log.info(f"Output data (skewed form):\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
             assert golden_output_data[i][j] == output_data[15 - i + j][j]
+
 
 @cocotb.test(timeout_time=10, timeout_unit="ms")
 async def os_random(dut):
     """
     Test Output Stationary with random numbers
     """
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -507,10 +514,9 @@ async def os_random(dut):
     golden_output_data = np.matmul(activation, weight)
 
     cocotb.log.info("== Output Stationary testcase1 ==")
-
-    cocotb.log.info(f"Input data: {activation}")
-    cocotb.log.info(f"Weight data: {weight}")
-    cocotb.log.info(f"Expected Output data: {golden_output_data}")
+    cocotb.log.info(f"Input data:\n{activation}")
+    cocotb.log.info(f"Weight data:\n{weight}")
+    cocotb.log.info(f"Expected output data:\n{golden_output_data}")
 
     output_data = []
 
@@ -552,8 +558,6 @@ async def os_random(dut):
             col_data[j] = weight[i - j][j]
             propagate[j] = REG1 if j <= i else REG2
 
-        # tb.log.info(f"i: {i}, row_data: {row_data}, col_data: {col_data}, propagete: {propagate}")
-
         tb.in_row_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_col_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_row_data_a.value = concatenate_data(row_data, 8)
@@ -574,8 +578,6 @@ async def os_random(dut):
             col_data[j] = weight[16 - (j - i)][j] if j > i else 0
             propagate[j] = REG1 if j > i else REG2
 
-        # tb.log.info(f"i: {i}, row_data: {row_data}, col_data: {col_data}, propagete: {propagate}")
-
         tb.in_row_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_col_data_valids.value = concatenate_data(data_valids, 1)
         tb.in_row_data_a.value = concatenate_data(row_data, 8)
@@ -590,10 +592,10 @@ async def os_random(dut):
     tb.in_col_ctrl_propagate.value = concatenate_data([REG2] * 16, 1)
 
     for i in range(64):
-        output_data.append(decopmose_data(tb.out_col_data_d.value, 20))
+        output_data.append(decompose_data(tb.out_col_data_d.value, 20))
         await RisingEdge(dut.clk)
     output_data = output_data[2:]
-    tb.log.info(f"output_data: {output_data}")
+    cocotb.log.info(f"Output data (skewed form):\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):

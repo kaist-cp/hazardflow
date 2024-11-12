@@ -39,7 +39,7 @@ pip3 install -r $CURR_DIR/requirements.txt
 cd $CURR_DIR/unit_tests/$1
 make clean
 make WAVES=1 | tee $CURR_DIR/$LOG_FILE
-echo "To see the waveform, go to the directory: $CURR_DIR/unit_tests/$1 and check \`$1_top.fst\` file with gtkwave."
+echo "To see the waveform, go to the directory: $CURR_DIR/unit_tests/$1 and check \`${TARGET_NAME}_top.fst\` file with gtkwave."
 
 FAILED_COUNT=$(grep -o "failed" $CURR_DIR/$LOG_FILE | wc -l)
 if [ $FAILED_COUNT -eq 0 ]; then
