@@ -62,14 +62,24 @@ pub enum Q {
     St,
 }
 
+/// Represents the SRAM addresses accessed by the operation.
 #[derive(Debug, Clone, Copy)]
 struct Op {
+    /// Start address.
     start: LocalAddr,
+
+    /// End address.
     end: LocalAddr,
+
+    /// Indicates whether an address overflow occurs from `start` to `end`.
+    ///
+    /// - If this is `true`, the accessed SRAM addresses are `[start, MAX_ADDR)` and `[0, end)`.
+    /// - If this is `false`, the accessed SRAM addresses are `[start, end)`.
     wraps_around: bool,
 }
 
 impl Op {
+    /// Checks whether an SRAM address overlap occurred.
     fn overlaps(self, other: Op) -> bool {
         // TODO: `is_garbage` check might not really be necessary.
         ((other.start.le(self.start) && (self.start.lt(other.end) || other.wraps_around))
@@ -117,17 +127,23 @@ pub struct Entry {
     /// Queue type.
     pub q: Q,
 
+    /// Indicates whether the command modifies the config.
     is_config: bool,
 
+    /// SRAM addresses accessed by operand A.
     opa: HOption<Op>,
+    /// Indicates whether operand A is the destination operand.
     opa_is_dst: bool,
+    /// SRAM addresses accessed by operand B.
     opb: HOption<Op>,
 
     /// Entry is issued or not.
     pub issued: bool,
 
+    /// Indicates that this command is completed immediately when issued.
     complete_on_issue: bool,
 
+    /// Command.
     cmd: GemminiCmd,
 
     /// Dependencies between entries in the queue.
@@ -307,10 +323,14 @@ fn update_config(new_entry: Entry, is_norm: bool, config: Config) -> Config {
     }
 }
 
+/// Represents the reservation station entries.
 #[derive(Debug, Default, Clone, Copy)]
 struct Entries {
+    /// LD entries.
     entries_ld: Array<HOption<Entry>, RS_ENTRIES_LD>,
+    /// EX entries.
     entries_ex: Array<HOption<Entry>, RS_ENTRIES_EX>,
+    /// ST entries.
     entries_st: Array<HOption<Entry>, RS_ENTRIES_ST>,
 }
 
