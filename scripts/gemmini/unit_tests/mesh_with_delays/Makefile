@@ -35,10 +35,10 @@ WAVES ?= 0
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps
 
-DUT      = mwd
+DUT      = mesh_with_delays_default
 TOPLEVEL = $(DUT)_top
 MODULE   = test_mesh_with_delays
-VERILOG_SOURCES += ../../../../build/mwd/*.v
+VERILOG_SOURCES += ../../../../build/mesh_with_delays_default/*.v
 VERILOG_SOURCES += ../../verilog_wrappers/TransposerWrapper.v
 VERILOG_SOURCES += ../../verilog_wrappers/MeshWrapper.v
 VERILOG_SOURCES += ../../verilog_wrappers/AlwaysOutTransposer.sv

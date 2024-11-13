@@ -5,5 +5,6 @@ pub mod mesh_with_delays;
 pub mod pe;
 pub mod tile;
 pub mod transposer;
+pub mod utils;
 
 use super::*;

@@ -826,7 +826,7 @@ module ExecuteControllerBlackBoxAdapter(
     wire [6-1:0] out_output_payload_Some_0;
     assign io_completed_bits = out_output_payload_Some_0;
 
-exe_top execute_hf
+execute_default_top execute_hf
 (
     .clk(clock),
     .rst(reset),

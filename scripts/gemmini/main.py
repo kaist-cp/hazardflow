@@ -103,8 +103,10 @@ def reset_gemmini():
     Reset the gemmini repository
     """
 
-    subprocess.run(["git", "reset", "--hard", "v0.7.1"], cwd=GEMMINI_PATH)
+    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=GEMMINI_PATH)
     subprocess.run(["git", "clean", "-fdx"], cwd=GEMMINI_PATH)
+    subprocess.run(["git", "remote", "add", "cs492", "https://github.com/woojinnn/gemmini.git"], cwd=GEMMINI_PATH)
+    subprocess.run(["git", "pull", "cs492", "cs492", "--rebase"], cwd=GEMMINI_PATH)
 
     os.makedirs(GEMMINI_VSRC_PATH, exist_ok=False)
 

@@ -29,11 +29,6 @@ BUILD_CONFIGS = {
         "chisel_wrappers": ["PE.scala"],
         "verilog_wrappers": ["PEBlackBox.v"],
     },
-    "tile": {
-        "module_names": ["tile_default"],
-        "chisel_wrappers": ["Tile.scala"],
-        "verilog_wrappers": ["TileBlackBox.v", "PE256Wrapper.v", "PE_256.sv", "MacUnit.sv"],
-    },
     "mesh": {
         "module_names": ["mesh_default"],
         "chisel_wrappers": ["Mesh.scala"],
@@ -44,30 +39,15 @@ BUILD_CONFIGS = {
         "chisel_wrappers": ["Transposer.scala"],
         "verilog_wrappers": ["TransposerBlackBox.v"],
     },
-    "mwd": {
-        "module_names": ["mwd"],
-        "chisel_wrappers": ["MeshWithDelays.scala"],
-        "verilog_wrappers": [
-            "AlwaysOutTransposer.sv",
-            "MeshWithDelaysBlackBox.v",
-            "TransposerWrapper.v",
-            "MeshWrapper.v",
-            "Mesh.sv",
-            "Tile.sv",
-            "PE.sv",
-            "PE_256.sv",
-            "MacUnit.sv"
-        ],
-    },
-    "execute_with_chisel_mwd": {
-        "module_names": ["exe"],
+    "mesh_with_delays": {
+        "module_names": ["execute_default"],
         "chisel_wrappers": ["ExecuteController.scala"],
         "verilog_wrappers": [
             "ExecuteControllerBlackBox.v",
-            "MeshWithDelaysWrapper.v",
             "AlwaysOutTransposer.sv",
+            "MeshWrapper.v",
+            "TransposerWrapper.v",
             "Mesh.sv",
-            "MeshWithDelays.sv",
             "Queue_98_mesh_with_delays.sv",
             "TagQueue.sv",
             "Tile.sv",

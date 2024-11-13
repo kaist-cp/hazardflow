@@ -89,6 +89,35 @@ impl<H1: Hazard, H2: Hazard, H3: Hazard, const D: Dep> ZipAnyExt for (I<H1, D>, 
     }
 }
 
+// TODO: Add 3 to 12-tuple variants of `zip_any_i_valid_h`, `zip_any_i_vr_h`, `zip_any_vr`.
+
+// TODO(kjh): Better name?
+/// Extension trait for `zip_any_i_valid_h`.
+pub trait ZipAnyIValidHExt: Interface {
+    /// Egress interface.
+    type E: Interface;
+
+    /// Zip-any `I<ValidH<_, _>, _>`.
+    fn zip_any_i_valid_h(self) -> Self::E;
+}
+
+impl<P1: Copy, R1: Copy, P2: Copy, R2: Copy, const D: Dep> ZipAnyIValidHExt
+    for (I<ValidH<P1, R1>, D>, I<ValidH<P2, R2>, D>)
+{
+    type E = I<ValidH<(HOption<P1>, HOption<P2>), (R1, R2)>, D>;
+
+    /// TODO(kjh): Documentation
+    fn zip_any_i_valid_h(self) -> I<ValidH<(HOption<P1>, HOption<P2>), (R1, R2)>, D> {
+        unsafe {
+            self.fsm((), |(ip1, ip2), er: (R1, R2), ()| {
+                let ep = if ip1.is_some() || ip2.is_some() { Some((ip1, ip2)) } else { None };
+                let ir = er;
+                (ep, ir, ())
+            })
+        }
+    }
+}
+
 /// Extension trait for `zip_any_valid`.
 pub trait ZipAnyValidExt: Interface {
     /// Egress interface.
@@ -111,9 +140,7 @@ impl<P1: Copy, P2: Copy> ZipAnyValidExt for (Valid<P1>, Valid<P2>) {
     /// |  **Fwd**  | `(HOption<P1>, HOption<P2>)` | `HOption<(HOption<P1>, HOption<P2>)>` |
     /// |  **Bwd**  | `((), ())`                   | `()`                                  |
     fn zip_any_valid(self) -> Valid<(HOption<P1>, HOption<P2>)> {
-        unsafe {
-            self.fsm((), |(l, r), (), ()| (if l.is_some() || r.is_some() { Some((l, r)) } else { None }, ((), ()), ()))
-        }
+        self.zip_any_i_valid_h().map_resolver::<()>(|_| ((), ()))
     }
 }
 
@@ -147,3 +174,105 @@ impl_valid_zip_any_valid! { P1, P2, P3, P4, P5, P6, P7, P8, P9 }
 impl_valid_zip_any_valid! { P1, P2, P3, P4, P5, P6, P7, P8, P9, P10 }
 impl_valid_zip_any_valid! { P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11 }
 impl_valid_zip_any_valid! { P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12 }
+
+// TODO(kjh): Better name?
+/// Extension trait for `zip_any_i_vr_h`.
+pub trait ZipAnyIVrHExt: Interface {
+    /// Egress interface.
+    type E: Interface;
+
+    /// Zip-any `I<VrH<_, _>, _>`.
+    fn zip_any_i_vr_h(self) -> Self::E;
+}
+
+impl<P1: Copy, R1: Copy, P2: Copy, R2: Copy, const D: Dep> ZipAnyIVrHExt for (I<VrH<P1, R1>, D>, I<VrH<P2, R2>, D>) {
+    type E = I<VrH<(HOption<P1>, HOption<P2>), (R1, R2)>, D>;
+
+    /// TODO(kjh): Documentation
+    fn zip_any_i_vr_h(self) -> I<VrH<(HOption<P1>, HOption<P2>), (R1, R2)>, D> {
+        unsafe {
+            self.fsm((), |(ip1, ip2), er: Ready<(R1, R2)>, ()| {
+                let ep = if ip1.is_some() || ip2.is_some() { Some((ip1, ip2)) } else { None };
+                let ir1 = Ready::new(er.ready, er.inner.0);
+                let ir2 = Ready::new(er.ready, er.inner.1);
+                (ep, (ir1, ir2), ())
+            })
+        }
+    }
+}
+
+/// Extension trait for `zip_any_vr`.
+pub trait ZipAnyVrExt: Interface {
+    /// Egress interface.
+    type E: Interface;
+
+    /// Zip-any valid-ready.
+    fn zip_any_vr(self) -> Self::E;
+}
+
+impl<P1: Copy, P2: Copy, const D: Dep> ZipAnyVrExt for (Vr<P1, D>, Vr<P2, D>) {
+    type E = Vr<(HOption<P1>, HOption<P2>), D>;
+
+    /// TODO(kjh): Documentation
+    fn zip_any_vr(self) -> Vr<(HOption<P1>, HOption<P2>), D> {
+        self.zip_any_i_vr_h().map_resolver::<()>(|_| ((), ()))
+    }
+}
+
+/// Extension trait for `zip_any_vr_h`.
+pub trait ZipAnyIVrHArrExt: Interface {
+    /// Egress interface.
+    type E: Interface;
+
+    /// Zip-any `I<VrH<_, _>, _>`.
+    fn zip_any_i_vr_h(self) -> Self::E;
+}
+
+impl<P: Copy, R: Copy, const D: Dep, const N: usize> ZipAnyIVrHArrExt for [I<VrH<P, R>, D>; N] {
+    type E = I<VrH<Array<HOption<P>, N>, [R; N]>, D>;
+
+    /// Zips any of the `N` hazard interfaces.
+    ///
+    /// - Payloads: Wrapped in another `HOption`. The outer `HOption` is `Some` if any of the payloads are `Some`.
+    /// - Resolver: Preserved.
+    ///
+    /// | Interface | Ingress                            | Egress                                      |
+    /// | :-------: | ---------------------------------- | ------------------------------------------- |
+    /// |  **Fwd**  | `(HOption<P>, HOption<P>, ...)`    | `HOption<(HOption<P>, HOption<P>, ...)>`    |
+    /// |  **Bwd**  | `(R, R, ...)`                      | `(R, R, ...)`                               |
+    fn zip_any_i_vr_h(self) -> Self::E {
+        unsafe {
+            self.fsm((), |ips, er: Ready<[R; N]>, ()| {
+                let ep = if ips.any(|ip| ip.is_some()) { Some(ips) } else { None };
+                let irs = Array::from(er.inner).map(|inner| Ready::new(er.ready, inner));
+                (ep, irs, ())
+            })
+        }
+    }
+}
+
+/// Extension trait for `zip_any_vr`.
+pub trait ZipAnyVrArrExt: Interface {
+    /// Egress interface.
+    type E: Interface;
+
+    /// Zip-any valid-ready.
+    fn zip_any_vr(self) -> Self::E;
+}
+
+impl<P: Copy, const D: Dep, const N: usize> ZipAnyVrArrExt for [Vr<P, D>; N] {
+    type E = Vr<Array<HOption<P>, N>, D>;
+
+    /// Zips any of the `N` valid-ready interfaces.
+    ///
+    /// - Payloads: Wrapped in another `HOption`. The outer `HOption` is `Some` if any of the payloads are `Some`.
+    /// - Resolver: Ignored.
+    ///
+    /// | Interface | Ingress                      | Egress                                |
+    /// | :-------: | ---------------------------- | ------------------------------------- |
+    /// |  **Fwd**  | `(HOption<P>, HOption<P>, ...)` | `HOption<(HOption<P>, HOption<P>, ...)>` |
+    /// |  **Bwd**  | `((), ())`                   | `()`                                  |
+    fn zip_any_vr(self) -> Self::E {
+        self.zip_any_i_vr_h().map_resolver::<()>(|_| [(); N])
+    }
+}

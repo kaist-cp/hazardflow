@@ -13,7 +13,7 @@ use crate::gemmini::*;
 pub mod rocc;
 
 /// Funct values.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, HEq)]
 pub enum Funct {
     ConfigCmd,
     Load2Cmd,
@@ -45,7 +45,7 @@ pub enum Funct {
 }
 
 /// Config command type. It is generated from `rs1[2:0]`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, HEq)]
 pub enum ConfigCmd {
     Ex,
     Load,
@@ -103,6 +103,12 @@ pub struct GemminiCmd {
     pub rob_id: HOption<U<{ clog2(ROB_ENTRIES) }>>,
     pub from_matmul_fsm: bool,
     pub from_conv_fsm: bool,
+}
+
+impl GemminiCmd {
+    pub fn is_same(self, other: GemminiCmd) -> bool {
+        self.cmd.rs1 == other.cmd.rs1 && self.cmd.rs2 == other.cmd.rs2 && self.rob_id == other.rob_id
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

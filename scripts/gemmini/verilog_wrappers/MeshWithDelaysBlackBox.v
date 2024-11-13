@@ -228,7 +228,7 @@ module MeshWithDelaysBlackBoxAdapter(
     assign in_input_2_payload_Some_0_d_0[15*8 +: 8] = io_d_bits_15_0;
 
     // Output wires.
-    wire [320-1:0] out_output_payload_Some_0_data;
+    wire [320-1:0] out_output_payload_Some_0_data_0;
 
     // Resolver.
     wire [6-1:0] in_input_3_resolver_inner_rob_id_discriminant;
@@ -247,16 +247,16 @@ module MeshWithDelaysBlackBoxAdapter(
 
     
 
-    mwd_top mwd_inst(
+    mesh_with_delays_default_top mesh_with_delays_default_inst(
         .clk(clock),
         .rst(reset),
 
         .in_input_0_payload_discriminant(io_a_valid),
-        .in_input_0_payload_Some_0(in_input_0_payload_Some_0_a_0),
+        .in_input_0_payload_Some_0_0(in_input_0_payload_Some_0_a_0),
         .in_input_1_payload_discriminant(io_b_valid),
-        .in_input_1_payload_Some_0(in_input_1_payload_Some_0_b_0),
+        .in_input_1_payload_Some_0_0(in_input_1_payload_Some_0_b_0),
         .in_input_2_payload_discriminant(io_d_valid),
-        .in_input_2_payload_Some_0(in_input_2_payload_Some_0_d_0),
+        .in_input_2_payload_Some_0_0(in_input_2_payload_Some_0_d_0),
         .in_input_3_payload_discriminant(io_req_valid),
         .in_input_3_payload_Some_0_tag_rob_id_discriminant(io_req_bits_tag_rob_id_valid),
         .in_input_3_payload_Some_0_tag_rob_id_Some_0(io_req_bits_tag_rob_id_bits),
@@ -303,7 +303,7 @@ module MeshWithDelaysBlackBoxAdapter(
         .out_output_payload_Some_0_tag_addr_data(io_resp_bits_tag_addr_data),
         .out_output_payload_Some_0_tag_rows(io_resp_bits_tag_rows),
         .out_output_payload_Some_0_tag_cols(io_resp_bits_tag_cols),
-        .out_output_payload_Some_0_data(out_output_payload_Some_0_data),
+        .out_output_payload_Some_0_data_0(out_output_payload_Some_0_data_0),
         .out_output_payload_Some_0_total_rows(io_resp_bits_total_rows),
         .out_output_payload_Some_0_last(io_resp_bits_last),
 
@@ -311,22 +311,22 @@ module MeshWithDelaysBlackBoxAdapter(
         .out_output_payload_Some_0_tag_addr_garbage(io_resp_bits_tag_addr_garbage) // Not used.
     );
     
-    assign io_resp_bits_data_0_0 = out_output_payload_Some_0_data[0*20 +: 20];
-    assign io_resp_bits_data_1_0 = out_output_payload_Some_0_data[1*20 +: 20];
-    assign io_resp_bits_data_2_0 = out_output_payload_Some_0_data[2*20 +: 20];
-    assign io_resp_bits_data_3_0 = out_output_payload_Some_0_data[3*20 +: 20];
-    assign io_resp_bits_data_4_0 = out_output_payload_Some_0_data[4*20 +: 20];
-    assign io_resp_bits_data_5_0 = out_output_payload_Some_0_data[5*20 +: 20];
-    assign io_resp_bits_data_6_0 = out_output_payload_Some_0_data[6*20 +: 20];
-    assign io_resp_bits_data_7_0 = out_output_payload_Some_0_data[7*20 +: 20];
-    assign io_resp_bits_data_8_0 = out_output_payload_Some_0_data[8*20 +: 20];
-    assign io_resp_bits_data_9_0 = out_output_payload_Some_0_data[9*20 +: 20];
-    assign io_resp_bits_data_10_0 = out_output_payload_Some_0_data[10*20 +: 20];
-    assign io_resp_bits_data_11_0 = out_output_payload_Some_0_data[11*20 +: 20];
-    assign io_resp_bits_data_12_0 = out_output_payload_Some_0_data[12*20 +: 20];
-    assign io_resp_bits_data_13_0 = out_output_payload_Some_0_data[13*20 +: 20];
-    assign io_resp_bits_data_14_0 = out_output_payload_Some_0_data[14*20 +: 20];
-    assign io_resp_bits_data_15_0 = out_output_payload_Some_0_data[15*20 +: 20];
+    assign io_resp_bits_data_0_0 = out_output_payload_Some_0_data_0[0*20 +: 20];
+    assign io_resp_bits_data_1_0 = out_output_payload_Some_0_data_0[1*20 +: 20];
+    assign io_resp_bits_data_2_0 = out_output_payload_Some_0_data_0[2*20 +: 20];
+    assign io_resp_bits_data_3_0 = out_output_payload_Some_0_data_0[3*20 +: 20];
+    assign io_resp_bits_data_4_0 = out_output_payload_Some_0_data_0[4*20 +: 20];
+    assign io_resp_bits_data_5_0 = out_output_payload_Some_0_data_0[5*20 +: 20];
+    assign io_resp_bits_data_6_0 = out_output_payload_Some_0_data_0[6*20 +: 20];
+    assign io_resp_bits_data_7_0 = out_output_payload_Some_0_data_0[7*20 +: 20];
+    assign io_resp_bits_data_8_0 = out_output_payload_Some_0_data_0[8*20 +: 20];
+    assign io_resp_bits_data_9_0 = out_output_payload_Some_0_data_0[9*20 +: 20];
+    assign io_resp_bits_data_10_0 = out_output_payload_Some_0_data_0[10*20 +: 20];
+    assign io_resp_bits_data_11_0 = out_output_payload_Some_0_data_0[11*20 +: 20];
+    assign io_resp_bits_data_12_0 = out_output_payload_Some_0_data_0[12*20 +: 20];
+    assign io_resp_bits_data_13_0 = out_output_payload_Some_0_data_0[13*20 +: 20];
+    assign io_resp_bits_data_14_0 = out_output_payload_Some_0_data_0[14*20 +: 20];
+    assign io_resp_bits_data_15_0 = out_output_payload_Some_0_data_0[15*20 +: 20];
 
     assign io_tags_in_progress_0_rob_id_valid = in_input_3_resolver_inner_rob_id_discriminant[0];
     assign io_tags_in_progress_1_rob_id_valid = in_input_3_resolver_inner_rob_id_discriminant[1];
@@ -373,5 +373,3 @@ module MeshWithDelaysBlackBoxAdapter(
     // DontCare
 
 endmodule
-    
-                                 

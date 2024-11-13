@@ -139,6 +139,9 @@ pub mod fsm_map;
 // Conversion
 pub mod convert;
 
+// Other
+pub mod generator;
+
 pub use fifo::*;
 pub use join::*;
 pub use merge::*;

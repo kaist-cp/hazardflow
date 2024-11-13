@@ -17,7 +17,7 @@ elif [ "$1" == "mesh" ]; then
 elif [ "$1" == "transposer" ]; then
     TARGET_NAME="transposer_default"
 elif [ "$1" == "mesh_with_delays" ]; then
-    TARGET_NAME="mwd"
+    TARGET_NAME="mesh_with_delays_default"
 else
     echo "Invalid argument. Please use \`pe\`, \`mesh\`, \`transposer\`, or \`mesh_with_delays\`."
     exit 1

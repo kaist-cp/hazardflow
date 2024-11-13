@@ -35,7 +35,7 @@ def concatenate_data(data: list, width):
     return data_concat
 
 
-def decopmose_data(data: BinaryValue, width):
+def decompose_data(data: BinaryValue, width):
     data_list = []
     data_len = len(data.binstr)
     num_data = data_len // width
@@ -59,7 +59,7 @@ def decopmose_data(data: BinaryValue, width):
     InpDataMonitor,
 ) = define_stream(
     "InpData",
-    signals=["payload_discriminant", "payload_Some_0", "resolver_ready"],
+    signals=["payload_discriminant", "payload_Some_0_0", "resolver_ready"],
     valid_signal="payload_discriminant",
     ready_signal="resolver_ready",
 )
@@ -275,7 +275,7 @@ class TB(object):
         self.out_tag_rows = self.dut.out_output_payload_Some_0_tag_rows
         self.out_tag_cols = self.dut.out_output_payload_Some_0_tag_cols
         self.out_last = self.dut.out_output_payload_Some_0_last
-        self.out_data = self.dut.out_output_payload_Some_0_data
+        self.out_data = self.dut.out_output_payload_Some_0_data_0
 
     async def reset(self):
         self.dut.rst.setimmediatevalue(0)
@@ -292,6 +292,9 @@ async def ws_no_transpose(dut):
     WS Test without Transpose
     """
     # Start test
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -302,9 +305,9 @@ async def ws_no_transpose(dut):
 
     tb.log.info(f"[Mode] Weight-Stationary (No Transpose)")
     tb.log.info(f"Activation:\n{activation}")
-    tb.log.info(f"weight:\n{weight}")
-    tb.log.info(f"bias:\n{bias}")
-    tb.log.info(f"Expected output: {expected_output}")
+    tb.log.info(f"Weight:\n{weight}")
+    tb.log.info(f"Bias:\n{bias}")
+    tb.log.info(f"Expected output:\n{expected_output}")
 
     # 1. Preload weight data
     await tb.in_ctrl_req.send(req_with_rob_id(WS, False, False, REG2))
@@ -312,19 +315,19 @@ async def ws_no_transpose(dut):
     for i in range(16):
         await tb.in_a_data_req.send(
             InpDataTransaction(
-                payload_Some_0=0,
+                payload_Some_0_0=0,
             )
         )
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=0,
+                payload_Some_0_0=0,
             )
         )
         # When running WS dataflow, weight should be sent in reverse order
         # due to the way the weight is preloaded in the PEs.
         await tb.in_d_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(weight[15 - i], 8),
+                payload_Some_0_0=concatenate_data(weight[15 - i], 8),
             )
         )
 
@@ -334,23 +337,23 @@ async def ws_no_transpose(dut):
     for i in range(16):
         await tb.in_a_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(activation[i], 8),
+                payload_Some_0_0=concatenate_data(activation[i], 8),
             )
         )
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(bias[i], 8),
+                payload_Some_0_0=concatenate_data(bias[i], 8),
             )
         )
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     output_data = []
     for _ in range(100):
         if tb.out_tag_cols.value.binstr == "10000":
-            output_data.append(decopmose_data(tb.out_data.value, 20))
+            output_data.append(decompose_data(tb.out_data.value, 20))
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"Output data: {output_data}")
+    tb.log.info(f"Output data:\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
@@ -363,6 +366,9 @@ async def ws_transpose_a(dut):
     WS Test with A Transpose
     """
     # Start test
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -373,24 +379,24 @@ async def ws_transpose_a(dut):
 
     tb.log.info(f"[Mode] Weight-Stationary (Transpose A)")
     tb.log.info(f"Activation:\n{activation}")
-    tb.log.info(f"weight:\n{weight}")
-    tb.log.info(f"bias:\n{bias}")
-    tb.log.info(f"Expected output: {expected_output}")
+    tb.log.info(f"Weight:\n{weight}")
+    tb.log.info(f"Bias:\n{bias}")
+    tb.log.info(f"Expected output:\n{expected_output}")
 
     # 1. Preload weight data
     await tb.in_ctrl_req.send(req_with_rob_id(WS, True, False, REG2))
     for i in range(16):
         await tb.in_a_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(activation[i], 8),
+                payload_Some_0_0=concatenate_data(activation[i], 8),
             )
         )
-        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         # When running WS dataflow, weight should be sent in reverse order
         # due to the way the weight is preloaded in the PEs.
         await tb.in_d_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(weight[15 - i], 8),
+                payload_Some_0_0=concatenate_data(weight[15 - i], 8),
             )
         )
 
@@ -398,13 +404,13 @@ async def ws_transpose_a(dut):
     await tb.in_ctrl_req.send(req_with_none_rob_id(WS, True, False, REG1))
 
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(bias[i], 8),
+                payload_Some_0_0=concatenate_data(bias[i], 8),
             )
         )
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     output_data = []
     for _ in range(100):
@@ -412,10 +418,10 @@ async def ws_transpose_a(dut):
             tb.out_tag_rob_id_discriminant.value.binstr == "1"
             and tb.out_tag_rob_id_Some_0.value.binstr == "010000"
         ):
-            output_data.append(decopmose_data(tb.out_data.value, 20))
+            output_data.append(decompose_data(tb.out_data.value, 20))
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"Output data: {output_data}")
+    tb.log.info(f"Output data:\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
@@ -428,6 +434,9 @@ async def ws_transpose_b(dut):
     WS Test with B Transpose
     """
     # Start test
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -438,40 +447,40 @@ async def ws_transpose_b(dut):
 
     tb.log.info(f"[Mode] Weight-Stationary (Transpose B)")
     tb.log.info(f"Activation:\n{activation}")
-    tb.log.info(f"weight:\n{weight}")
-    tb.log.info(f"bias:\n{bias}")
-    tb.log.info(f"Expected output: {expected_output}")
+    tb.log.info(f"Weight:\n{weight}")
+    tb.log.info(f"Bias:\n{bias}")
+    tb.log.info(f"Expected output:\n{expected_output}")
 
     # 1. Preload weight data
     await tb.in_ctrl_req.send(req_with_none_rob_id(WS, False, True, REG2))
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
-        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         # When running WS dataflow, weight should be sent in reverse order
         # due to the way the weight is preloaded in the PEs.
         await tb.in_d_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(weight[15 - i], 8),
+                payload_Some_0_0=concatenate_data(weight[15 - i], 8),
             )
         )
 
     # 2. Wait until the data is loaded
     await tb.in_ctrl_req.send(req_with_rob_id(WS, False, True, REG2))
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
-        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0=0))
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     # 3. Send activation and bias data
     await tb.in_ctrl_req.send(req_with_none_rob_id(WS, False, True, REG1))
     for i in range(16):
         await tb.in_a_data_req.send(
-            InpDataTransaction(payload_Some_0=concatenate_data(activation[i], 8))
+            InpDataTransaction(payload_Some_0_0=concatenate_data(activation[i], 8))
         )
         await tb.in_b_data_req.send(
-            InpDataTransaction(payload_Some_0=concatenate_data(bias[i], 8))
+            InpDataTransaction(payload_Some_0_0=concatenate_data(bias[i], 8))
         )
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     output_data = []
     for _ in range(100):
@@ -479,10 +488,10 @@ async def ws_transpose_b(dut):
             tb.out_tag_rob_id_discriminant.value.binstr == "1"
             and tb.out_tag_rob_id_Some_0.value.binstr == "010000"
         ):
-            output_data.append(decopmose_data(tb.out_data.value, 20))
+            output_data.append(decompose_data(tb.out_data.value, 20))
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"Output data: {output_data}")
+    tb.log.info(f"Output data:\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
@@ -495,6 +504,9 @@ async def os_no_transpose(dut):
     OS Test without Transpose
     """
     # Start test
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -519,43 +531,38 @@ async def os_no_transpose(dut):
 
     tb.log.info(f"[Ouptut-Stationary] No Transpose, Shift: {rnd_shift}")
     tb.log.info(f"Activation:\n{activation}")
-    tb.log.info(f"weight:\n{weight}")
-    tb.log.info(f"bias:\n{bias}")
-    tb.log.info(f"Expected output: {expected_output}")
-
-    tb.log.info(
-        f"Test with activation: {activation}, weight: {weight}, bias: {bias}, shift: {rnd_shift}"
-    )
-    tb.log.info(f"Expected output: {expected_output}")
+    tb.log.info(f"Weight:\n{weight}")
+    tb.log.info(f"Bias:\n{bias}")
+    tb.log.info(f"Expected output:\n{expected_output}")
 
     # 1. Preload bias data
     await tb.in_ctrl_req.send(req_with_rob_id(OS, False, False, REG2))
     for i in range(16):
         await tb.in_a_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(activation[i], 8),
+                payload_Some_0_0=concatenate_data(activation[i], 8),
             )
         )
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=0,
+                payload_Some_0_0=0,
             )
         )
         await tb.in_d_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(bias[15 - i], 8),
+                payload_Some_0_0=concatenate_data(bias[15 - i], 8),
             )
         )
 
     await tb.in_ctrl_req.send(req_with_none_rob_id(OS, False, False, REG1))
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(weight[i], 8),
+                payload_Some_0_0=concatenate_data(weight[i], 8),
             )
         )
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     await tb.in_ctrl_req.send(os_flush_request(REG1, rnd_shift))
 
@@ -565,10 +572,10 @@ async def os_no_transpose(dut):
             tb.out_tag_rob_id_discriminant.value.binstr == "1"
             and tb.out_tag_rob_id_Some_0.value.binstr == "010000"
         ):
-            output_data.append(decopmose_data(tb.out_data.value, 20))
+            output_data.append(decompose_data(tb.out_data.value, 20))
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"Output data: {output_data}")
+    tb.log.info(f"Output data:\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
@@ -582,6 +589,9 @@ async def os_transpose_a(dut):
     OS Test with A Transpose
     """
     # Start test
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -594,17 +604,17 @@ async def os_transpose_a(dut):
 
     tb.log.info(f"[Ouptut-Stationary] Transpose A, Shift: {rnd_shift}")
     tb.log.info(f"Activation:\n{activation}")
-    tb.log.info(f"weight:\n{weight}")
-    tb.log.info(f"bias:\n{bias}")
-    tb.log.info(f"Expected output: {expected_output}")
+    tb.log.info(f"Weight:\n{weight}")
+    tb.log.info(f"Bias:\n{bias}")
+    tb.log.info(f"Expected output:\n{expected_output}")
 
     await tb.in_ctrl_req.send(req_with_rob_id(OS, True, False, REG2))
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
-        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         await tb.in_d_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(bias[15 - i], 8),
+                payload_Some_0_0=concatenate_data(bias[15 - i], 8),
             )
         )
 
@@ -612,15 +622,15 @@ async def os_transpose_a(dut):
     for i in range(16):
         await tb.in_a_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(activation[i], 8),
+                payload_Some_0_0=concatenate_data(activation[i], 8),
             )
         )
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(weight[i], 8),
+                payload_Some_0_0=concatenate_data(weight[i], 8),
             )
         )
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     await tb.in_ctrl_req.send(os_flush_request(REG1, rnd_shift))
 
@@ -630,10 +640,10 @@ async def os_transpose_a(dut):
             tb.out_tag_rob_id_discriminant.value.binstr == "1"
             and tb.out_tag_rob_id_Some_0.value.binstr == "010000"
         ):
-            output_data.append(decopmose_data(tb.out_data.value, 20))
+            output_data.append(decompose_data(tb.out_data.value, 20))
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"Output data: {output_data}")
+    tb.log.info(f"Output data:\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
@@ -647,6 +657,9 @@ async def os_transpose_both(dut):
     OS Test with Transpose both A and B
     """
     # Start test
+    random.seed(0)
+    np.random.seed(0)
+    np.set_printoptions(linewidth=200)
     tb = TB(dut)
 
     await tb.reset()
@@ -659,31 +672,31 @@ async def os_transpose_both(dut):
 
     tb.log.info(f"[Ouptut-Stationary] Transpose A and B, Shift: {rnd_shift}")
     tb.log.info(f"Activation:\n{activation}")
-    tb.log.info(f"weight:\n{weight}")
-    tb.log.info(f"bias:\n{bias}")
-    tb.log.info(f"Expected output: {expected_output}")
+    tb.log.info(f"Weight:\n{weight}")
+    tb.log.info(f"Bias:\n{bias}")
+    tb.log.info(f"Expected output:\n{expected_output}")
 
     # 0. Preload the bias
     await tb.in_ctrl_req.send(req_with_none_rob_id(OS, True, True, REG2))
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
-        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         await tb.in_d_data_req.send(
-            InpDataTransaction(payload_Some_0=concatenate_data(bias[15 - i], 8))
+            InpDataTransaction(payload_Some_0_0=concatenate_data(bias[15 - i], 8))
         )
 
     # 1. Send weight data
     await tb.in_ctrl_req.send(req_with_rob_id(OS, True, True, REG2))
     for i in range(16):
-        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         await tb.in_b_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(weight[i], 8),
+                payload_Some_0_0=concatenate_data(weight[i], 8),
             )
         )
         await tb.in_d_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(bias[15 - i], 8),
+                payload_Some_0_0=concatenate_data(bias[15 - i], 8),
             )
         )
 
@@ -692,11 +705,11 @@ async def os_transpose_both(dut):
     for i in range(16):
         await tb.in_a_data_req.send(
             InpDataTransaction(
-                payload_Some_0=concatenate_data(activation[i], 8),
+                payload_Some_0_0=concatenate_data(activation[i], 8),
             )
         )
-        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0=0))
-        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0=0))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     # 3. Flush the data
     await tb.in_ctrl_req.send(os_flush_request(REG1, rnd_shift))
@@ -709,10 +722,10 @@ async def os_transpose_both(dut):
             tb.out_tag_rob_id_discriminant.value.binstr == "1"
             and tb.out_tag_rob_id_Some_0.value.binstr == "010000"
         ):
-            output_data.append(decopmose_data(tb.out_data.value, 20))
+            output_data.append(decompose_data(tb.out_data.value, 20))
         await RisingEdge(dut.clk)
 
-    tb.log.info(f"Output data: {np.array(output_data)}")
+    tb.log.info(f"Output data:\n{np.array(output_data)}")
 
     for i in range(16):
         for j in range(16):
