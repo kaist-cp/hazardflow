@@ -14,7 +14,6 @@ module MeshWrapper
     input [16-1:0] in_input_1_1_payload_Some_0_control_dataflow_discriminant,
     input [16-1:0] in_input_1_1_payload_Some_0_control_propagate_discriminant,
     input [80-1:0] in_input_1_1_payload_Some_0_control_shift,
-    input [16-1:0] in_input_1_1_payload_Some_0_bad_dataflow,
 
     output [16-1:0] out_output_0_payload_discriminant, // DontCare
     output [128-1:0] out_output_0_payload_Some_0_a_0,    // DontCare
@@ -26,8 +25,7 @@ module MeshWrapper
     output [16-1:0] out_output_1_1_payload_Some_0_last,
     output [16-1:0] out_output_1_1_payload_Some_0_control_dataflow_discriminant,
     output [16-1:0] out_output_1_1_payload_Some_0_control_propagate_discriminant, // DontCare
-    output [80-1:0] out_output_1_1_payload_Some_0_control_shift, // DontCare
-    output [16-1:0] out_output_1_1_payload_Some_0_bad_dataflow   // DontCare
+    output [80-1:0] out_output_1_1_payload_Some_0_control_shift // DontCare
 );
     wire io_out_valid_0_0;
     wire io_out_control_0_0_dataflow;
