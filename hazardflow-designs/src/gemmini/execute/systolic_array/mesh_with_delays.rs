@@ -41,301 +41,265 @@ pub enum TransposeFlag {
 /// Mesh tag
 #[derive(Debug, Clone, Copy)]
 pub struct MeshTag {
-    /// rob_id
+    /// ROB ID.
     pub rob_id: HOption<U<{ clog2(RS_ENTRIES) }>>,
-    /// local_addr
+    /// SRAM write address.
     pub addr: LocalAddr,
-    /// rows
+    /// Number of rows.
     pub rows: U<{ clog2(BLOCK_SIZE + 1) }>,
-    /// cols
+    /// Number of cols.
     pub cols: U<{ clog2(BLOCK_SIZE + 1) }>,
 }
 
-impl MeshTag {
-    /// Generate garbage tag.
-    pub fn get_garbage_tag() -> Self {
-        let garbage_addr = LocalAddr::from(GARBAGE_ADDR.into_u());
-        Self { rob_id: None, addr: garbage_addr, rows: 0.into_u(), cols: 0.into_u() }
+impl Default for MeshTag {
+    /// Returns garbage tag.
+    fn default() -> Self {
+        Self { rob_id: None, addr: LocalAddr::from(GARBAGE_ADDR.into_u()), rows: 0.into_u(), cols: 0.into_u() }
     }
 }
 
 /// Request signals to the mesh.
 #[derive(Debug, Clone, Copy)]
 pub struct MeshReq {
-    /// pe_control
-    pub pe_control: PeControl,
-    /// a_transpose
+    /// Dataflow value used in the PE.
+    pub dataflow: Dataflow,
+    /// Indicates whether the propagate value should be flipped.
+    pub propagate_flip: bool,
+    /// Shift value used in the PE.
+    pub shift: U<{ clog2(ACC_BITS) }>,
+    /// Indicates that `A` should be transposed, used to invoke a transposer.
     pub transpose_a: bool,
-    /// bd_transpos
+    /// Indicates that either `B` or `D` should be transposed, used to invoke a transposer.
     pub transpose_bd: bool,
-    /// total_rows
+    /// Specifies the number of rows in the matmul operation.
     pub total_rows: U<{ clog2(BLOCK_SIZE + 1) }>,
-    /// tag
+    /// Tag.
     pub tag: MeshTag,
-    /// flush
-    pub flush: U<2>,
+    /// Indicates whether the request represents a flush.
+    pub flush: bool,
 }
 
 /// Response signals from the mesh.
 #[derive(Debug, Clone, Copy)]
 pub struct MeshResp {
-    /// total_rows
+    /// Specifies the number of rows in the matmul operation.
     pub total_rows: U<{ clog2(BLOCK_SIZE + 1) }>,
-    /// tag
+    /// Tag.
     pub tag: MeshTag,
-    /// last
+    /// Indicates that the row represents the last row.
     pub last: bool,
-    /// data
+    /// Data.
     pub data: Array<S<OUTPUT_BITS>, MESH_COLS>,
 }
 
-/// Helper type to update configurations.
+/// Matmul operation configuration.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Config {
     /// Matmul ID.
     pub matmul_id: U<ID_BITS>,
     /// Propagation.
-    pub in_prop: bool,
+    pub propagate: Propagate,
 }
 
-/// Helper type to manage fire_counter and flush_counter.
-#[derive(Debug, Default, Clone, Copy)]
-struct Counter {
-    fire_counter: U<{ clog2(BLOCK_SIZE) }>,
-    flush_counter: U<2>,
+impl Config {
+    /// Creates a new configuration.
+    pub fn new(matmul_id: U<ID_BITS>, propagate: Propagate) -> Self {
+        Self { matmul_id, propagate }
+    }
+
+    /// Returns the updated global configuration based on the incoming request.
+    ///
+    /// For more details, see Section 2.3.1 of the assignment documentation.
+    ///
+    /// # Arguments
+    ///
+    /// - `self`: The current configuration state.
+    /// - `propagate_flip`: A boolean indicating whether to toggle the propagate value in processing elements (PEs).
+    pub fn update(self, propagate_flip: bool) -> Self {
+        todo!("assignment 6")
+    }
 }
 
+/// Wrapper type of request and configuration.
 #[derive(Debug, Clone, Copy)]
-struct ReqExtended {
-    req: MeshReq,
-    config: Config,
+pub struct ReqExtended {
+    /// Mesh request.
+    pub req: MeshReq,
+    /// Matmul operation configuration.
+    pub config: Config,
 }
 
-/// Helper function
+/// Manages two FIFOs containing the mesh tag and total rows, and returns the metadata transferred from the FIFO.
 ///
-/// Updates the global configuration of `mesh_delay`.
-/// This function should be used in a combinator that manages internal state.
+/// These metadata are used to store the Mesh output in the SRAM (Scratchpad + Accumulator).
+///
+/// For more details, see Section 2.3.8 of the assignment documentation.
 ///
 /// # Arguments
 ///
-/// * `prop` - Propagation information from `MeshReq`.
-/// * `config` - Previously stored configuration state.
-///
-/// # Returns
-///
-/// New configuration state.
-///
-/// # Behavior
-///
-/// For more details, refer to section 2.3.1 of the assignment description.
-fn update_config(prop: Propagate, config: Config) -> Config {
-    todo!("assignment 6")
-}
-
-/// Helper function
-///
-/// Increase fire counter whenever all data (a, b, and d) comes in.
-/// This function should be used in a `fsm_egress`.
-///
-/// # Arguments
-///
-/// * `req_ext` - Request and updated configuration.
-/// * `counter` - Previously stored conter state.
-///
-/// # Returns
-///
-/// * `(ReqExtended, bool)` - request and 1-bit signal indicating last fire.
-/// * `Counter` - Updated counter state.
-/// * `bool` - The 1-bit signal indicating whether `fsm_egress` is ready to receieve new request or not.
-///
-/// # Behavior
-///
-/// For more details, refer to section 2.3.2 of the assignment description.
-#[allow(clippy::type_complexity)]
-fn update_counter(req_ext: ReqExtended, counter: Counter) -> ((ReqExtended, bool), Counter, bool) {
-    let req = req_ext.req;
-
-    let last_fire: bool = todo!("Is this last fire?");
-    let s_next: Counter = todo!("Calculate next fire_counter and flush_counter");
-
-    // `is_last` indicates fsm_egress is ready to receive next payload.
-    let is_last: bool = todo!("is_last for WS dataflow") || todo!("is_last for OS dataflow");
-
-    ((req_ext, last_fire), s_next, is_last)
-}
-
-/// Helper function to manage two fifo.
-///
-/// Manage `tag_fifo` and `total_rows_fifo`.
-/// The `tag` and `total_rows` are metadata to store results in SRAM (Scratchpad or Accumulator).
-///
-/// # Arguments
-///
-/// * `req` - Request which contains `tag` and `total_rows`.
-/// Resolver signal which contains active computation in systolic array.
-/// * `control` - control signal which contains `mesh_id` and `last` signals.
-///
-/// # Returns
-///
-/// * `MeshTag` - Tag for the just finished computation in systolic array.
-/// *  `U<{ clog2(BLOCK_SIZE + 1) }>` - Total rows for the just finished computation in systolic array.
-///
-/// # Behavior
-///
-/// For more details, refer to section 2.3.6 of the assignment description.
+/// - `req`: A request containing metadata. It sends the tags in the `tags_fifo` as the resolver.
+/// - `control`: Control signals from the Mesh output.
 fn fifos(
     req: I<VrH<ReqExtended, TagsInProgress>, { Dep::Helpful }>,
     control: Valid<PeColControl>,
-) -> Valid<(MeshTag, U<{ clog2(BLOCK_SIZE + 1) }>)> {
+) -> (Valid<MeshTag>, Valid<U<{ clog2(BLOCK_SIZE + 1) }>>) {
     // Duplicate control signal and request, because we need to address two fifo.
-    let (control_tag, control_row) = control.lfork();
+    let (control_to_tag_fifo, control_to_total_rows_fifo) = control.lfork();
 
-    // Refer to section 2.3.8 (1)
-    let req: I<VrH<ReqExtended, TagsInProgress>, { Dep::Helpful }> = todo!("filter flush operation");
-    let (req_tagq, req_rowq) = req.map_resolver_inner::<(TagsInProgress, ())>(|(tags, _)| tags).lfork();
+    // Section 2.3.8 (1) Filter out flush request.
+    let req: I<VrH<ReqExtended, TagsInProgress>, { Dep::Helpful }> = todo!("assignment 6");
 
-    // Refer to section 2.3.8 (2)
-    // Calculate future `matmul_id` when the computation is completed.
-    let req_tag: I<VrH<(U<ID_BITS>, ReqExtended), TagsInProgress>, { Dep::Helpful }> =
-        todo!("Calculate matmul_id_of_output");
-    let req_row: Vr<(U<ID_BITS>, ReqExtended)> = todo!("Calculate matmul id of current");
+    // Section 2.3.8 (2) Calculate future `matmul_id`.
+    let (tag, total_rows) = req
+        .map_resolver_inner::<(TagsInProgress, ())>(|(tags, _)| tags)
+        .map(|ReqExtended { req, config }| {
+            let tag_id = todo!("assignment 6");
+            let total_rows_id = todo!("assignment 6");
+            ((tag_id, req.tag), (total_rows_id, req.total_rows))
+        })
+        .unzip();
 
-    // Refer to section 2.3.8 (3)
-    // Convert the resolver type to use `fifo` family combinator
-    let req_tag: I<VrH<(U<ID_BITS>, MeshTag), ((), FifoS<(U<ID_BITS>, MeshTag), FIFO_LENGTH>)>, { Dep::Helpful }> =
+    // Section 2.3.8 (3) Convert resolver type and calculate `TagsInProgress`.
+    let tag: I<VrH<(U<ID_BITS>, MeshTag), ((), FifoS<(U<ID_BITS>, MeshTag), FIFO_LENGTH>)>, { Dep::Helpful }> =
         todo!("Caculate the resolver signal `TagsInProgress` here");
-    let req_row = todo!("Refer `req_tag` and convert resolver type");
+    let total_rows = total_rows.map_resolver_inner::<((), FifoS<(U<ID_BITS>, U<5>), FIFO_LENGTH>)>(|_| ());
 
     // FIFO
-    let tag_fifo = req_tag.multi_headed_transparent_fifo();
-    let row_fifo = todo!("Use this -> req_row.multi_headed_transparent_fifo();");
+    let tag_fifo = tag.multi_headed_transparent_fifo().filter_map(|p| p.head());
+    let total_rows_fifo = total_rows.multi_headed_transparent_fifo().filter_map(|p| p.head());
 
-    // Refer to the section 2.3.8 (4)
-    // We need PeColControl signal.
-    let tag = (tag_fifo, control_tag).join();
-    let total_rows = todo!("Use this -> (row_fifo, control_row).join();");
+    // Section 2.3.8 (4) Pop one element and get metadata.
+    let tag = (tag_fifo, control_to_tag_fifo)
+        .join()
+        .map_resolver_inner_with_p::<()>(|ip, _| {
+            let pop: bool = todo!("assignment 6");
+            ((), if pop { 1.into_u() } else { 0.into_u() })
+        })
+        .filter_map::<MeshTag>(|((head_id, tag), mesh_out_control)| {
+            let transfer: bool = todo!("assignment 6");
+            if transfer {
+                Some(tag)
+            } else {
+                None
+            }
+        });
+    let total_rows = (total_rows_fifo, control_to_total_rows_fifo)
+        .join()
+        .map_resolver_inner_with_p::<()>(|ip, _| {
+            let pop: bool = todo!("assignment 6");
+            ((), if pop { 1.into_u() } else { 0.into_u() })
+        })
+        .filter_map::<U<{ clog2(BLOCK_SIZE + 1) }>>(|((head_id, total_rows), mesh_out_control)| {
+            let transfer: bool = todo!("assignment 6");
+            if transfer {
+                Some(total_rows)
+            } else {
+                None
+            }
+        });
 
-    let tag: Valid<MeshTag> = todo!("Carefully read condition for popping and transferring data.");
-    let total_rows: Valid<U<5>> = todo!("Carefully read condition for popping and transferring data.");
-
-    // Refer to the section 2.3.8 (5)
-    // Return metadata
-    (tag, total_rows).zip_any_valid().map(|(tag, total_rows)| {
-        let tag: MeshTag = todo!("If tag is invalid payload, replace it with garbage tag signal");
-        let total_rows: U<5> = todo!("If total_rows in invalid payload, replace it with garbage total_rows signal");
-
-        (tag, total_rows)
-    })
+    // NOTE: Converting to the valid interface is safe as there are no longer any hazards.
+    (tag.always_into_valid(), total_rows.always_into_valid())
 }
 
-/// Helper function to invoke transposer.
+/// Invokes a Transposer.
 ///
-/// Transpose 0 to 1 matrix.
+/// Returns three matrices, with at most one matrix is transposed.
+///
+/// For more details, see Section 2.3.5 of the assignment documentation.
 ///
 /// # Arguments
 ///
-/// * `data` - It contains request and 3 matrices. The request contains `dataflow`, `transpose_a` and `transpose_bd`.
-///
-/// # Returns
-///
-///  Three matrices. Either one is transposed, or none are transposed.
-///
-/// # Behavior
-///
-/// For more details, refer to section 2.3.5 of the assignment description.
-/// The figure would be pretty helpful!
-fn transpose(data: Valid<(MeshReq, A, B, D)>) -> (Valid<A>, Valid<B>, Valid<D>) {
-    // You need to attach selector bit to use `branch` combinator later.
-    // Selector bit for whether the matrix should be tranposed or not.
-    // Refer to section 2.3.5 (1).
-    let a_with_sel: Valid<(A, BoundedU<2>)> = todo!("attach selector bit for A matrix");
-    let b_with_sel: Valid<(B, BoundedU<2>)> = todo!("attach selector bit for B matrix");
-    let d_with_sel: Valid<(D, BoundedU<2>)> = todo!("attach selector bit for D matrix");
+/// - `data`: It contains request and 3 matrices. The request contains `dataflow`, `transpose_a` and `transpose_bd`.
+fn transpose(data: Valid<(MeshReq, A, B, D)>) -> Valid<(A, B, D)> {
+    // Section 2.3.5 (1) Attach selector.
+    let (a_with_sel, b_with_sel, d_with_sel): (
+        Valid<(A, BoundedU<2>)>,
+        Valid<(B, BoundedU<2>)>,
+        Valid<(D, BoundedU<2>)>,
+    ) = todo!("assignment 6");
 
-    // Perform branch based on selector bit.
-    // Refer to section 2.3.5 (2)
-    let [a, a_transpose]: [Valid<A>; 2] = todo!("branch from a_with_sel");
-    let [b, b_transpose]: [Valid<B>; 2] = todo!("branch from b_with_sel");
-    let [d, d_transpose]: [Valid<D>; 2] = todo!("branch from d_with_sel");
+    // Section 2.3.5 (2) Branch interface.
+    let [a, a_transpose] = a_with_sel.branch();
+    let [b, b_transpose] = b_with_sel.branch();
+    let [d, d_transpose] = d_with_sel.branch();
 
-    // Attach tag where transposed data come from.
-    // Refer to section 2.3.5 (3)
-    let a_transpose: Valid<(TransposeFlag, A)> = todo!("attach tag");
-    let b_transpose: Valid<(TransposeFlag, B)> = todo!("attach tag");
-    let d_transpose: Valid<(TransposeFlag, D)> =
-        todo!("attach tag. It should be reversed before going into transposer!");
+    let a_transpose = a_transpose.map(|p| (TransposeFlag::A, p));
+    let b_transpose = b_transpose.map(|p| (TransposeFlag::B, p));
+    let d_transpose = d_transpose.map(|p| (TransposeFlag::D, p.reverse()));
 
-    // Get transpose_target.
-    // section 2.3.5 (4)
-    let flag: Valid<TransposeFlag> = todo!("Which matrices among A, B, and D go into the Transposer?");
-    // Valid<A> doesn't mean that A should be tranposed. Actually the type of A, B, and D are the same.
-    let transpose_target: Valid<A> = todo!("Select matrix among a, b, and d");
+    // Section 2.3.5 (3) Select transpose target.
+    // NOTE: `Valid<A>` does not mean that `A` should be transposed, actually the types `A`, `B`, and `D` are the same.
+    let (flag, transpose_target): (Valid<TransposeFlag>, Valid<A>) = todo!("assignment 6");
 
     let transposed = transpose_target.map(|vec| vec.concat()).comb(transposer_ffi);
 
-    // Identify which matrix is transposed among A, B, or D.
-    // section 2.3.5 (5)
+    // Section 2.3.5 (4) Identify which matrix is transposed among A, B, or D.
     let [a_transposed, b_transposed, d_transposed]: [Valid<A>; 3] =
-        (flag, transposed).join_valid().map(|(flag, arr)| todo!("which matrix?")).branch();
+        (flag, transposed).join_valid().map(|(flag, arr)| todo!("assignment 6")).branch();
 
-    // Select one among `a` and `a_transposed`
-    // Section 2.3.5 (6)
-    let a: Valid<A> = todo!("Select one among `a` and `a_transposed`");
-    let b: Valid<B> = todo!("Select one among `b` and `b_transposed`");
-    let d: Valid<D> = todo!("Select one among `d` and `d_transposed`. It should be reversed before going out.");
+    // Section 2.3.5 (5) Select one among `X` and `X_transposed`.
+    let a = [a_transposed, a].merge();
+    let b = [b_transposed, b].merge();
+    let d = [d_transposed.map(|p| p.reverse()), d].merge();
 
-    (a, b, d)
+    (a, b, d).join_valid()
 }
 
 /// Mesh with delays.
 pub fn mesh_with_delays(
-    data: Vr<Array<A, 3>>,
+    data: Vr<(A, B, D)>,
     req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>,
 ) -> Valid<MeshResp> {
-    // Section 2.3.1 update configurations.
-    // Update configuration and fork interfaces.
-    let req: I<VrH<ReqExtended, TagsInProgress>, { Dep::Helpful }> = todo!("update configuration. from req");
+    // Section 2.3.1 Update Configurations.
+    let req: I<VrH<ReqExtended, TagsInProgress>, { Dep::Helpful }> = todo!("assignment 6");
 
     let (mesh_req, fifo_req) = req.map_resolver_inner::<((), TagsInProgress)>(|(_, tags)| tags).lfork();
 
-    // Section 2.3.2 manage request buffer
-    let mesh_req: Vr<(ReqExtended, bool)> = todo!("Request buffer. from mesh_req");
+    // Section 2.3.2 Request Buffer.
+    let mesh_req: Vr<(ReqExtended, bool)> = mesh_req.fsm_egress::<(ReqExtended, bool), U<{ clog2(BLOCK_SIZE) }>>(
+        U::default(),
+        true,
+        true,
+        |req_ext, counter| todo!("assignment 6"),
+    );
 
-    // Section 2.3.3 perform a branch with either flush_req or matmul_req
-    // It could be (flush_req, matmul_req)
-    let [flush_req, matmul_req]: [Vr<(ReqExtended, bool)>; 2] = todo!("Branch request. from mesh_req");
+    // Section 2.3.3 Branch Request.
+    let [mesh_req_flush, mesh_req_matmul]: [Vr<(ReqExtended, bool)>; 2] = todo!("assignment 6");
 
-    let (matmul_req, req_and_data) = (matmul_req, data).join_vr().always_into_valid().lfork();
+    // NOTE: Converting to the valid interface is safe as there are no longer any hazards.
+    let mesh_req_flush = mesh_req_flush.always_into_valid();
+    let (mesh_req_matmul, mesh_data) = (mesh_req_matmul, data)
+        .join_vr()
+        .always_into_valid()
+        .map(|((req_ext, last), (a, b, d))| {
+            let matmul_req = (req_ext, last);
+            let mesh_data = (req_ext.req, a, b, d);
+            (matmul_req, mesh_data)
+        })
+        .unzip();
 
-    // Section 2.3.4 merge `flush_req` and `matmul_req`.
-    // Only one request between `flush_req` and `matmul_req` can be transferred to mesh.
-    let matmul_req = matmul_req.map(|(req, _)| req);
-    let flush_req = flush_req.always_into_valid();
-    let req: Valid<(MeshReq, Config, bool)> = todo!("Merged Req");
+    // Section 2.3.4 Merging Requests.
+    let mesh_req: Valid<(ReqExtended, bool)> = todo!("assignment 6");
 
-    // Section 2.3.5 Invoke transposer.
-    let (a, b, d): (Valid<A>, Valid<B>, Valid<D>) =
-        todo!("Use matmul_req_and_data. Get these Valid interfaces from `transpose` helper function.");
+    // Section 2.3.5 Invoke a Transposer.
+    let mesh_data_transposed = mesh_data.comb(transpose);
 
-    // Preprocessing for mesh input such as,
-    // Applying ShiftRegister and interface type conversion
-    let (in_left, in_top) = (a, b, d, req).comb(mesh_i).comb(shift_i);
+    // Section 2.3.6 Mesh IO type conversion + Section 2.3.7 Shift.
+    let mesh_out = (mesh_data_transposed, mesh_req)
+        .comb(preprocess_type)
+        .comb(preprocess_shift)
+        .comb(move |(in_row, in_col)| mesh_ffi(in_row, in_col))
+        .comb(postprocess_shift)
+        .comb(postprocess_type);
 
-    let mesh_output = mesh_ffi(in_left, in_top);
+    let (mesh_out, mesh_out_control) = mesh_out.map(|p| (p, p.1)).unzip();
 
-    // Preprocessing for mesh output such as,
-    // Applying ShiftRegister and interface type conversion
-    let (output_data, output_config) = mesh_output.comb(shift_o).comb(mesh_o);
-    let (fifo_control, last) = output_config.lfork();
+    // Section 2.3.8 FIFO.
+    let (tag, total_rows) = fifos(fifo_req, mesh_out_control);
 
-    // FIFO
-    let metadata = fifos(fifo_req, fifo_control);
-
-    let output = (output_data, last.map(|p| p.last)).join_valid();
-
-    // Refer to the section 2.3.9
-    // Return `MeshResp`
-    todo!("Use `metadata` and `output.`")
+    // Section 2.3.9 Return Mesh Response.
+    (tag, total_rows, mesh_out).zip_any_valid().filter_map(|(tag, total_rows, mesh_out)| todo!("assignment 6"))
 }
 
 /// Mesh with delays.
@@ -346,6 +310,6 @@ pub fn mesh_with_delays_default(
     d: Vr<D>,
     req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>,
 ) -> Valid<MeshResp> {
-    let data = [a, b, d].join_vr();
+    let data = (a, b, d).join_vr();
     mesh_with_delays(data, req)
 }

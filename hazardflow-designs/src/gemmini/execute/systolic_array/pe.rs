@@ -5,7 +5,7 @@
 use super::*;
 
 /// Bit width of the register type.
-const ACC_BITS: usize = 32;
+pub const ACC_BITS: usize = 32;
 
 /// PE row data signals.
 #[derive(Debug, Clone, Copy)]

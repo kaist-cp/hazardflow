@@ -75,9 +75,9 @@ def decompose_data(data: BinaryValue, width):
     "InpCtrl",
     signals=[
         "payload_discriminant",
-        "payload_Some_0_pe_control_dataflow_discriminant",
-        "payload_Some_0_pe_control_propagate_discriminant",
-        "payload_Some_0_pe_control_shift",
+        "payload_Some_0_dataflow_discriminant",
+        "payload_Some_0_propagate_flip",
+        "payload_Some_0_shift",
         "payload_Some_0_transpose_a",
         "payload_Some_0_transpose_bd",
         "payload_Some_0_total_rows",
@@ -104,10 +104,10 @@ def os_flush_request(propagate, shift):
     return InpCtrlTransaction(
         payload_Some_0_transpose_a=False,
         payload_Some_0_transpose_bd=False,
-        payload_Some_0_flush=1,
-        payload_Some_0_pe_control_dataflow_discriminant=OS,
-        payload_Some_0_pe_control_propagate_discriminant=propagate,
-        payload_Some_0_pe_control_shift=shift,
+        payload_Some_0_flush=True,
+        payload_Some_0_dataflow_discriminant=OS,
+        payload_Some_0_propagate_flip=propagate,
+        payload_Some_0_shift=shift,
         payload_Some_0_tag_addr_accumulate=False,
         payload_Some_0_tag_addr_data=0,
         payload_Some_0_tag_addr_garbage=False,
@@ -127,10 +127,10 @@ def req_with_none_rob_id(mode, transpose_a, transpose_bd, propagate):
     return InpCtrlTransaction(
         payload_Some_0_transpose_a=transpose_a,
         payload_Some_0_transpose_bd=transpose_bd,
-        payload_Some_0_flush=0,
-        payload_Some_0_pe_control_dataflow_discriminant=mode,
-        payload_Some_0_pe_control_propagate_discriminant=propagate,
-        payload_Some_0_pe_control_shift=0,
+        payload_Some_0_flush=False,
+        payload_Some_0_dataflow_discriminant=mode,
+        payload_Some_0_propagate_flip=propagate,
+        payload_Some_0_shift=0,
         payload_Some_0_total_rows=16,
         payload_Some_0_tag_rob_id_discriminant=False,
         payload_Some_0_tag_rob_id_Some_0=0,
@@ -148,9 +148,9 @@ def req_with_none_rob_id(mode, transpose_a, transpose_bd, propagate):
 
 def req_with_rob_id(mode, transpose_a, transpose_bd, propagate):
     return InpCtrlTransaction(
-        payload_Some_0_pe_control_dataflow_discriminant=mode,
-        payload_Some_0_pe_control_propagate_discriminant=propagate,
-        payload_Some_0_pe_control_shift=0,
+        payload_Some_0_dataflow_discriminant=mode,
+        payload_Some_0_propagate_flip=propagate,
+        payload_Some_0_shift=0,
         payload_Some_0_transpose_a=transpose_a,
         payload_Some_0_transpose_bd=transpose_bd,
         payload_Some_0_total_rows=16,
@@ -165,7 +165,7 @@ def req_with_rob_id(mode, transpose_a, transpose_bd, propagate):
         payload_Some_0_tag_addr_data=0,
         payload_Some_0_tag_rows=16,
         payload_Some_0_tag_cols=16,
-        payload_Some_0_flush=0,
+        payload_Some_0_flush=False,
     )
 
 
@@ -458,11 +458,7 @@ async def ws_transpose_b(dut):
         await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
         # When running WS dataflow, weight should be sent in reverse order
         # due to the way the weight is preloaded in the PEs.
-        await tb.in_d_data_req.send(
-            InpDataTransaction(
-                payload_Some_0_0=concatenate_data(weight[15 - i], 8),
-            )
-        )
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=concatenate_data(weight[15 - i], 8)))
 
     # 2. Wait until the data is loaded
     await tb.in_ctrl_req.send(req_with_rob_id(WS, False, True, REG2))
@@ -474,12 +470,8 @@ async def ws_transpose_b(dut):
     # 3. Send activation and bias data
     await tb.in_ctrl_req.send(req_with_none_rob_id(WS, False, True, REG1))
     for i in range(16):
-        await tb.in_a_data_req.send(
-            InpDataTransaction(payload_Some_0_0=concatenate_data(activation[i], 8))
-        )
-        await tb.in_b_data_req.send(
-            InpDataTransaction(payload_Some_0_0=concatenate_data(bias[i], 8))
-        )
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=concatenate_data(activation[i], 8)))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=concatenate_data(bias[i], 8)))
         await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=0))
 
     output_data = []
@@ -538,21 +530,9 @@ async def os_no_transpose(dut):
     # 1. Preload bias data
     await tb.in_ctrl_req.send(req_with_rob_id(OS, False, False, REG2))
     for i in range(16):
-        await tb.in_a_data_req.send(
-            InpDataTransaction(
-                payload_Some_0_0=concatenate_data(activation[i], 8),
-            )
-        )
-        await tb.in_b_data_req.send(
-            InpDataTransaction(
-                payload_Some_0_0=0,
-            )
-        )
-        await tb.in_d_data_req.send(
-            InpDataTransaction(
-                payload_Some_0_0=concatenate_data(bias[15 - i], 8),
-            )
-        )
+        await tb.in_a_data_req.send(InpDataTransaction(payload_Some_0_0=concatenate_data(activation[i], 8)))
+        await tb.in_b_data_req.send(InpDataTransaction(payload_Some_0_0=0))
+        await tb.in_d_data_req.send(InpDataTransaction(payload_Some_0_0=concatenate_data(bias[15 - i], 8)))
 
     await tb.in_ctrl_req.send(req_with_none_rob_id(OS, False, False, REG1))
     for i in range(16):

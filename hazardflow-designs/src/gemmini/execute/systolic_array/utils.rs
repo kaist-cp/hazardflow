@@ -9,71 +9,65 @@ use super::*;
 macro_rules! shift_reg {
     ($first: ident, $( $x:ident ),*) => {{
         [ [$first], $(
-                [ $x.shift_reg_fwd::<{${index()} + 1}>() ]
+                [ $x.shift_reg_fwd::<{ ${index()} + 1 }>() ]
         ), *]
     }};
 
     (($fx:ident, $fy: ident), $(($x:ident, $y:ident)), *) => {{
         [ [($fx, $fy)], $(
-                [ ($x.shift_reg_fwd::<{${index()} + 1}>(), $y.shift_reg_fwd::<{${index()} + 1}>()) ]
+                [ ($x.shift_reg_fwd::<{ ${index()} + 1 }>(), $y.shift_reg_fwd::<{ ${index()} + 1 }>()) ]
         ), *]
     }};
 }
-macro_rules! shift_reg_reverse {
+macro_rules! shift_reg_rev {
     ($($x:ident),* ; $last:ident) => {{
-        [ $( [ $x.shift_reg_fwd::<{TOTAL_ROWS - 1 - ${index()}}>() ]
+        [ $( [ $x.shift_reg_fwd::<{ TOTAL_ROWS - 1 - ${index()} }>() ]
         ),*, [ $last ] ]
     }};
 
     ($(($x:ident, $y:ident)),* ; ($lx:ident, $ly:ident)) => {{
-        [ $( [ ($x.shift_reg_fwd::<{TOTAL_ROWS - 1 - ${index()}}>(), $y.shift_reg_fwd::<{TOTAL_ROWS - 1 - ${index()}}>()) ]
+        [ $( [ ($x.shift_reg_fwd::<{ TOTAL_ROWS - 1 - ${index()} }>(), $y.shift_reg_fwd::<{ TOTAL_ROWS - 1 - ${index()} }>()) ]
         ),*, [ ($lx, $ly) ] ]
     }};
 }
 
 /// Shift input interface.
-pub fn shift_i((in_left, in_top): (MeshRowData, MeshColData)) -> (MeshRowData, MeshColData) {
-    let [[in_left0], [in_left1], [in_left2], [in_left3], [in_left4], [in_left5], [in_left6], [in_left7], [in_left8], [in_left9], [in_left10], [in_left11], [in_left12], [in_left13], [in_left14], [in_left15]] =
-        in_left;
-    let [[(t0d, t0c)], [(t1d, t1c)], [(t2d, t2c)], [(t3d, t3c)], [(t4d, t4c)], [(t5d, t5c)], [(t6d, t6c)], [(t7d, t7c)], [(t8d, t8c)], [(t9d, t9c)], [(t10d, t10c)], [(t11d, t11c)], [(t12d, t12c)], [(t13d, t13c)], [(t14d, t14c)], [(t15d, t15c)]] =
-        in_top;
+pub fn preprocess_shift((in_row, in_col): (MeshRowData, MeshColData)) -> (MeshRowData, MeshColData) {
+    let [[r0], [r1], [r2], [r3], [r4], [r5], [r6], [r7], [r8], [r9], [r10], [r11], [r12], [r13], [r14], [r15]] = in_row;
+    let [[(c0d, c0c)], [(c1d, c1c)], [(c2d, c2c)], [(c3d, c3c)], [(c4d, c4c)], [(c5d, c5c)], [(c6d, c6c)], [(c7d, c7c)], [(c8d, c8c)], [(c9d, c9c)], [(c10d, c10c)], [(c11d, c11c)], [(c12d, c12c)], [(c13d, c13c)], [(c14d, c14c)], [(c15d, c15c)]] =
+        in_col;
     (
+        shift_reg!(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15),
         shift_reg!(
-            in_left0, in_left1, in_left2, in_left3, in_left4, in_left5, in_left6, in_left7, in_left8, in_left9,
-            in_left10, in_left11, in_left12, in_left13, in_left14, in_left15
-        ),
-        shift_reg!(
-            (t0d, t0c),
-            (t1d, t1c),
-            (t2d, t2c),
-            (t3d, t3c),
-            (t4d, t4c),
-            (t5d, t5c),
-            (t6d, t6c),
-            (t7d, t7c),
-            (t8d, t8c),
-            (t9d, t9c),
-            (t10d, t10c),
-            (t11d, t11c),
-            (t12d, t12c),
-            (t13d, t13c),
-            (t14d, t14c),
-            (t15d, t15c)
+            (c0d, c0c),
+            (c1d, c1c),
+            (c2d, c2c),
+            (c3d, c3c),
+            (c4d, c4c),
+            (c5d, c5c),
+            (c6d, c6c),
+            (c7d, c7c),
+            (c8d, c8c),
+            (c9d, c9c),
+            (c10d, c10c),
+            (c11d, c11c),
+            (c12d, c12c),
+            (c13d, c13c),
+            (c14d, c14c),
+            (c15d, c15c)
         ),
     )
 }
 
 /// Shift output interface.
-pub fn shift_o((row_output, col_output): (MeshRowData, MeshColData)) -> (MeshRowData, MeshColData) {
-    let [[row0], [row1], [row2], [row3], [row4], [row5], [row6], [row7], [row8], [row9], [row10], [row11], [row12], [row13], [row14], [row15]] =
-        row_output;
+pub fn postprocess_shift((out_row, out_col): (MeshRowData, MeshColData)) -> (MeshRowData, MeshColData) {
+    let [[r0], [r1], [r2], [r3], [r4], [r5], [r6], [r7], [r8], [r9], [r10], [r11], [r12], [r13], [r14], [r15]] =
+        out_row;
     let [[(c0d, c0c)], [(c1d, c1c)], [(c2d, c2c)], [(c3d, c3c)], [(c4d, c4c)], [(c5d, c5c)], [(c6d, c6c)], [(c7d, c7c)], [(c8d, c8c)], [(c9d, c9c)], [(c10d, c10c)], [(c11d, c11c)], [(c12d, c12c)], [(c13d, c13c)], [(c14d, c14c)], [(c15d, c15c)]] =
-        col_output;
+        out_col;
     (
-        shift_reg_reverse!(
-            row0, row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12, row13, row14; row15
-        ),
-        shift_reg_reverse!(
+        shift_reg_rev!(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14; r15),
+        shift_reg_rev!(
             (c0d, c0c),
             (c1d, c1c),
             (c2d, c2c),
@@ -96,16 +90,18 @@ pub fn shift_o((row_output, col_output): (MeshRowData, MeshColData)) -> (MeshRow
 
 /// Interface type conversion.
 #[allow(clippy::type_complexity)]
-pub fn mesh_i(
-    (a, b, d, req): (Valid<A>, Valid<B>, Valid<D>, Valid<(MeshReq, Config, bool)>),
-) -> (MeshRowData, MeshColData) {
+pub fn preprocess_type((data, req): (Valid<(A, B, D)>, Valid<(ReqExtended, bool)>)) -> (MeshRowData, MeshColData) {
     // # Safety
     //
     // All the input and output interfaces are `Valid` type.
     unsafe {
-        (a, b, d, req).fsm::<(MeshRowData, MeshColData), ()>((), |(a_in, b_in, d_in, req_in), _, ()| {
+        (data, req).fsm::<(MeshRowData, MeshColData), ()>((), |(data_in, req_in), _, ()| {
             let default_row = None::<PeRowData>.repeat::<1>().repeat::<MESH_ROWS>();
             let default_col = (None::<PeColData>, None::<PeColControl>).repeat::<1>().repeat::<MESH_COLS>();
+
+            let a_in = data_in.map(|p| p.0);
+            let b_in = data_in.map(|p| p.1);
+            let d_in = data_in.map(|p| p.2);
 
             let col_in = match (b_in.zip(d_in), req_in) {
                 (Some(bd), Some(req)) => Some((Some(bd), Some(req))),
@@ -114,8 +110,8 @@ pub fn mesh_i(
             };
 
             let in_left = col_in.map_or(default_row, |_| {
-                if let Some(a_in) = a_in {
-                    a_in.map(|tile_v| tile_v.map(|v| Some(PeRowData { a: v })))
+                if let Some(mesh_row) = a_in {
+                    mesh_row.map(|tile_row| tile_row.map(|a| Some(PeRowData { a })))
                 } else {
                     range::<MESH_ROWS>().map(|_| Some(PeRowData { a: S::from(0.into_u::<INPUT_BITS>()) }).repeat::<1>())
                 }
@@ -123,13 +119,9 @@ pub fn mesh_i(
 
             let in_top = col_in.map_or(default_col, |(bd, mesh_req)| {
                 // Reqeust is always valid due to the match statement above.
-                let (bd, (req, config, last_fire)) = mesh_req.map(|req| (bd, req)).unwrap();
-                let pe_control = PeControl {
-                    dataflow: req.pe_control.dataflow,
-                    propagate: if config.in_prop { Propagate::Reg1 } else { Propagate::Reg2 },
-                    shift: req.pe_control.shift,
-                };
-                let column_control = Some(PeColControl { control: pe_control, id: config.matmul_id, last: last_fire });
+                let (bd, (ReqExtended { req, config }, last)) = mesh_req.map(|req| (bd, req)).unwrap();
+                let pe_control = PeControl { dataflow: req.dataflow, propagate: config.propagate, shift: req.shift };
+                let column_control = Some(PeColControl { control: pe_control, id: config.matmul_id, last });
 
                 if let Some((b, d)) = bd {
                     b.zip(d).map(|(b, d)| {
@@ -148,20 +140,20 @@ pub fn mesh_i(
                 }
             });
 
-            ((in_left, in_top), ((), (), (), ()), ())
+            ((in_left, in_top), ((), ()), ())
         })
     }
 }
 
 /// Interface type conversion.
-pub fn mesh_o(
-    (row_output, col_output): (MeshRowData, MeshColData),
-) -> (Valid<Array<S<OUTPUT_BITS>, MESH_COLS>>, Valid<PeColControl>) {
+pub fn postprocess_type(
+    (out_row, out_col): (MeshRowData, MeshColData),
+) -> Valid<(Array<S<OUTPUT_BITS>, MESH_COLS>, PeColControl)> {
     // # Safety
     //
     // All the input and output interfaces are `Valid` type.
     unsafe {
-        (row_output, col_output).fsm::<(Valid<Array<S<OUTPUT_BITS>, MESH_COLS>>, Valid<PeColControl>), ()>(
+        (out_row, out_col).fsm::<Valid<(Array<S<OUTPUT_BITS>, MESH_COLS>, PeColControl)>, ()>(
             (),
             |(_, col_data), _, ()| {
                 let out_valid = col_data[0][0].0.is_some();
@@ -176,12 +168,11 @@ pub fn mesh_o(
 
                 let matmul_result = if dataflow_os { out_c } else { out_b };
 
-                let matmul_result = if out_valid { Some(matmul_result) } else { None };
-                let output_control = if out_valid { col_data[0][0].1 } else { None };
-
+                let ep = if out_valid { Some((matmul_result, col_data[0][0].1.unwrap())) } else { None };
                 let ir0 = ().repeat::<1>().repeat::<MESH_COLS>();
                 let ir1 = ((), ()).repeat::<1>().repeat::<MESH_COLS>();
-                ((matmul_result, output_control), (ir0, ir1), ())
+
+                (ep, (ir0, ir1), ())
             },
         )
     }

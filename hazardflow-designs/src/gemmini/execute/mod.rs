@@ -501,11 +501,12 @@ struct SramReadRespInfos {
 }
 
 /// generate inputs for mesh_with_delays
+#[allow(clippy::type_complexity)]
 fn mesh_inputs(
     cntl: I<VrH<ControlSignals, TagsInProgress>, { Dep::Helpful }>,
     spad_resps: [Vr<ScratchpadReadResp>; SP_BANKS],
     acc_resps: [Vr<AccumulatorReadResp>; ACC_BANKS],
-) -> (Vr<Array<A, 3>, { Dep::Helpful }>, I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>) {
+) -> (Vr<(A, B, D)>, I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }>) {
     let (mesh_req, cntl) = cntl.map_resolver_inner::<(TagsInProgress, ())>(|er| er.0).lfork();
 
     let req: I<VrH<MeshReq, TagsInProgress>, { Dep::Helpful }> = mesh_req.map(|cntl| MeshReq {
@@ -516,14 +517,12 @@ fn mesh_inputs(
             rows: cntl.c_shape.map(|c| c.rows).unwrap_or(0.into_u()),
             cols: cntl.c_shape.map(|c| c.cols).unwrap_or(0.into_u()),
         },
-        pe_control: PeControl {
-            dataflow: cntl.dataflow,
-            propagate: if cntl.prop { Propagate::Reg2 } else { Propagate::Reg1 },
-            shift: cntl.shift,
-        },
+        dataflow: cntl.dataflow,
+        propagate_flip: cntl.prop,
+        shift: cntl.shift,
         transpose_a: cntl.transpose_a,
         transpose_bd: cntl.transpose_bd,
-        flush: 0.into_u(),
+        flush: false,
     });
 
     let (info, zeros) = cntl
@@ -761,12 +760,12 @@ fn mesh_inputs(
     let b_data = [b_data, b_zero].merge();
     let d_data = [d_data, d_zero].merge();
 
-    let data = [
+    let data = (
         a_data.filter_map(|p| p).reg_fwd(true),
         b_data.filter_map(|p| p).reg_fwd(true),
         d_data.filter_map(|p| p).reg_fwd(true),
-    ]
-    .join_vr();
+    )
+        .join_vr();
 
     (data, req.reg_fwd(true))
 }
@@ -1558,16 +1557,14 @@ where
             let MeshControlSignals { counters, signals, .. } = p;
 
             MeshReq {
-                pe_control: PeControl {
-                    dataflow: signals.dataflow,
-                    propagate: if counters.in_prop_flush { Propagate::Reg2 } else { Propagate::Reg1 },
-                    shift: signals.shift,
-                },
+                dataflow: signals.dataflow,
+                propagate_flip: counters.in_prop_flush,
+                shift: signals.shift,
                 transpose_a: false,
                 transpose_bd: false,
                 total_rows: BLOCK_SIZE.into_u(),
                 tag: MeshTag { rob_id: None, addr: LocalAddr::garbage(), rows: 0.into_u(), cols: 0.into_u() },
-                flush: 1.into_u(),
+                flush: true,
             }
         })
         .map_resolver_inner(|_| ());

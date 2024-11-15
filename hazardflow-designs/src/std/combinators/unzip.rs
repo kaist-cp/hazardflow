@@ -146,18 +146,14 @@ impl<P1: Copy, P2: Copy, R1: Copy, R2: Copy, const D: Dep> I<VrH<(P1, P2), (R1, 
     /// |  **Fwd**  | `HOption<(P1, P2)>` | `(HOption<P1>, HOption<P2>)` |
     /// |  **Bwd**  | `Ready<(R1, R2)>`   | `(Ready<R1>, Ready<R2>)`     |
     #[allow(clippy::type_complexity)]
-    pub fn unzip(self) -> (I<VrH<P1, R1>, { Dep::Demanding }>, I<VrH<P2, R2>, { Dep::Demanding }>) {
+    pub fn unzip(self) -> (I<VrH<P1, R1>, D>, I<VrH<P2, R2>, D>) {
         unsafe {
-            Interface::fsm(self, (), |ip, er: (Ready<R1>, Ready<R2>), ()| {
-                let ready = er.0.ready && er.1.ready;
-                let ep = if ready && ip.is_some() {
-                    let (p1, p2) = ip.unwrap();
-                    (Some(p1), Some(p2))
-                } else {
-                    (None, None)
-                };
-                let ir = Ready::new(ready, (er.0.inner, er.1.inner));
-                (ep, ir, ())
+            Interface::fsm::<(I<VrH<P1, R1>, D>, I<VrH<P2, R2>, D>), ()>(self, (), |ip, (er1, er2), ()| {
+                let ep1 = if er2.ready { ip.map(|(p, _)| p) } else { None };
+                let ep2 = if er1.ready { ip.map(|(_, p)| p) } else { None };
+                let ir = Ready::new(er1.ready && er2.ready, (er1.inner, er2.inner));
+
+                ((ep1, ep2), ir, ())
             })
         }
     }
@@ -238,7 +234,7 @@ impl<P1: Copy, P2: Copy, const D: Dep> Vr<(P1, P2), D> {
     /// | :-------: | ------------------- | ---------------------------- |
     /// |  **Fwd**  | `HOption<(P1, P2)>` | `(HOption<P1>, HOption<P2>)` |
     /// |  **Bwd**  | `Ready<()>`         | `(Ready<()>, Ready<()>)`     |
-    pub fn unzip(self) -> (Vr<P1, { Dep::Demanding }>, Vr<P2, { Dep::Demanding }>) {
+    pub fn unzip(self) -> (Vr<P1, D>, Vr<P2, D>) {
         self.map_resolver::<((), ())>(|_| ()).unzip()
     }
 }

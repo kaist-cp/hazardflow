@@ -35,6 +35,15 @@ where
     [(); clog2(N + 1)]:,
     [(); clog2(N) + 1]:,
 {
+    /// Returns the head of the FIFO.
+    pub fn head(self) -> HOption<P> {
+        if self.len == 0.into_u() {
+            None
+        } else {
+            Some(self.inner[self.raddr])
+        }
+    }
+
     /// Returns inner elements with valid bit.
     pub fn inner_with_valid(self) -> Array<HOption<P>, N> {
         range::<N>().map(|i| {
