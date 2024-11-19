@@ -19,6 +19,8 @@ const FIFO_LENGTH: usize = MAX_SIMULTANEOUS_MATMULS + 1;
 pub type A = Array<Array<S<INPUT_BITS>, TILE_ROWS>, MESH_ROWS>;
 /// Type of data of `b`.
 pub type B = Array<Array<S<INPUT_BITS>, TILE_COLS>, MESH_COLS>;
+/// Type of data of `c`.
+pub type C = Array<Array<S<OUTPUT_BITS>, TILE_COLS>, MESH_COLS>;
 /// Type of data of `d`.
 pub type D = Array<Array<S<INPUT_BITS>, TILE_COLS>, MESH_COLS>;
 
@@ -88,8 +90,8 @@ pub struct MeshResp {
     pub tag: MeshTag,
     /// Indicates that the row represents the last row.
     pub last: bool,
-    /// Data.
-    pub data: Array<S<OUTPUT_BITS>, MESH_COLS>,
+    /// Output data.
+    pub data: C,
 }
 
 /// Matmul operation configuration.

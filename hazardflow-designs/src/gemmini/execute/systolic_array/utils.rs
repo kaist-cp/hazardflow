@@ -146,34 +146,29 @@ pub fn preprocess_type((data, req): (Valid<(A, B, D)>, Valid<(ReqExtended, bool)
 }
 
 /// Interface type conversion.
-pub fn postprocess_type(
-    (out_row, out_col): (MeshRowData, MeshColData),
-) -> Valid<(Array<S<OUTPUT_BITS>, MESH_COLS>, PeColControl)> {
+pub fn postprocess_type((out_row, out_col): (MeshRowData, MeshColData)) -> Valid<(C, PeColControl)> {
     // # Safety
     //
     // All the input and output interfaces are `Valid` type.
     unsafe {
-        (out_row, out_col).fsm::<Valid<(Array<S<OUTPUT_BITS>, MESH_COLS>, PeColControl)>, ()>(
-            (),
-            |(_, col_data), _, ()| {
-                let out_valid = col_data[0][0].0.is_some();
-                let dataflow_os = col_data[0][0].1.is_some_and(|v| matches!(v.control.dataflow, Dataflow::OS));
+        (out_row, out_col).fsm::<Valid<(C, PeColControl)>, ()>((), |(_, col_data), _, ()| {
+            let out_valid = col_data[0][0].0.is_some();
+            let dataflow_os = col_data[0][0].1.is_some_and(|v| matches!(v.control.dataflow, Dataflow::OS));
 
-                let out_b = col_data
-                    .map(|tile_r| tile_r.map(|(data, _)| data.map_or(0.into_u(), |v| U::from(v.b))).concat())
-                    .map(S::from);
-                let out_c = col_data
-                    .map(|tile_r| tile_r.map(|(data, _)| data.map_or(0.into_u(), |v| U::from(v.d))).concat())
-                    .map(S::from);
+            let out_b = col_data
+                .map(|tile_r| tile_r.map(|(data, _)| data.map_or(0.into_u(), |v| U::from(v.b))).concat())
+                .map(|v| S::from(v).repeat::<TILE_COLS>());
+            let out_c = col_data
+                .map(|tile_r| tile_r.map(|(data, _)| data.map_or(0.into_u(), |v| U::from(v.d))).concat())
+                .map(|v| S::from(v).repeat::<TILE_COLS>());
 
-                let matmul_result = if dataflow_os { out_c } else { out_b };
+            let matmul_result = if dataflow_os { out_c } else { out_b };
 
-                let ep = if out_valid { Some((matmul_result, col_data[0][0].1.unwrap())) } else { None };
-                let ir0 = ().repeat::<1>().repeat::<MESH_COLS>();
-                let ir1 = ((), ()).repeat::<1>().repeat::<MESH_COLS>();
+            let ep = if out_valid { Some((matmul_result, col_data[0][0].1.unwrap())) } else { None };
+            let ir0 = ().repeat::<1>().repeat::<MESH_COLS>();
+            let ir1 = ((), ()).repeat::<1>().repeat::<MESH_COLS>();
 
-                (ep, (ir0, ir1), ())
-            },
-        )
+            (ep, (ir0, ir1), ())
+        })
     }
 }

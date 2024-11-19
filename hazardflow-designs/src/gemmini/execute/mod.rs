@@ -906,7 +906,7 @@ fn spad_write_req(resp: (MeshRespExtended, (Dataflow, U<3>, U<16>)), bank_i: U<2
         .mesh_resp
         .data
         .map(|e| {
-            let e_clipped = clip_with_saturation(U::from(e)); // Lower 8 bits
+            let e_clipped = clip_with_saturation(U::from(e[0])); // Lower 8 bits
             if activation == 1.into_u() {
                 // Check MSB for signedness.
                 if e_clipped[8 - 1] {
@@ -940,7 +940,7 @@ fn acc_write_req(resp: (MeshRespExtended, (Dataflow, U<3>, U<16>)), bank_i: U<1>
     let write_signals = compute_write_signal(resp);
     let resp = resp.0;
 
-    let wdata = resp.mesh_resp.data.map(|v| U::from(v.sext::<32>()));
+    let wdata = resp.mesh_resp.data.map(|v| U::from(v[0].sext::<32>()));
     let wmask = write_signals.w_mask.map(|v| v.repeat::<4>()).concat();
 
     if write_signals.start_array_outputting
