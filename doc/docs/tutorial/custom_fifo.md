@@ -41,7 +41,7 @@ The `masked_merge` combinator performs the following operation (`U<M>` is a bitv
 
 <!-- TODO: to explain masked merge, we don't need to think of FIFO queue. It can be an example of using masked merge, but the current text *assumes* there should be a FIFO queue: "It indicates which ingress interfaces are present in the current queue." -->
 
-- It takes N valid-ready interfaces (`Vr<P>` = `I<VrH<P, ()>`).
+- It takes N valid-ready interfaces (`Vr<P>` = `I<VrH<P, ()>`, `VrH` is defined in [here](../lang/interface.md#vrh)).
 - It returns a valid-ready hazard interface (`I<VrH<(P, U<{ clog2(N) }>), U<N>>>`).
   + The `U<{ clog2(N) }>` in the payload indicates the index of selected ingress interface.
   + The `U<N>` in the resolver indicates the mask bits for the selection.
