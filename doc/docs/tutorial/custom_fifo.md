@@ -109,7 +109,7 @@ Based on the above submodules, we can implement the custom FIFO in a concise and
 fn custom_fifo(ingress: [Vr<u32>; N]) -> Vr<u32> {
     ingress
         .masked_merge()
-        .map_resolver_inner::<((), FifoS<(u32, U<{ clog2(N) }>), M>)>(|(_, fifo_s)| {
+        .map_resolver_inner::<FifoS<(u32, U<{ clog2(N) }>), M>>(|fifo_s| {
             fifo_s.inner_with_valid().fold(false.repeat::<N>(), |acc, i| {
                 if let Some((_, idx)) = i {
                     acc.set(idx, true)

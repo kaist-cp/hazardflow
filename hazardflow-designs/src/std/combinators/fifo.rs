@@ -161,3 +161,79 @@ where
         }
     }
 }
+
+impl<const D: Dep, const N: usize, P: Copy> I<VrH<P, FifoS<P, N>>, D>
+where
+    [(); clog2(N)]:,
+    [(); clog2(N + 1)]:,
+{
+    /// A variation of [`I::transparent_fifo`] that has valid-ready egress interface.
+    ///
+    /// - Payload: The same behavior as [`I::transparent_fifo`].
+    /// - Resolver: The same behavior as [`I::transparent_fifo`], but unnecessary unit type is removed in the ingress
+    ///     resolver signal.
+    ///
+    /// | Interface | Ingress              | Egress       |
+    /// | :-------: | -------------------- | ------------ |
+    /// |  **Fwd**  | `HOption<P>`         | `HOption<P>` |
+    /// |  **Bwd**  | `Ready<FifoS<P, N>>` | `Ready<()>`  |
+    pub fn transparent_fifo(self) -> Vr<P>
+    where
+        [(); clog2(N) + 1]:,
+        [(); clog2(N + 1) + 1]:,
+    {
+        self.multi_headed_transparent_fifo().map_resolver_inner(|_| U::from(1)).filter_map(|s| {
+            if s.len == 0.into_u() {
+                None
+            } else {
+                Some(s.inner[s.raddr])
+            }
+        })
+    }
+
+    /// A variation of [`I::multi_headed_transparent_fifo`] that has valid-ready egress interface.
+    ///
+    /// - Payload: The same behavior as [`I::multi_headed_transparent_fifo`].
+    /// - Resolver: The same behavior as [`I::multi_headed_transparent_fifo`], but unnecessary unit type is removed in
+    ///     the ingress resolver signal.
+    ///
+    /// | Interface | Ingress               | Egress                       |
+    /// | :-------: | --------------------- | ---------------------------- |
+    /// |  **Fwd**  | `HOption<P>`          | `HOption<FifoS<P, N>>`       |
+    /// |  **Bwd**  | `Ready<FifoS<P, N>>`  | `Ready<U<{ clog2(N + 1) }>>` |
+    #[allow(clippy::type_complexity)]
+    pub fn multi_headed_transparent_fifo(self) -> I<VrH<FifoS<P, N>, U<{ clog2(N + 1) }>>, { Dep::Helpful }>
+    where
+        [(); clog2(N) + 1]:,
+        [(); clog2(N + 1) + 1]:,
+    {
+        unsafe {
+            self.fsm::<FifoS<P, N>, { Dep::Helpful }, VrH<FifoS<P, N>, U<{ clog2(N + 1) }>>>(
+                FifoS::default(),
+                |ip, er, s| {
+                    let FifoS { inner, raddr, waddr, len } = s;
+                    let pop = er.inner;
+
+                    let empty = len == U::from(0);
+                    let full = len == U::from(N);
+
+                    let enq = ip.is_some() && !full;
+                    let deq = er.ready && !empty;
+
+                    let ep = Some(s);
+                    let ir = Ready::new(!full, s);
+
+                    let inner_next = if enq { inner.set(waddr, ip.unwrap()) } else { inner };
+                    let len_next = (len + U::from(enq).resize() - if deq { pop.resize() } else { 0.into_u() }).resize();
+                    let raddr_next =
+                        if deq { wrapping_add::<{ clog2(N) }>(raddr, pop.resize(), N.into_u()) } else { raddr };
+                    let waddr_next = if enq { wrapping_inc::<{ clog2(N) }>(waddr, N.into_u()) } else { waddr };
+
+                    let s_next = FifoS { inner: inner_next, raddr: raddr_next, waddr: waddr_next, len: len_next };
+
+                    (ep, ir, s_next)
+                },
+            )
+        }
+    }
+}
