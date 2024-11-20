@@ -86,5 +86,7 @@ pub const CL_RS_MAX_PER_TYPE: usize = clog2(RS_MAX_PER_TYPE);
 
 /// Bit width of inputType.
 pub const INPUT_BITS: usize = 8;
+/// Bit width of the PE register type.
+pub const ACC_BITS: usize = 32;
 /// Bit width of outputType.
 pub const OUTPUT_BITS: usize = 20;
