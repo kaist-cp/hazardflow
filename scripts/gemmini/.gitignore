@@ -1,0 +1,4 @@
+cocotb_test.log
+
+*.vcd
+!waveforms/mesh_with_delays/*.vcd

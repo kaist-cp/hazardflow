@@ -1,0 +1,186 @@
+#!/usr/bin/perl -w
+
+# See LICENSE for license details.
+
+use Getopt::Long;
+use IO::File;
+use Pod::Usage;
+
+use strict;
+use warnings;
+use vars qw ($debug $PREFIX);
+
+$debug = 0;
+my $opt_modules = "mesh_with_delays";
+my $opt_output_filename;
+my @opt_files;
+
+Getopt::Long::config ("no_auto_abbrev","no_pass_through");
+if (! GetOptions
+    ("debug"      => \$debug,
+     "h|help"     => \&usage,
+     "o|output=s" => \$opt_output_filename,
+     "<>"         => \&parameter,
+    )) {
+    \&usage and die "[ERROR] Bad usage\n"
+}
+print STDERR "[ERROR] Specify at least one root module to dump.\n" and usage()
+    if !$opt_modules;
+
+if ($debug) { print "[DEBUG] Using module regex match: /$opt_modules/\n"; }
+
+my $file_out;
+if ($opt_output_filename) {
+    open $file_out, ">", "$opt_output_filename" or
+        die "[ERROR] Unable to open $file_out\n";
+}
+
+if (!@opt_files) {
+    prune(\*STDIN);
+} else {
+    foreach (@opt_files) {
+        open my $fh, "<", $_ or die "[ERROR] Unable to open $_\n";
+        prune($fh);
+        close $fh;
+    }
+}
+
+if ($opt_output_filename) {
+    close $file_out;
+}
+
+sub prune {
+    my $fh = shift;
+
+    # Build up a hash of all signals to include and signals to skip
+    my %targets;
+    my %includes;
+    my %skips;
+    my @scope;
+    my $header = "";
+    my $found_module = 0;
+
+    $targets{"execute_default_00_execute_39_mesh_with_delays_inst"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_12_transpose_inst"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_14_preprocess_type_inst"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_16_preprocess_shift_inst"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_18_closure_inst"}++;
+    $targets{"ffi_MeshWrapper_0"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_20_postprocess_shift_inst"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_22_postprocess_type_inst"}++;
+    $targets{"execute_default_00_execute_39_mesh_with_delays_26_fifos_inst"}++;
+
+    while (<$fh>) {
+        if ($_ =~ /^\$enddefinitions \$end$/) {
+            if ($file_out) {print $file_out $_} else {print $_};
+            last;
+        }
+        if ($_ =~ /\$version|\$date|^\s*\$end$|\$timescale/) {
+            if ($file_out) {print $file_out $_} else {print $_};
+            next;
+        }
+
+        if ($_ =~ /^\s*\$scope module (.+) \$end$/) {
+            my $module = $1;
+            if ($_ =~ /$opt_modules/ || $found_module) {
+                $found_module++;
+            }
+
+            push @scope, $module;
+
+            if ($found_module && $targets{$scope[-1]}) {
+                if ($file_out) {print $file_out $_} else {print $_};
+            }
+
+            if ($debug) { print "[DEBUG] $found_module  $header$module\n"; }
+            $header = "$header  ";
+
+            next;
+        }
+        if ($_ =~ /^\s*\$upscope \$end$/) {
+            if ($found_module && $targets{$scope[-1]}) {
+                if ($file_out) {print $file_out $_} else {print $_};
+            }
+
+            if ($found_module) {
+                $found_module--;
+            }
+
+            $header = substr($header, 0, -2);
+            pop @scope;
+            next;
+        }
+        if ($found_module && $targets{$scope[-1]}) {
+            my $signal;
+            my $signal_name;
+
+            if ($_ !~ /^\s*\$var\s+wire\s+\d+\s+(.+?)\s+(.+)\$end$/) {
+                die;
+            }
+
+            $signal = $1;
+            $signal_name = $2;
+
+            if ($signal_name =~ /^clk/ || $signal_name =~ /^in_/ || $signal_name =~ /^out_/) {
+                if ($file_out) {print $file_out $_} else {print $_};
+                $includes{$signal}++;
+            }
+        }
+    }
+
+    # Prune the VCD file
+    while (<$fh>) {
+        if ($_ =~ /^#/ || /^$/) {
+            if ($file_out) {print $file_out $_} else {print $_};
+            next;
+        }
+        my $signal;
+        if ($_ =~ /^[01](.+)$/ || /^.+ (.+)$/) {
+            $signal = $1;
+        }
+        if ($includes{$signal}) {
+            if ($file_out) {print $file_out $_} else {print $_};
+        }
+    }
+}
+
+sub usage {
+    pod2usage(-verbose=>2, -exitval=>2, -output=>\*STDOUT, -noperldoc=>1);
+}
+
+sub parameter {
+    my $param = shift;
+    if ($param =~ /^--?/) {
+        die "[ERROR] Unknown parameter: $param\n";
+    } else {
+        push @opt_files, "$param";
+    }
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+vcd-prune - Remove/keep the signals of specific modules in a VCD file
+
+=head1 SYNOPSIS
+
+  vcd-prune -m MODULE [OPTION]... [VCD...]
+
+=head1 DESCRIPTION
+
+  This reads an explicitly specified VCD file or STDIN and extracts
+  only those signals encapsulated by the specified MODULE (or multiple
+  modules). The output vcd file will be written to STDOUT by default
+  or to a file if so specified.
+
+=head1 OPTIONS
+
+Mandatory arguments to long options are mandatory to short options, too.
+
+  --debug                    Enable debugging information as the hierarchy is
+                             traversed.
+  -h, --help                 Print this help text
+  -o, --output=FILE          Output file. Default is STDOUT.
