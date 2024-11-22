@@ -215,230 +215,128 @@ fn update_ex_config<const EX_QUEUE_LENGTH: usize>(cmd: ExeCmd<EX_QUEUE_LENGTH>, 
     }
 }
 
+fn get_exe_cmd_type<const EX_QUEUE_LENGTH: usize, const N: usize>(
+    cmd_decoded: CmdDecoded<EX_QUEUE_LENGTH>,
+    tags_in_progress: Array<MeshTag, N>,
+    any_pending_rob_ids: bool,
+    config: ConfigS,
+) -> HOption<ExeCmdType> {
+    let any_matmul_in_progress = tags_in_progress.any(|tag| tag.rob_id.is_some());
+
+    if cmd_decoded.cmds[0].is_some() {
+        if cmd_decoded.do_config && !any_matmul_in_progress && !any_pending_rob_ids {
+            Some(ExeCmdType::Config)
+        } else if cmd_decoded.do_preloads[0] && cmd_decoded.do_computes[1] {
+            let raw_hazard = tags_in_progress.any(|tag| {
+                let pre_rs1_addr = LocalAddr::from(cmd_decoded.rs1s[0]);
+                let mul_rs1_addr = LocalAddr::from(cmd_decoded.rs1s[1]);
+                let mul_rs2_addr = LocalAddr::from(cmd_decoded.rs2s[1]);
+
+                let pre_raw_hazard = tag.addr.is_same_addr(pre_rs1_addr) && !pre_rs1_addr.is_garbage();
+                let mul_raw_hazard = (tag.addr.is_same_addr(mul_rs1_addr) && !mul_rs1_addr.is_garbage())
+                    || (tag.addr.is_same_addr(mul_rs2_addr) && !mul_rs2_addr.is_garbage());
+
+                !tag.addr.is_garbage() && (pre_raw_hazard || mul_raw_hazard)
+            });
+
+            if !raw_hazard {
+                Some(ExeCmdType::Preload)
+            } else if config.dataflow == Dataflow::OS {
+                Some(ExeCmdType::Flush)
+            } else {
+                None
+            }
+        } else if cmd_decoded.do_computes[0] && cmd_decoded.do_preloads[1] && cmd_decoded.do_computes[2] {
+            let pre_rs1_addr = LocalAddr::from(cmd_decoded.rs1s[1]);
+            let mul_rs1_addr = LocalAddr::from(cmd_decoded.rs1s[2]);
+            let mul_rs2_addr = LocalAddr::from(cmd_decoded.rs2s[2]);
+
+            let raw_hazard = tags_in_progress.any(|tag| {
+                let pre_raw_hazard = tag.addr.is_same_addr(pre_rs1_addr) && !pre_rs1_addr.is_garbage();
+                let mul_raw_hazard = (tag.addr.is_same_addr(mul_rs1_addr) && !mul_rs1_addr.is_garbage())
+                    || (tag.addr.is_same_addr(mul_rs2_addr) && !mul_rs2_addr.is_garbage());
+
+                !tag.addr.is_garbage() && (pre_raw_hazard || mul_raw_hazard)
+            });
+
+            if !raw_hazard {
+                Some(ExeCmdType::ComputeAndPreload)
+            } else {
+                Some(ExeCmdType::Compute)
+            }
+        } else if cmd_decoded.do_computes[0] {
+            Some(ExeCmdType::Compute)
+        } else if any_matmul_in_progress && (config.dataflow == Dataflow::OS || cmd_decoded.do_config) {
+            Some(ExeCmdType::Flush)
+        } else {
+            None
+        }
+    } else if any_matmul_in_progress && config.dataflow == Dataflow::OS {
+        Some(ExeCmdType::Flush)
+    } else {
+        None
+    }
+}
+
 /// Decode the command from the reservation station.
 #[allow(clippy::type_complexity)]
 fn cmd_decoder<const EX_QUEUE_LENGTH: usize>(
     cmd: Vr<GemminiCmd>,
 ) -> (
-    Vr<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS)>,
-    I<
-        VrH<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS), (TagsInProgress, bool, HOption<ExeCmd<EX_QUEUE_LENGTH>>, U<2>)>,
-        { Dep::Helpful },
-    >,
+    Vr<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS), { Dep::Demanding }>,
+    I<VrH<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS), (TagsInProgress, bool)>, { Dep::Demanding }>,
 )
 where
     [(); clog2(EX_QUEUE_LENGTH) + 1]:,
     [(); clog2(EX_QUEUE_LENGTH + 1) + 1]:,
 {
-    cmd
-        .map_resolver_inner::<((), FifoS<GemminiCmd, EX_QUEUE_LENGTH>)>(|_| ())
-        .multi_headed_transparent_fifo()
-        .map(|fifo_s| {
-            // Transforms `FifoS` into array of commands
-            range::<EX_QUEUE_LENGTH>().map(|i| {
-                if i.resize() < fifo_s.len {
-                    let idx = wrapping_add::<{ clog2(EX_QUEUE_LENGTH) }>(fifo_s.raddr, i, EX_QUEUE_LENGTH.into_u());
-                    Some(fifo_s.inner[idx])
-                } else {
-                    None
-                }
-            })
-        })
-        .map_resolver_drop::<VrH<_, _>>(
-            |er: Ready<(((U<2>, HOption<ExeCmd<EX_QUEUE_LENGTH>>), TagsInProgress, bool), ConfigS)>| {
-                let pop_count: U<2> = er.inner.0 .0 .0;
-                Ready::valid(((), pop_count.resize()))
-            },
-        )
-        .map(decode_cmd::<EX_QUEUE_LENGTH>)
-        .filter_map_drop_with_r_inner(|cmd, er| {
-            let (((_pop_count, prev_cmd), tags_in_progress, any_pending_robs), config) = er;
-            let any_matmul_in_progress = tags_in_progress.any(|mesh_tag| mesh_tag.rob_id.is_some());
+    let cmd_fifo = cmd.map_resolver_inner::<FifoS<GemminiCmd, EX_QUEUE_LENGTH>>(|_| ()).multi_headed_transparent_fifo();
 
-            let cmd_type = if cmd.cmds[0].is_some() {
-                if cmd.do_config
-                    && !any_matmul_in_progress
-                    && !any_pending_robs
-                    && !(prev_cmd.is_some_and(|prev_cmd| prev_cmd.typ == ExeCmdType::Config))
-                {
-                    Some(ExeCmdType::Config)
-                } else if cmd.do_preloads[0] && cmd.do_computes[1] {
-                    Some(ExeCmdType::Preload)
-                } else if cmd.do_computes[0] && cmd.do_preloads[1] && cmd.do_computes[2] {
-                    Some(ExeCmdType::ComputeAndPreload)
-                } else if cmd.do_computes[0] {
-                    Some(ExeCmdType::Compute)
-                } else if any_matmul_in_progress && (config.dataflow == Dataflow::OS || cmd.do_config) {
-                    Some(ExeCmdType::Flush)
-                } else {
-                    None
-                }
-            } else if any_matmul_in_progress && config.dataflow == Dataflow::OS {
-                Some(ExeCmdType::Flush)
-            } else {
-                None
+    let cmd_decoded = cmd_fifo.map(|fifo_s| decode_cmd::<EX_QUEUE_LENGTH>(fifo_s.inner_with_valid()));
+
+    let exe_cmd = cmd_decoded
+        .map_resolver_drop_with_p::<VrH<CmdDecoded<EX_QUEUE_LENGTH>, (TagsInProgress, bool, ConfigS)>>(|ip, er| {
+            let (tags_in_progress, any_pending_rob_ids, config) = er.inner;
+
+            let Some(cmd_decoded) = ip else {
+                return Ready::new(false, 0.into_u());
             };
 
-            cmd_type.map(|typ| {
-                ExeCmd {
-                    typ, cmd,
-                }
-            })
-        })
-        .filter_map_drop_with_r_inner(|cmds, er| {
-            // Check RAW hazard.
-            let (((_pop_count, prev_cmd), tags_in_progress, _any_pending_robs), config) = er;
+            let exe_cmd_type = get_exe_cmd_type(cmd_decoded, tags_in_progress, any_pending_rob_ids, config);
 
-            let cmd = cmds.cmd;
-            match cmds.typ {
-                ExeCmdType::Preload => {
-                    let raw_hazard = tags_in_progress.any(|tag| {
-                        let pre_rs1_addr = LocalAddr::from(cmd.rs1s[0]);
-                        let mul_rs1_addr = LocalAddr::from(cmd.rs1s[1]);
-                        let mul_rs2_addr = LocalAddr::from(cmd.rs2s[1]);
+            if let Some(exe_cmd_type) = exe_cmd_type {
+                let pop_count = match exe_cmd_type {
+                    ExeCmdType::Config | ExeCmdType::Preload | ExeCmdType::Compute => 1.into_u(),
+                    ExeCmdType::ComputeAndPreload => 2.into_u(),
+                    ExeCmdType::Flush => 0.into_u(),
+                };
 
-                        let pre_raw_hazard = tag.addr.is_same_addr(pre_rs1_addr) && !pre_rs1_addr.is_garbage();
-                        let mul_raw_hazard = (tag.addr.is_same_addr(mul_rs1_addr) && !mul_rs1_addr.is_garbage())
-                            || (tag.addr.is_same_addr(mul_rs2_addr) && !mul_rs2_addr.is_garbage());
-
-                        !tag.addr.is_garbage() && (pre_raw_hazard || mul_raw_hazard)
-                    });
-
-                    if !raw_hazard {
-                        Some(cmds)
-                    } else if config.dataflow == Dataflow::OS {
-                        Some(ExeCmd {
-                            typ: ExeCmdType::Flush,
-                            cmd,
-                        })
-                    } else {
-                        None
-                    }
-                }
-                ExeCmdType::ComputeAndPreload => {
-                    let pre_rs1_addr = LocalAddr::from(cmd.rs1s[1]);
-                    let mul_rs1_addr = LocalAddr::from(cmd.rs1s[2]);
-                    let mul_rs2_addr = LocalAddr::from(cmd.rs2s[2]);
-
-                    let raw_hazard = tags_in_progress.any(|tag| {
-                        let pre_raw_hazard = tag.addr.is_same_addr(pre_rs1_addr) && !pre_rs1_addr.is_garbage();
-                        let mul_raw_hazard = (tag.addr.is_same_addr(mul_rs1_addr) && !mul_rs1_addr.is_garbage())
-                            || (tag.addr.is_same_addr(mul_rs2_addr) && !mul_rs2_addr.is_garbage());
-
-                        !tag.addr.is_garbage() && (pre_raw_hazard || mul_raw_hazard)
-                    });
-                    // TODO: Refactor this.
-                    let raw_hazard_with_prev_cmd = prev_cmd.is_some_and(|prev_cmd| match prev_cmd.typ {
-                        ExeCmdType::Preload => {
-                            let prev_cmd = prev_cmd.cmd;
-                            let prev_cmd_tgt_addr = LocalAddr::from(prev_cmd.rs2s[0]);
-
-                            let pre_raw_hazard =
-                                prev_cmd_tgt_addr.is_same_addr(pre_rs1_addr) && !pre_rs1_addr.is_garbage();
-                            let mul_raw_hazard = (prev_cmd_tgt_addr.is_same_addr(mul_rs1_addr)
-                                && !mul_rs1_addr.is_garbage())
-                                || (prev_cmd_tgt_addr.is_same_addr(mul_rs2_addr) && !mul_rs2_addr.is_garbage());
-
-                            !prev_cmd_tgt_addr.is_garbage() && (pre_raw_hazard || mul_raw_hazard)
-                        }
-                        ExeCmdType::ComputeAndPreload => {
-                            let prev_cmd = prev_cmd.cmd;
-                            let prev_cmd_tgt_addr = LocalAddr::from(prev_cmd.rs2s[1]);
-
-                            let pre_raw_hazard =
-                                prev_cmd_tgt_addr.is_same_addr(pre_rs1_addr) && !pre_rs1_addr.is_garbage();
-                            let mul_raw_hazard = (prev_cmd_tgt_addr.is_same_addr(mul_rs1_addr)
-                                && !mul_rs1_addr.is_garbage())
-                                || (prev_cmd_tgt_addr.is_same_addr(mul_rs2_addr) && !mul_rs2_addr.is_garbage());
-
-                            !prev_cmd_tgt_addr.is_garbage() && (pre_raw_hazard || mul_raw_hazard)
-                        }
-                        _ => false,
-                    });
-
-                    if !raw_hazard && !raw_hazard_with_prev_cmd {
-                        Some(cmds)
-                    } else {
-                        Some(ExeCmd {
-                            typ: ExeCmdType::Compute,
-                            cmd,
-                        })
-                    }
-                }
-                _ => Some(cmds),
+                Ready::new(er.ready, pop_count)
+            } else {
+                Ready::new(false, 0.into_u())
             }
         })
-        .map_resolver_inner(|er: ((((Array<bool, 2>, HOption<ExeCmd<EX_QUEUE_LENGTH>>), Array<MeshTag, 6>, bool), ConfigS), HOption<ExeCmd<EX_QUEUE_LENGTH>>)| er.0)
-        .transparent_fsm_filter_map_drop_with_r::<ExeCmd<EX_QUEUE_LENGTH>>(None, |ip, er, s| {
-            // Filter out repeated ExeCmd.
-            let ep = if let Some(prev) = s {
-                match (ip.typ, prev.typ) {
-                    (ExeCmdType::ComputeAndPreload, ExeCmdType::Compute) => {
-                        // TODO: Why does this case happen??? (Found while debugging `tiled_matmul_os` testcase)
-                        None
-                    }
-                    (ExeCmdType::ComputeAndPreload, ExeCmdType::ComputeAndPreload) => {
-                        match ((ip.cmd.cmds[0], prev.cmd.cmds[0]), (ip.cmd.cmds[1], prev.cmd.cmds[1])) {
-                            ((Some(ip_cmd0), Some(prev_cmd0)), (Some(ip_cmd1), Some(prev_cmd1)))
-                                if ip_cmd0.is_same(prev_cmd0) && ip_cmd1.is_same(prev_cmd1) =>
-                            {
-                                None
-                            }
-                            _ => Some(ip),
-                        }
-                    }
-                    (ExeCmdType::Config, ExeCmdType::Config) => {
-                        if er.inner.0.0.0 == 1.into_u() {
-                            None
-                        } else {
-                            Some(ip)
-                        }
-                    }
-                    (ExeCmdType::Preload, ExeCmdType::Preload)
-                    | (ExeCmdType::Compute, ExeCmdType::Compute)
-                    | (ExeCmdType::Flush, _) => {
-                        match (ip.cmd.cmds[0], prev.cmd.cmds[0]) {
-                            (Some(ip_cmd), Some(prev_cmd)) if ip_cmd.is_same(prev_cmd) => None,
-                            _ => Some(ip),
-                        }
-                    }
-                    _ => Some(ip)
-                }
-            } else {
-                Some(ip)
-            };
+        .filter_map_drop_with_r_inner::<ExeCmd<EX_QUEUE_LENGTH>>(|cmd_decoded, er| {
+            let (tags_in_progress, any_pending_rob_ids, config) = er;
+            let exe_cmd_type = get_exe_cmd_type(cmd_decoded, tags_in_progress, any_pending_rob_ids, config);
+            exe_cmd_type.map(|typ| ExeCmd { typ, cmd: cmd_decoded })
+        });
 
-            (ep, Some(ip))
+    let exe_cmd = exe_cmd
+        .map_resolver_inner::<((TagsInProgress, bool), ConfigS)>(|((tags_in_progress, any_pending_rob_ids), config)| {
+            (tags_in_progress, any_pending_rob_ids, config)
         })
-        .transparent_fsm_map::<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS)>(ConfigS::default(), |cmd, s_config| {
-            // Update the configuration state if the command is a `ex_config` command.
-            let config_updated = update_ex_config(cmd, s_config);
+        .transparent_fsm_map::<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS)>(ConfigS::default(), |cmd, config| {
+            let config_next = update_ex_config(cmd, config);
+            ((cmd, config_next), config_next)
+        });
 
-            ((cmd, config_updated), config_updated)
-        })
-        .map_resolver_inner::<(
-            (Array<MeshTag, 6>, bool, HOption<ExeCmd<EX_QUEUE_LENGTH>>, U<2>),
-            HOption<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS)>,
-        )>(|er| {
-            // TODO: Rename variables.
-            let ((tags_in_progress, any_pending_robs, prev_compute_cmd, pop_count), naked_s) = er;
+    let (config_cmd, compute_cmd) = exe_cmd.map_resolver_inner::<((), (TagsInProgress, bool))>(|(_, er)| er).lfork();
 
-            let pop_count = if naked_s.is_some_and(|(cmd, _)| cmd.typ == ExeCmdType::Config) {
-                1.into_u()
-            } else {
-                pop_count
-            };
-
-            ((pop_count, naked_s.map(|inner| inner.0).or(prev_compute_cmd)), tags_in_progress, any_pending_robs)
-        })
-        .transparent_reg_fwd(true)
-        .map(|(cmd, config)| {
-                let sel = if cmd.typ == ExeCmdType::Config {BoundedU::new(0.into_u())} else {BoundedU::new(1.into_u())};
-                ((cmd, config), sel)
-            }
-        )
-        .map_resolver_inner(|(_, er1)| er1)
-        .branch()
+    (
+        config_cmd.filter(|(exe_cmd, _)| exe_cmd.typ == ExeCmdType::Config),
+        compute_cmd.filter(|(exe_cmd, _)| exe_cmd.typ != ExeCmdType::Config),
+    )
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -1420,7 +1318,7 @@ where
     // 2. Process the config command.
     //
     // It just return the ROB id of the command. The configuration information was parsed in the decode stage (step 1).
-    let config_rob_id = config_cmd.filter_map(|(cmd, _)| {
+    let config_rob_id = config_cmd.reg_fwd(false).filter_map(|(cmd, _)| {
         if cmd.typ == ExeCmdType::Config {
             cmd.cmd.cmds[0].and_then(|cmd| cmd.rob_id)
         } else {
@@ -1430,32 +1328,16 @@ where
 
     // 3. Compute all cofiguruations and signals. Also, wait for finishing fire all rows.
     let compute_cmd = compute_cmd
-        .filter_map_drop_with_r::<AndH<ValidH<_, _>>>(|ip, er| if er.inner.3 == 0.into_u() { Some(ip) } else { None })
-        .map_resolver::<(((TagsInProgress, U<6>), bool), HOption<(ExeCmd<EX_QUEUE_LENGTH>, ConfigS)>)>(|er| {
-            let (((matmul_in_progress, _sram_readies), any_pending_rob_ids), naked_fsm_egress_state) = er.inner;
-
-            let pop_count = if let (Some((cmd, _)), true) = (naked_fsm_egress_state, er.ready) {
-                if matches!(cmd.typ, ExeCmdType::Preload | ExeCmdType::Compute) {
-                    1
-                } else if matches!(cmd.typ, ExeCmdType::ComputeAndPreload) {
-                    2
-                } else {
-                    0
-                }
-            } else {
-                0
-            }
-            .into_u();
-
-            (matmul_in_progress, any_pending_rob_ids, naked_fsm_egress_state.map(|inner| inner.0), pop_count)
+        .map_resolver_inner::<(TagsInProgress, bool, U<6>)>(|(tags_in_progress, any_pending_rob_ids, _)| {
+            (tags_in_progress, any_pending_rob_ids)
         })
-        .transparent_fsm_egress_with_r::<(bool, MeshControlSignals<EX_QUEUE_LENGTH>), CounterS>(
+        .fsm_egress_with_r::<(bool, MeshControlSignals<EX_QUEUE_LENGTH>), CounterS>(
             CounterS::default(),
-            |(cmd, config), er_inner, counter_curr| {
-                let ((_, sram_read_req_readies), _) = er_inner;
-                let (signals, last, s_next) = compute_control_signals(cmd, config, counter_curr, sram_read_req_readies);
-
-                let ep = (last, MeshControlSignals { cmd, config, counters: counter_curr, signals });
+            false,
+            |(cmd, config), er, counters| {
+                let (_, _, sram_read_req_readies) = er;
+                let (signals, last, s_next) = compute_control_signals(cmd, config, counters, sram_read_req_readies);
+                let ep = (last, MeshControlSignals { cmd, config, counters, signals });
 
                 (ep, s_next, last)
             },
@@ -1489,7 +1371,13 @@ where
             (ep, next_in_prop_flush)
         });
 
-    let (compute_cmd, pending_completed_rob_ids) = compute_cmd.lfork();
+    let (compute_cmd, pending_completed_rob_ids) = compute_cmd
+        .map_resolver_inner::<((TagsInProgress, U<6>), bool)>(
+            |((tags_in_progress, sram_read_readies), any_pending_rob_ids)| {
+                (tags_in_progress, any_pending_rob_ids, sram_read_readies)
+            },
+        )
+        .lfork();
 
     // 4. Process the pending completed rob ids.
     let pending_completed_rob_ids = pending_completed_rob_ids

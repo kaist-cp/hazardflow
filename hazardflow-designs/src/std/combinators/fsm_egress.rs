@@ -198,9 +198,10 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, R>, D> {
     pub fn fsm_egress_with_r<EP: Copy, S: Copy>(
         self,
         init: S,
+        pipe: bool,
         f: impl Fn(P, R, S) -> (EP, S, bool),
     ) -> I<VrH<EP, R>, { Dep::Demanding }> {
-        self.map_resolver_inner(|er_inner: (R, HOption<P>)| er_inner.0).transparent_fsm_egress_with_r(init, f)
+        self.map_resolver_inner(|er_inner: (R, HOption<P>)| er_inner.0).transparent_fsm_egress_with_r(init, pipe, f)
     }
 }
 
@@ -267,6 +268,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, (R, HOption<P>)>, D> {
     pub fn transparent_fsm_egress_with_r<EP: Copy, S: Copy>(
         self,
         init: S,
+        pipe: bool,
         f: impl Fn(P, R, S) -> (EP, S, bool),
     ) -> I<VrH<EP, R>, { Dep::Demanding }> {
         unsafe {
@@ -279,7 +281,7 @@ impl<P: Copy, R: Copy, const D: Dep> I<VrH<P, (R, HOption<P>)>, D> {
                 };
 
                 let et = ep.is_some() && er.ready;
-                let ir = Ready::new(sp.is_none() || (et && is_last), (er.inner, sp));
+                let ir = Ready::new(sp.is_none() || (et && is_last && pipe), (er.inner, sp));
                 let it = ip.is_some() && ir.ready;
 
                 let (sp_next, s_next) = if it {
